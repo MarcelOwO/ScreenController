@@ -1,9 +1,3 @@
-[submodule "external/simpleble"]
-	path = external/simpleble
-	url = https://github.com/simpleble/simpleble.git
 [submodule "external/glfw"]
 	path = external/glfw
 	url = https://github.com/glfw/glfw.git
-[submodule "vcpkg"]
-	path = vcpkg
-	url = https://github.com/microsoft/vcpkg.git
