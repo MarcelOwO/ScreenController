@@ -6,37 +6,35 @@
 #define GRAPHICS_RENDERER_H
 
 #include <string>
-#include <iostream>
 
-#include <glad.h>
+#include <glad/glad.h>
 
-class GraphicsRenderer
-{
+class GraphicsRenderer {
 public:
     GraphicsRenderer();
     ~GraphicsRenderer();
 
-    void init(GLADloadproc dloadproc, int windowWidth, int windowHeight);
+    void init(GLADloadproc dloadproc, int window_width, int window_height);
 
-    void render();
-    void cleanup();
+    void render() const;
+    void cleanup() const;
 
 private:
-    std::string vertexShaderSource;
-    std::string fragmentShaderSource;
+    std::string vertex_shader_source_;
+    std::string fragment_shader_source_;
 
-    GLuint vertexShader;
-    GLuint fragmentShader;
+    GLuint vertex_shader_;
+    GLuint fragment_shader_;
 
-    GLuint texture;
+    GLuint texture_;
 
-    GLuint shaderProgram;
+    GLuint shader_program_;
 
-    GLuint vao;
-    GLuint vbo;
+    GLuint vao_;
+    GLuint vbo_;
 
-    GLuint linkProgram(GLuint vertexShader, GLuint fragmentShader);
-    GLuint compileShader(GLenum type, std::string source);
+    static GLuint link_program(GLuint vertex_shader, GLuint fragment_shader);
+    static GLuint compile_shader(GLenum type, const std::string& source);
 };
 
 

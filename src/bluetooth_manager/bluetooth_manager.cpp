@@ -4,18 +4,9 @@
 
 #include "bluetooth_manager.h"
 
-#include <iostream>
-#include <utility>
-#include <sdbus-c++/sdbus-c++.h>
-#include <memory>
-#include <fcntl.h>
 
-BluetoothManager::BluetoothManager()
-{
+BluetoothManager::BluetoothManager() {
 }
 
-void BluetoothManager::init()
-{
-
-
+void BluetoothManager::init() {
 }

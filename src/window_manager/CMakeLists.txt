@@ -1,10 +1,11 @@
-add_subdirectory(${CMAKE_SOURCE_DIR}/external/glfw ${CMAKE_BINARY_DIR}/external/glfw)
-
-find_package(GLFW CONFIG REQUIRED)
-
 add_library(Window STATIC window_manager.cpp window_manager.h)
 
-target_link_libraries(Window PRIVATE GLFW)
+target_include_directories(Window
+        PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}  # This line is crucial
+)
+
+target_link_libraries(Window PUBLIC glfw)
 
 
 

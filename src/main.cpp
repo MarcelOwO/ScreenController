@@ -3,21 +3,17 @@
 
 #include "App.h"
 
-int main()
-{
+int main() {
     setenv("DISPLAY", ":0", 1); //hack
 
-    try
-    {
+    try {
         const auto app = std::make_unique<App>();
 
         app->init();
         app->run();
-
         app->cleanup();
     }
-    catch ([[maybe_unused]] const std::exception& e)
-    {
+    catch ([[maybe_unused]] const std::exception& e) {
         std::cerr << e.what() << std::endl;
         return -1;
     }

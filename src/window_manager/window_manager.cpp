@@ -8,7 +8,7 @@
 
 WindowManager::WindowManager()
 {
-    window = nullptr;
+    window_ = nullptr;
 }
 
 void WindowManager::init()
@@ -18,65 +18,60 @@ void WindowManager::init()
         std::cout << "Error: " << description << "\n";
     });
 
-
     if (!glfwInit())
     {
         return;
     }
 
-	window = glfwCreateWindow(1920, 1080, "My Title", glfwGetPrimaryMonitor(), nullptr);
+    window_ = glfwCreateWindow(1920, 1080, "My Title", glfwGetPrimaryMonitor(), nullptr);
 
-    if (!window)
+    if (!window_)
     {
         return;
     }
 
 
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(window_);
 }
 
-bool WindowManager::shouldClose()
-{
-    return glfwWindowShouldClose(window);
+bool WindowManager::should_close() const {
+    return glfwWindowShouldClose(window_);
 }
 
-void WindowManager::pollEvents() const
-{
+void WindowManager::poll_events() {
     return glfwPollEvents();
 }
 
-void WindowManager::swapBuffers()
-{
-    glfwSwapBuffers(window);
+void WindowManager::swap_buffers() const {
+    glfwSwapBuffers(window_);
 }
 
-int WindowManager::getHeight()
+int WindowManager::get_height()
 {
     const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     return mode->height;
 }
 
-int WindowManager::getWidth()
+int WindowManager::get_width()
 {
     const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     return mode->width;
 }
 
-GLFWglproc (* WindowManager::addressPointer())(const char* procname)
+GLFWglproc (* WindowManager::address_pointer())(const char* procname)
 {
     return &glfwGetProcAddress;
 }
 
-void WindowManager::Update(const std::function<void()>& render)
-{
-    if (!window)
+void WindowManager::update(const std::function<void()>& render) const {
+    if (!window_)
     {
         return;
     }
 
     render();
 
-    glfwSwapBuffers(window);
+    glfwSwapBuffers(window_);
 
     glfwSwapInterval(1);
 }
@@ -86,11 +81,10 @@ WindowManager::~WindowManager()
     cleanup();
 }
 
-void WindowManager::cleanup()
-{
-    if (window)
+void WindowManager::cleanup() const {
+    if (window_)
     {
-        glfwDestroyWindow(window);
+        glfwDestroyWindow(window_);
     }
     glfwTerminate();
 }

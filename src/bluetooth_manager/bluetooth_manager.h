@@ -6,21 +6,13 @@
 #define BLUETOOTH_MANAGER_H
 
 
-#include <simpleble/SimpleBLE.h>
-
 class BluetoothManager
 {
 public:
-
-
     BluetoothManager();
     ~BluetoothManager() = default;
 
-    void init();
-
-
-
-private:
+     void init();
 };
 
 #endif //BLUETOOTH_MANAGER_H

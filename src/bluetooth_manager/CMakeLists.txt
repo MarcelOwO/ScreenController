@@ -1,8 +1,11 @@
-add_subdirectory(${CMAKE_SOURCE_DIR}/external/simpleble/simpleble ${CMAKE_BINARY_DIR}/external/simpleble/simpleble)
+find_package(sdbus-c++ REQUIRED)
+
 
 add_library(Bluetooth STATIC bluetooth_manager.cpp bluetooth_manager.h)
 
-target_include_directories(Bluetooth PUBLIC
-        ${CMAKE_SOURCE_DIR}/external/simpleble/simpleble/include)
+target_include_directories(Bluetooth
+        PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}  # This line is crucial
+)
+target_link_libraries(Bluetooth PUBLIC SDBusCpp::sdbus-c++)
 
-target_link_libraries(Bluetooth PRIVATE simpleble::simpleble )

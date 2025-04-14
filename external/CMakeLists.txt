@@ -1,0 +1,8 @@
+option(GLFW_INSTALL_EXAMPLES OFF)
+option(GLFW_INSTALL_TESTS OFF)
+option(GLFW_INSTALL_DOCS OFF)
+option(GLFW_INSTALL OFF)
+
+add_subdirectory(glfw)
+add_subdirectory(glad)
+add_subdirectory(sdbus-cpp)

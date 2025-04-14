@@ -18,21 +18,21 @@ public:
     ~WindowManager();
 
     void init();
-    void Update(const std::function<void()>& render);
-    void cleanup();
+    void update(const std::function<void()>& render) const;
+    void cleanup() const;
 
-    bool shouldClose();
-    void pollEvents() const;
+    [[nodiscard]] bool should_close() const;
+    static void poll_events();
 
-    void swapBuffers();
+    void swap_buffers() const;
 
-    int getHeight();
-    int getWidth();
+    static int get_height();
+    static int get_width();
 
-    GLFWglproc (* addressPointer())(const char* procname);
+    static GLFWglproc (* address_pointer())(const char* procname);
 
 private:
-    GLFWwindow* window;
+    GLFWwindow* window_;
 };
 
 
