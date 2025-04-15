@@ -8,9 +8,14 @@
 
 
 App::App() {
-    window_ = std::make_unique<WindowManager>();
-    renderer_ = std::make_unique<GraphicsRenderer>();
-    bluetooth_ = std::make_unique<BluetoothManager>();
+    try {
+        window_ = std::make_unique<WindowManager>();
+        renderer_ = std::make_unique<GraphicsRenderer>();
+        bluetooth_ = std::make_unique<BluetoothManager>();
+    }
+    catch (std::exception& e) {
+        std::cout << e.what() << std::endl;
+    }
 }
 
 App::~App() {
@@ -21,7 +26,8 @@ void App::init() const {
     try {
         bluetooth_->init();
         window_->init();
-        renderer_->init(std::bit_cast<GLADloadproc>(window_->address_pointer()), window_->get_width(),
+        renderer_->init(std::bit_cast<GLADloadproc>(window_->address_pointer()),
+                        window_->get_width(),
                         window_->get_height());
     }
     catch (std::exception& e) {
@@ -37,6 +43,5 @@ void App::run() const {
 }
 
 void App::cleanup() const {
-    renderer_->cleanup();
     window_->cleanup();
 }
