@@ -6,8 +6,9 @@
 #define GRAPHICS_RENDERER_H
 
 #include <string>
-
 #include <glad/glad.h>
+
+#include "shader/shader.h"
 
 class GraphicsRenderer {
 public:
@@ -15,26 +16,25 @@ public:
     ~GraphicsRenderer();
 
     void init(GLADloadproc dloadproc, int window_width, int window_height);
+    void set_texture() {
+
+
+    }
 
     void render() const;
-    void cleanup() const;
 
 private:
-    std::string vertex_shader_source_;
-    std::string fragment_shader_source_;
-
-    GLuint vertex_shader_;
-    GLuint fragment_shader_;
+    Shader shader_;
 
     GLuint texture_;
-
-    GLuint shader_program_;
 
     GLuint vao_;
     GLuint vbo_;
 
-    static GLuint link_program(GLuint vertex_shader, GLuint fragment_shader);
-    static GLuint compile_shader(GLenum type, const std::string& source);
+    const std::filesystem::path vertex_shader_source_path_{"assets/shader_files/vertex_shader.vs"};
+    const std::filesystem::path fragment_shader_source_path_{
+        "assets/shader_files/fragment_shader.fs"
+    };
 };
 
 
