@@ -10,18 +10,26 @@
 
 #include "shader/shader.h"
 
+#include "../common/pixel_data.h"
+
 class GraphicsRenderer {
 public:
     GraphicsRenderer();
     ~GraphicsRenderer();
 
+    struct Color {
+        uint8_t r;
+        uint8_t g;
+        uint8_t b;
+    };
+
+
     void init(GLADloadproc dloadproc, int window_width, int window_height);
-    void set_texture() {
-
-
-    }
-
+    void set_texture(const std::array<PixelData, 2073600>& data);
     void render() const;
+
+
+    void cleanup();
 
 private:
     Shader shader_;

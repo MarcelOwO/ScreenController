@@ -9,22 +9,26 @@
 
 #include <../bluetooth_manager/bluetooth_manager.h>
 #include <../graphics_renderer/graphics_renderer.h>
+#include <../storage_manager/storage_manager.h>
 #include <../window_manager/window_manager.h>
+#include <../file_processor/file_processor.h>
+#include <../common/command.h>
 
 class App {
 public:
     App();
     ~App();
 
-    void init() const;
-    void run() const;
-    void cleanup() const;
+    void init();
+    void run();
+    void cleanup();
 
 private:
-    std::unique_ptr<WindowManager> window_;
-    std::unique_ptr<GraphicsRenderer> renderer_;
-    std::unique_ptr<BluetoothManager> bluetooth_;
+    WindowManager window_manager_;
+    GraphicsRenderer renderer_;
+    BluetoothManager bluetooth_manager_;
+    StorageManager storage_manager_;
+    FileProcessor file_processor_;
 };
-
 
 #endif //APP_H

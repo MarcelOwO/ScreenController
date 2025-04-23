@@ -10,7 +10,7 @@ target_include_directories(Renderer
         ${CMAKE_CURRENT_SOURCE_DIR}  # This line is crucial
 )
 
-target_link_libraries(Renderer PUBLIC glad)
+target_link_libraries(Renderer PUBLIC common glad)
 add_custom_command(
         TARGET Renderer POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/assets/shader_files"

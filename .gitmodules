@@ -7,3 +7,6 @@
 [submodule "external/stb"]
 	path = external/stb
 	url = https://github.com/nothings/stb.git
+[submodule "external/dbus_gatt"]
+	path = external/dbus_gatt
+	url = https://github.com/RomaSo/dbus_gatt.git

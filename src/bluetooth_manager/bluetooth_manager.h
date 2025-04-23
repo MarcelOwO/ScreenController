@@ -4,20 +4,11 @@
 
 #ifndef BLUETOOTH_MANAGER_H
 #define BLUETOOTH_MANAGER_H
-
-#include <chrono>
-#include <iostream>
-#include <map>
-#include <memory>
-#include <stdexcept>
+#include <functional>
 #include <string>
-#include <thread>
 #include <vector>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/l2cap.h>
+
 #include <sdbus-c++/sdbus-c++.h>
-#include <sys/poll.h>
-#include <sys/socket.h>
 
 class BluetoothManager {
 public:
@@ -25,27 +16,35 @@ public:
     ~BluetoothManager();
 
     void init();
+    void run();
+    void cleanup();
+
+    using FileDataCallback = std::function<void(std::string file_name,
+                                                std::vector<std::byte> file_data)>;
+    using CommandCallback = std::function<void(std::string command_name,
+                                               std::vector<std::byte> data_data)>;
+
+    void on_file_received(FileDataCallback callback);
+    void on_command_received(CommandCallback callback);
+
     void open_socket();
 
 private:
-    sdbus::ServiceName bluez_service_;
-    sdbus::InterfaceName le_adv_manager_iface_;
-    sdbus::InterfaceName le_adv_iface_;
-    sdbus::InterfaceName adapter_iface_;
+    std::unique_ptr<sdbus::IConnection> connection_ = sdbus::createSystemBusConnection();
 
-    sdbus::ObjectPath device0_path_;
-    sdbus::ObjectPath adv_object_path_;
-    sdbus::ObjectPath app_object_path_;
+    sdbus::InterfaceName adapter_interface_name_;
+    sdbus::InterfaceName adv_manager_interface_name_;
+    sdbus::InterfaceName gatt_mgr_interface_name_;
 
-    std::string my_service_uuid_;
-    std::string my_local_name_;
-    std::string adv_type_;
+    sdbus::ObjectPath gatt_object_path_;
+    sdbus::ObjectPath adapter_path_;
+    sdbus::ObjectPath app_path_;
+    sdbus::ObjectPath service_path_;
+    sdbus::ObjectPath char_path_;
 
-    std::unique_ptr<sdbus::IProxy> adv_manager_proxy_;
-    std::unique_ptr<sdbus::IObject> advertisement_object_;
 
-    std::shared_ptr<sdbus::IConnection> connection_;
-
+    FileDataCallback file_data_callback_;
+    CommandCallback command_callback_;
 };
 
 

@@ -78,8 +78,8 @@ void GraphicsRenderer::render() const {
     glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    shader_.use();
 
+    shader_.use();
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture_);
 
@@ -90,3 +90,16 @@ void GraphicsRenderer::render() const {
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glBindVertexArray(0);
 }
+
+void GraphicsRenderer::set_texture(const std::array<PixelData,static_cast<size_t>(1920*1080)> &data) {
+    glGenTextures(1, &texture_);
+    glBindTexture(GL_TEXTURE_2D, texture_);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, 1920, 1080, 0,GL_RGBA,GL_UNSIGNED_BYTE, data.data());
+    glGenerateMipmap(GL_TEXTURE_2D);
+}
+
+
