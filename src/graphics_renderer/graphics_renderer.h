@@ -5,45 +5,44 @@
 #ifndef GRAPHICS_RENDERER_H
 #define GRAPHICS_RENDERER_H
 
-#include <string>
 #include <glad/glad.h>
 
-#include "shader/shader.h"
+#include <span>
+#include <string>
 
 #include "../common/pixel_data.h"
+#include "shader/shader.h"
 
+namespace screen_controller {
 class GraphicsRenderer {
-public:
-    GraphicsRenderer();
-    ~GraphicsRenderer();
+ public:
+  GraphicsRenderer();
+  ~GraphicsRenderer();
 
-    struct Color {
-        uint8_t r;
-        uint8_t g;
-        uint8_t b;
-    };
+  struct Color {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+  };
+
+  void init(GLADloadproc dloadproc, int window_width, int window_height);
+
+  void set_texture(std::span<const std::byte> data);
+  void render() const;
 
 
-    void init(GLADloadproc dloadproc, int window_width, int window_height);
-    void set_texture(const std::array<PixelData, 2073600>& data);
-    void render() const;
+ private:
+  Shader shader_;
 
+  GLuint texture_;
 
-    void cleanup();
+  GLuint vao_;
+  GLuint vbo_;
 
-private:
-    Shader shader_;
-
-    GLuint texture_;
-
-    GLuint vao_;
-    GLuint vbo_;
-
-    const std::filesystem::path vertex_shader_source_path_{"assets/shader_files/vertex_shader.vs"};
-    const std::filesystem::path fragment_shader_source_path_{
-        "assets/shader_files/fragment_shader.fs"
-    };
+  const std::filesystem::path vertex_shader_source_path_{
+      "assets/shader_files/vertex_shader.vs"};
+  const std::filesystem::path fragment_shader_source_path_{
+      "assets/shader_files/fragment_shader.fs"};
 };
-
-
-#endif //GRAPHICS_RENDERER_H
+}  // namespace screen_controller
+#endif  // GRAPHICS_RENDERER_H

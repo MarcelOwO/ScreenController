@@ -7,22 +7,20 @@
 
 #include <cstdint>
 
-
+namespace screen_controller::common {
 
 struct PixelData {
+ public:
+  PixelData(const uint8_t red, const uint8_t green, const uint8_t blue)
+      : r(red), g(green), b(blue) {}
 
-uint8_t r;
-uint8_t g;
-uint8_t b;
+  PixelData() : r(), g(), b() {}
 
-  PixelData(uint8_t red, uint8_t green, uint8_t blue, uint8_t alpha) :
-      r(red), g(green), b(blue) {}
-
- PixelData() : r(0), g(0), b(0) {}
-
-
+ private:
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
 };
+}  // namespace screen_controller::common
 
-
-
-#endif //FRAME_DATA_H
+#endif  // FRAME_DATA_H

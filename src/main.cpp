@@ -3,19 +3,24 @@
 #include "App.h"
 
 int main() {
-    setenv("DISPLAY", ":0", 1); //hack
+  (void)setenv("DISPLAY", ":0", 1);
 
-    try {
-        App app;
-
-        app.init();
-        app.run();
-        app.cleanup();
-    }
-    catch ([[maybe_unused]] const std::exception& e) {
-        std::cerr << e.what() << std::endl;
-        return -1;
+  try {
+    screen_controller::App app;
+    if (!app.init()) {
+      std::cerr << "Failed to initialize app" << std::endl;
+      throw std::runtime_error("Failed to initialize app");
     }
 
-    return 0;
+    app.run();
+
+  } catch (const std::exception& e) {
+    std::cerr << "Unhandled exception: " << e.what() << std::endl;
+    return EXIT_FAILURE;
+  } catch (...) {
+    std::cerr << "Unknown exception" << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  return EXIT_SUCCESS;
 }

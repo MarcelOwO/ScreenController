@@ -3,6 +3,7 @@ project(ScreenController)
 
 set(CMAKE_CXX_STANDARD 26)
 
+
 add_subdirectory(src/common)
 add_subdirectory(src/app)
 add_subdirectory(src/window_manager)
@@ -16,3 +17,11 @@ add_subdirectory(external)
 add_executable(ScreenController src/main.cpp)
 
 target_link_libraries(ScreenController PRIVATE App common)
+
+add_custom_command(
+        TARGET ScreenController POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/assets"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/resources"
+        "${CMAKE_BINARY_DIR}/assets"
+)

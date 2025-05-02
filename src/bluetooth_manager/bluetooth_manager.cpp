@@ -3,168 +3,229 @@
 
 #include "bluetooth_manager.h"
 
-#include <fstream>
-#include <iostream>
-#include <stdexcept>
-#include <string>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/l2cap.h>
 #include <sys/socket.h>
 
-BluetoothManager::BluetoothManager() :
-    adapter_interface_name_(sdbus::InterfaceName("org.bluez.Adapter1")),
-    adv_manager_interface_name_(sdbus::InterfaceName(
-        "org.bluez.LEAdvertisingManager1")),
-    gatt_mgr_interface_name_(
-        sdbus::InterfaceName("org.bluez.GattManager1")),
-    gatt_object_path_(
-        sdbus::ObjectPath("/org/bluez/hci0/owo/service0001")),
-    adapter_path_(sdbus::ObjectPath("/org/bluez/hci0")),
-    app_path_(sdbus::ObjectPath("/org/bluez/hci0/owo")),
-    service_path_(sdbus::ObjectPath("/org/bluez/hci0/owo/service0001")),
-    char_path_(
-        sdbus::ObjectPath("/org/bluez/hci0/owo/service0001/char0001")) {
-    connection_ = sdbus::createSystemBusConnection();
+#include <fstream>
+#include <iostream>
+#include <stdexcept>
+#include <string>
+
+namespace screen_controller {
+
+BluetoothManager::BluetoothManager()
+    : adapter_interface_name_(sdbus::InterfaceName("org.bluez.Adapter1")),
+      adv_manager_interface_name_(
+          sdbus::InterfaceName("org.bluez.LEAdvertisingManager1")),
+      gatt_mgr_interface_name_(sdbus::InterfaceName("org.bluez.GattManager1")),
+      agent_mgr_iface_(sdbus::InterfaceName("org.bluez.AgentManager1")),
+      gatt_object_path_(sdbus::ObjectPath("/org/bluez/hci0/owo/service0001")),
+      adapter_path_(sdbus::ObjectPath("/org/bluez/hci0")),
+      advertisement_path_(sdbus::ObjectPath("/org/bluez/hci0/owo")),
+      service_path_(sdbus::ObjectPath("/org/bluez/hci0/owo/service0001")),
+      char_path_(sdbus::ObjectPath("/org/bluez/hci0/owo/service0001/char0001")),
+      agent_path_(sdbus::ObjectPath("/org/bluez/hci0/owo/agent1")) {
 }
 
-void BluetoothManager::on_file_received(FileDataCallback callback) {
-    file_data_callback_ = std::move(callback);
+BluetoothManager::~BluetoothManager() {}
+void BluetoothManager::on_file_received(file_data_callback callback) {
+  file_data_callback_ = std::move(callback);
 }
 
-void BluetoothManager::on_command_received(CommandCallback callback) {
-    command_callback_ = std::move(callback);
+void BluetoothManager::on_command_received(command_callback callback) {
+  command_callback_ = std::move(callback);
 }
 
+bool BluetoothManager::init() {
+  connection_ = sdbus::createSystemBusConnection();
 
-void BluetoothManager::init() {
-    try {
-        const auto adapter_proxy = sdbus::createProxy(*connection_, sdbus::ServiceName("org.bluez"),
-                                                      adapter_path_);
+  if (!connection_) {
+    std::cerr << "Failed to connect to system bus." << std::endl;
+    return false;
+  }
 
-        adapter_proxy->setProperty("Alias")
-                     .onInterface(adapter_interface_name_)
-                     .toValue("ScreenController");
+  const auto adapter_proxy = sdbus::createProxy(
+      *connection_, sdbus::ServiceName("org.bluez"), adapter_path_);
 
-        adapter_proxy->setProperty("Powered")
-                     .onInterface(adapter_interface_name_)
-                     .toValue(true);
+  if (adapter_proxy == nullptr) {
+    std::cerr << "Failed to create adapter proxy" << std::endl;
+    return false;
+  }
 
-        adapter_proxy->setProperty("Discoverable")
-                     .onInterface(adapter_interface_name_)
-                     .toValue(true);
+  if (!setup_adapter(*adapter_proxy)) {
+    std::cerr << "Failed to setup adapter" << std::endl;
+    return false;
+  }
 
-        adapter_proxy->setProperty("Pairable")
-                     .onInterface(adapter_interface_name_)
-                     .toValue(true);
+  if (!register_agent()) {
+    std::cerr << "Failed to register adapter." << std::endl;
+    return false;
+  }
 
-        const auto app_object = sdbus::createObject(*connection_, app_path_);
+  if (!register_advertisement()) {
+    std::cerr << "Failed to register advertisement." << std::endl;
+    return false;
+  };
 
+  std::string capabilities = "NoInputNoOutput";
 
-        app_object->addVTable(
-                      sdbus::registerMethod("Release")
-                      .withNoReply()
-                      .implementedAs([=]() { std::cout << "Released" << std::endl; }),
-                      sdbus::registerProperty("Type")
-                      .withGetter([=]() { return std::string("peripheral"); }),
-                      sdbus::registerProperty("ServiceUUIDs")
-                      .withGetter([=]() {
-                              return std::vector<std::string>{
-                                  std::string(
-                                      "69696969-6969-6969-6969-696969696969")
-                              };
-                          }
-                      ),
-                      sdbus::registerProperty("Discoverable")
-                      .withGetter([=]() { return true; }))
-                  .forInterface(sdbus::InterfaceName(
-                      "org.bluez.LEAdvertisement1"));
+  /*(void)adapter_proxy->callMethod("RegisterAgent")
+      .onInterface(agent_mgr_iface_)
+      .withArguments(agent_path_, capabilities);
 
-        connection_->enterEventLoopAsync();
+  (void)adapter_proxy->callMethod("RequestDefaultAgent")
+      .onInterface(agent_mgr_iface_)
+      .withArguments(agent_path_);
 
-        adapter_proxy->callMethod("RegisterAdvertisement")
-                     .onInterface(adv_manager_interface_name_)
-                     .withArguments(app_path_, std::map<std::string, sdbus::Variant>{});
-    }
-    catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
-    }
+  (void)adapter_proxy->callMethod("RegisterAdvertisement")
+      .onInterface(adv_manager_interface_name_)
+      .withArguments(advertisement_path_,
+                     std::map<std::string, sdbus::Variant>{});*/
+
+  connection_->enterEventLoopAsync();
+
+  return true;
 }
 
+bool BluetoothManager::register_advertisement() {
+  const auto advertisement_obj =
+      sdbus::createObject(*connection_, advertisement_path_);
 
+  if (!advertisement_obj) {
+    return false;
+  }
+
+  advertisement_obj
+      ->addVTable(sdbus::registerMethod("Release").withNoReply().implementedAs(
+                      [=] { std::cout << "Released" << std::endl; }),
+                  sdbus::registerProperty("Type").withGetter(
+                      [=] { return std::string("peripheral"); }),
+                  sdbus::registerProperty("ServiceUUIDs").withGetter([=] {
+                    return std::vector<std::string>{
+                        std::string("69696969-6969-6969-6969-696969696969")};
+                  }))
+      .forInterface(sdbus::InterfaceName("org.bluez.LEAdvertisement1"));
+  return true;
+}
 void BluetoothManager::open_socket() {
-    const int l2_cap_socket = socket(AF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP);
+  const int l2_cap_socket = socket(AF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP);
 
-    if (l2_cap_socket < 0) {
-        throw std::runtime_error("Failed to open l2cap socket");
-        return;
-    }
+  if (l2_cap_socket < 0) {
+    throw std::runtime_error("Failed to open l2cap socket");
+    return;
+  }
 
-    sockaddr_l2 loc_addr = {};
-    loc_addr.l2_family = AF_BLUETOOTH;
-    loc_addr.l2_psm = 0x1010; // PSM
-    loc_addr.l2_cid = 0;
+  sockaddr_l2 loc_addr = {};
 
-    memset(&loc_addr.l2_bdaddr, 0, sizeof(loc_addr.l2_bdaddr));
+  loc_addr.l2_family = AF_BLUETOOTH;
+  loc_addr.l2_psm = 0x1010;
+  loc_addr.l2_cid = 0;
 
-    if (bind(l2_cap_socket, reinterpret_cast<sockaddr*>(&loc_addr), sizeof(loc_addr)) < 0) {
-        (void)close(l2_cap_socket);
-        throw std::runtime_error("Failed to bind l2cap socket");
-        return;
-    }
+  (void)memset(&loc_addr.l2_bdaddr, 0, sizeof(loc_addr.l2_bdaddr));
 
-    if (listen(l2_cap_socket, 1) < 0) {
-        (void)close(l2_cap_socket);
-        throw std::runtime_error("Failed to listen on l2cap socket");
-        return;
-    }
-
-    sockaddr_l2 rem_addr = {};
-    socklen_t opt = sizeof(rem_addr);
-
-    std::cout << "Waiting for connection..." << std::endl;
-
-    const int client_socket = accept(l2_cap_socket, reinterpret_cast<sockaddr*>(&rem_addr),
-                                     &opt);
-    if (client_socket < 0) {
-        (void)close(l2_cap_socket);
-        throw std::runtime_error("Failed to accept connection");
-        return;
-    }
-
-    std::array<char, 18> buffer{};
-    (void)ba2str(&rem_addr.l2_bdaddr, buffer.data());
-    std::cout << "Accepted connection from " << buffer.data() << std::endl;
+  if (bind(l2_cap_socket, reinterpret_cast<sockaddr*>(&loc_addr),
+           sizeof(loc_addr)) < 0) {
     (void)close(l2_cap_socket);
+    throw std::runtime_error("Failed to bind l2cap socket");
+    return;
+  }
 
-    constexpr int buffer_size = 1024;
-    std::array<char, buffer_size> file_buffer{};
+  if (listen(l2_cap_socket, 1) < 0) {
+    (void)close(l2_cap_socket);
+    throw std::runtime_error("Failed to listen on l2cap socket");
+    return;
+  }
 
-    try {
-        std::ofstream received_file("received_file.txt", std::ios::binary);
+  sockaddr_l2 rem_addr = {};
+  socklen_t opt = sizeof(rem_addr);
 
-        if (!received_file.is_open()) {
-            throw std::runtime_error("Failed to open received file");
-        }
+  const int client_socket =
+      accept(l2_cap_socket, reinterpret_cast<sockaddr*>(&rem_addr), &opt);
+  if (client_socket < 0) {
+    (void)close(l2_cap_socket);
+    throw std::runtime_error("Failed to accept connection");
+    return;
+  }
 
-        ssize_t bytes_read{};
-        while ((bytes_read = recv(client_socket, file_buffer.data(), buffer_size, 0))) {
-            received_file.write(file_buffer.data(), bytes_read);
-        }
+  std::array<char, 18> buffer{};
+  (void)ba2str(&rem_addr.l2_bdaddr, buffer.data());
+  (void)close(l2_cap_socket);
+}
+bool BluetoothManager::setup_adapter(sdbus::IProxy& adapter_proxy) {
+  adapter_proxy.setProperty("Alias")
+      .onInterface(adapter_interface_name_)
+      .toValue("ScreenController");
 
-        if (bytes_read < 0) {
-            throw std::runtime_error("Failed to read received file");
-        }
+  adapter_proxy.setProperty("Powered")
+      .onInterface(adapter_interface_name_)
+      .toValue(true);
 
-        std::cout << "File received." << std::endl;
+  adapter_proxy.setProperty("Discoverable")
+      .onInterface(adapter_interface_name_)
+      .toValue(true);
 
-        received_file.close();
-    }
-    catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
-        close(l2_cap_socket);
-        return;
-    }
+  adapter_proxy.setProperty("Pairable")
+      .onInterface(adapter_interface_name_)
+      .toValue(true);
+
+  return true;
+}
+void BluetoothManager::unregister_agent() {
+  const auto adapter_proxy = sdbus::createProxy(
+      *connection_, sdbus::ServiceName("org.bluez"), adapter_path_);
+  const auto agent_mgr_iface = sdbus::InterfaceName("org.bluez.AgentManager1");
+
+  adapter_proxy->callMethod("UnregisterAgent")
+      .onInterface(agent_mgr_iface)
+      .withArguments(sdbus::ObjectPath("/org/bluez/hci0/owo/agent"));
+  connection_->leaveEventLoop();
 }
 
-BluetoothManager::~BluetoothManager() {
+bool BluetoothManager::register_agent() {
+  const auto agent_object = sdbus::createObject(*connection_, agent_path_);
+
+  if (!agent_object) {
+    std::cerr << "Failed to create agent object" << std::endl;
+    return false;
+  }
+
+  agent_object
+      ->addVTable(
+          sdbus::registerMethod("Release").withNoReply().implementedAs(
+              []() { std::cout << "Agent released" << std::endl; }),
+          sdbus::registerMethod("RequestPinCode")
+              .implementedAs(
+                  [](sdbus::ObjectPath device) { return std::string("0000"); }),
+          sdbus::registerMethod("DisplayPinCode")
+              .implementedAs([](sdbus::ObjectPath device, std::string pincode) {
+                std::cout << pincode << std::endl;
+              }),
+          sdbus::registerMethod("RequestPasskey")
+              .implementedAs([](sdbus::ObjectPath device) { return 1234; }),
+          sdbus::registerMethod("DisplayPasskey")
+              .implementedAs(
+                  [](sdbus::ObjectPath device, uint32_t passkey,
+                     uint16_t entered) { std::cout << entered << std::endl; }),
+
+          sdbus::registerMethod("RequestConfirmation")
+              .implementedAs([](sdbus::ObjectPath device, uint32_t passkey) {
+                std::cout << "RequestConfirmation" << std::endl;
+              }),
+          sdbus::registerMethod("RequestAuthorization")
+              .implementedAs([](sdbus::ObjectPath device) {
+                std::cout << "RequestAuthorization" << std::endl;
+              }),
+          sdbus::registerMethod("AuthorizeService")
+              .implementedAs([](sdbus::ObjectPath device, std::string uuid) {
+                std::cout << "AuthorizeService" << std::endl;
+              }),
+          sdbus::registerMethod("Cancel").implementedAs(
+              []() { std::cout << "Cancel" << std::endl; })
+
+              )
+      .forInterface(sdbus::InterfaceName("org.bluez.Agent1"));
+  return true;
 }
+
+}  // namespace screen_controller

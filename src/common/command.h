@@ -5,10 +5,27 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
+namespace screen_controller::common {
 enum class Command {
-  NONE,
-  SET_SCREEN,
-  DELETE_FILE,
+  kNone,
+  kSetScreen,
+  kDeleteFile,
+  kSaveFile,
 };
 
-#endif //COMMAND_H
+inline std::string command_to_string(Command e) {
+  switch (e) {
+    case Command::kNone:
+      return "none";
+    case Command::kSetScreen:
+      return "set_screen";
+    case Command::kDeleteFile:
+      return "delete_file";
+    case Command::kSaveFile:
+      return "save_file";
+    default:
+      return "unknown";
+  }
+}
+}  // namespace screen_controller::common
+#endif  // COMMAND_H
