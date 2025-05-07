@@ -11,13 +11,17 @@
 #include <string>
 #include <vector>
 
-
 namespace screen_controller {
 
 class BluetoothManager {
  public:
   BluetoothManager();
   ~BluetoothManager();
+
+  BluetoothManager(const BluetoothManager&) = delete;
+  BluetoothManager& operator=(const BluetoothManager&) = delete;
+  BluetoothManager(BluetoothManager&&) = delete;
+  BluetoothManager& operator=(BluetoothManager&&) = delete;
 
   bool init();
 
@@ -32,8 +36,8 @@ class BluetoothManager {
   void open_socket();
 
  private:
-  std::unique_ptr<sdbus::IConnection> connection_ =
-      sdbus::createSystemBusConnection();
+  std::shared_ptr<sdbus::IConnection> connection_;
+  std::shared_ptr<sdbus::IProxy> adapter_proxy_;
 
   sdbus::InterfaceName adapter_interface_name_;
   sdbus::InterfaceName adv_manager_interface_name_;
@@ -51,7 +55,7 @@ class BluetoothManager {
   command_callback command_callback_;
 
   bool register_advertisement();
-  bool setup_adapter(sdbus::IProxy& adapter_proxy);
+  bool setup_adapter();
   void unregister_agent();
   bool register_agent();
 };

@@ -73,7 +73,6 @@ bool App::init() {
 
 bool App::load_startup_image() {
   auto path = storage_manager_.GetPath("sticker.webp");
-
   if (!file_processor_.process_file(path.c_str())) {
     std::cerr << "Failed to load sticker.webp" << std::endl;
     return false;
@@ -83,9 +82,12 @@ bool App::load_startup_image() {
   return true;
 }
 void App::process_frame() {
-  if (const auto frame = file_processor_.get_processed_data(); frame.has_value()) {
-    renderer_.set_texture(frame.value());
+  const auto frame = file_processor_.get_processed_data();
+  if (!frame.has_value()) {
+    std::cerr << "Failed to process frame." << std::endl;
+    return;
   }
+  renderer_.set_texture(frame.value()->data);
 }
 
 void App::render_loop() {

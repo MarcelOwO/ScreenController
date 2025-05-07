@@ -81,8 +81,7 @@ void GraphicsRenderer::render() const {
   glBindVertexArray(0);
 }
 
-void GraphicsRenderer::set_texture(const std::span<const std::byte> data) {
-  std::cout<<"target size:"<< 1920*1080*3<<"|"<<data.size()<<std::endl;
+void GraphicsRenderer::set_texture(const std::span<const uint8_t> data) {
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1920, 1080, 0, GL_RGB,
                GL_UNSIGNED_BYTE, data.data());
 

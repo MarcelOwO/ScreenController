@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.25)
 project(ScreenController)
 
 set(CMAKE_CXX_STANDARD 26)
-
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
 add_subdirectory(src/common)
 add_subdirectory(src/app)

@@ -12,6 +12,9 @@
 #include <stdexcept>
 #include <string>
 
+#include "dbus_implementations/bluetooth_adapter.h"
+#include "dbus_implementations/bluetooth_le_advertising_manager.h"
+
 namespace screen_controller {
 
 BluetoothManager::BluetoothManager()
@@ -25,10 +28,9 @@ BluetoothManager::BluetoothManager()
       advertisement_path_(sdbus::ObjectPath("/org/bluez/hci0/owo")),
       service_path_(sdbus::ObjectPath("/org/bluez/hci0/owo/service0001")),
       char_path_(sdbus::ObjectPath("/org/bluez/hci0/owo/service0001/char0001")),
-      agent_path_(sdbus::ObjectPath("/org/bluez/hci0/owo/agent1")) {
-}
+      agent_path_(sdbus::ObjectPath("/org/bluez/hci0/owo/agent1")) {}
 
-BluetoothManager::~BluetoothManager() {}
+BluetoothManager::~BluetoothManager() = default;
 void BluetoothManager::on_file_received(file_data_callback callback) {
   file_data_callback_ = std::move(callback);
 }
@@ -45,15 +47,15 @@ bool BluetoothManager::init() {
     return false;
   }
 
-  const auto adapter_proxy = sdbus::createProxy(
+  adapter_proxy_ = sdbus::createProxy(
       *connection_, sdbus::ServiceName("org.bluez"), adapter_path_);
 
-  if (adapter_proxy == nullptr) {
+  if (!adapter_proxy_) {
     std::cerr << "Failed to create adapter proxy" << std::endl;
     return false;
   }
 
-  if (!setup_adapter(*adapter_proxy)) {
+  if (!setup_adapter()) {
     std::cerr << "Failed to setup adapter" << std::endl;
     return false;
   }
@@ -67,21 +69,35 @@ bool BluetoothManager::init() {
     std::cerr << "Failed to register advertisement." << std::endl;
     return false;
   };
+  try {
+    std::string capabilities = "NoInputNoOutput";
 
-  std::string capabilities = "NoInputNoOutput";
+    const auto bluez_proxy =
+        sdbus::createProxy(*connection_, sdbus::ServiceName("org.bluez"),
+                           sdbus::ObjectPath("/org/bluez"));
 
-  /*(void)adapter_proxy->callMethod("RegisterAgent")
-      .onInterface(agent_mgr_iface_)
-      .withArguments(agent_path_, capabilities);
+    (void)bluez_proxy->callMethod(sdbus::MethodName("RegisterAgent"))
+        .onInterface(agent_mgr_iface_)
+        .withArguments(agent_path_, capabilities);
 
-  (void)adapter_proxy->callMethod("RequestDefaultAgent")
-      .onInterface(agent_mgr_iface_)
-      .withArguments(agent_path_);
+    (void)bluez_proxy->callMethod(sdbus::MethodName("RequestDefaultAgent"))
+        .onInterface(agent_mgr_iface_)
+        .withArguments(agent_path_);
 
-  (void)adapter_proxy->callMethod("RegisterAdvertisement")
-      .onInterface(adv_manager_interface_name_)
-      .withArguments(advertisement_path_,
-                     std::map<std::string, sdbus::Variant>{});*/
+    dbus::BluetoothLeAdvertisingManager bluetooth_le_advertising_manager(
+        adapter_proxy_);
+
+    std::unordered_map<std::string, sdbus::Variant> options{};
+
+    if (!bluetooth_le_advertising_manager.RegisterAdvertisement(
+            advertisement_path_, options)) {
+      std::cerr << "Failed to register advertisement." << std::endl;
+    }
+
+  } catch (sdbus::Error& e) {
+    std::cerr << e.what() << std::endl;
+    return false;
+  }
 
   connection_->enterEventLoopAsync();
 
@@ -106,6 +122,7 @@ bool BluetoothManager::register_advertisement() {
                         std::string("69696969-6969-6969-6969-696969696969")};
                   }))
       .forInterface(sdbus::InterfaceName("org.bluez.LEAdvertisement1"));
+
   return true;
 }
 void BluetoothManager::open_socket() {
@@ -152,31 +169,28 @@ void BluetoothManager::open_socket() {
   (void)ba2str(&rem_addr.l2_bdaddr, buffer.data());
   (void)close(l2_cap_socket);
 }
-bool BluetoothManager::setup_adapter(sdbus::IProxy& adapter_proxy) {
-  adapter_proxy.setProperty("Alias")
-      .onInterface(adapter_interface_name_)
-      .toValue("ScreenController");
+bool BluetoothManager::setup_adapter() {
+  dbus::BluetoothAdapter adapter(adapter_proxy_);
+  if (!adapter.SetAlias("ScreenController")) {
+    return false;
+  };
 
-  adapter_proxy.setProperty("Powered")
-      .onInterface(adapter_interface_name_)
-      .toValue(true);
-
-  adapter_proxy.setProperty("Discoverable")
-      .onInterface(adapter_interface_name_)
-      .toValue(true);
-
-  adapter_proxy.setProperty("Pairable")
-      .onInterface(adapter_interface_name_)
-      .toValue(true);
+  if (!adapter.SetDiscoverable(true)) {
+    return false;
+  }
+  if (!adapter.SetPowered(true)) {
+    return false;
+  }
+  if (!adapter.SetPairable(true)) {
+    return false;
+  }
 
   return true;
 }
 void BluetoothManager::unregister_agent() {
-  const auto adapter_proxy = sdbus::createProxy(
-      *connection_, sdbus::ServiceName("org.bluez"), adapter_path_);
   const auto agent_mgr_iface = sdbus::InterfaceName("org.bluez.AgentManager1");
 
-  adapter_proxy->callMethod("UnregisterAgent")
+  adapter_proxy_->callMethod("UnregisterAgent")
       .onInterface(agent_mgr_iface)
       .withArguments(sdbus::ObjectPath("/org/bluez/hci0/owo/agent"));
   connection_->leaveEventLoop();

@@ -27,7 +27,7 @@ class GraphicsRenderer {
 
   void init(GLADloadproc dloadproc, int window_width, int window_height);
 
-  void set_texture(std::span<const std::byte> data);
+  void set_texture(std::span<const uint8_t> data);
   void render() const;
 
 

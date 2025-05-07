@@ -8,3 +8,6 @@
 	path = external/stb
 	url = https://github.com/nothings/stb.git
 
+[submodule "external/FFmpeg"]
+	path = external/FFmpeg
+	url = https://github.com/FFmpeg/FFmpeg.git
