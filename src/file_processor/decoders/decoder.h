@@ -14,7 +14,9 @@ namespace screen_controller::processing {
 class Decoder {
  public:
   virtual ~Decoder() = default;
-  virtual std::optional<std::shared_ptr<models::FrameData>> get_next_frame();
+  virtual bool init() = 0;
+  virtual std::optional<std::shared_ptr<models::FrameData>>
+  get_next_frame() = 0;
 };
 
 }  // namespace screen_controller::processing

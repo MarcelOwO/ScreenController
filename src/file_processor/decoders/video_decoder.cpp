@@ -4,181 +4,181 @@
 
 #include "video_decoder.h"
 
+#include <fstream>
 #include <iostream>
 #include <vector>
 
 namespace screen_controller::processing {
 
-VideoDecoder::VideoDecoder(std::string_view path) {
-  if (!init()) {
-    std::cerr << "Failed to initialize video decoder" << std::endl;
-  }
-}
-bool VideoDecoder::init() { return true; }
+VideoDecoder::VideoDecoder(const std::string_view path)
+    : video_data_{},
+      image_data_{
+          .data = std::vector<uint8_t>(1920 * 1080 * 3, 0),
+          .width = 1920,
+          .height = 1080,
+          .channels = 3,
+      },
+      path_(path),
+      codec_context_(nullptr),
+      format_context_(nullptr),
+      video_stream_index_(-1),
+      frame_(nullptr),
+      packet_(nullptr),
+      sws_ctx_(nullptr) {}
 
-bool VideoDecoder::process_video(const std::string_view path) {
-  AVFormatContext* format_context = nullptr;
-
-  if (avformat_open_input(&format_context, path.data(), nullptr, nullptr) < 0) {
+bool VideoDecoder::init() {
+  if (avformat_open_input(&format_context_, path_.data(), nullptr, nullptr) <
+      0) {
     std::cerr << "FileProcessor::process_file: avformat_open_input error"
               << std::endl;
+
     return false;
   }
 
-  if (avformat_find_stream_info(format_context, nullptr) < 0) {
+  if (avformat_find_stream_info(format_context_, nullptr) < 0) {
     std::cerr << "FileProcessor::process_file: avformat_find_stream_info error"
               << std::endl;
-    avformat_close_input(&format_context);
     return false;
   }
 
-  int video_stream_index = -1;
-
-  for (int i = 0; i < format_context->nb_streams; ++i) {
-    if (format_context->streams[i]->codecpar->codec_type ==
+  for (unsigned int i = 0U; i < format_context_->nb_streams; ++i) {
+    if (format_context_->streams[i]->codecpar->codec_type ==
         AVMEDIA_TYPE_VIDEO) {
-      video_stream_index = i;
+      video_stream_index_ = i;
       break;
     }
   }
 
-  if (video_stream_index == -1) {
+  if (video_stream_index_ == -1) {
     std::cerr << "Error: Could not find a video stream in the file."
               << std::endl;
-    avformat_close_input(&format_context);
     return false;
   }
-
   const AVCodec* codec = avcodec_find_decoder(
-      format_context->streams[video_stream_index]->codecpar->codec_id);
-  if (!codec) {
+      format_context_->streams[video_stream_index_]->codecpar->codec_id);
+
+  if (codec == nullptr) {
     std::cerr << "Error: Failed to find decoder for codec ID: " << std::endl;
-    avformat_close_input(&format_context);
     return false;
   }
 
-  AVCodecContext* codec_context = avcodec_alloc_context3(codec);
-  if (!codec_context) {
+  codec_context_ = avcodec_alloc_context3(codec);
+
+  if (codec_context_ == nullptr) {
     std::cerr << "Could not allocate codec context" << std::endl;
-    avformat_close_input(&format_context);
-    return {};
+    return false;
   }
 
   if (avcodec_parameters_to_context(
-          codec_context,
-          format_context->streams[video_stream_index]->codecpar) < 0) {
+          codec_context_,
+          format_context_->streams[video_stream_index_]->codecpar) < 0) {
     std::cerr << "Could not copy codec parameters" << std::endl;
-    avcodec_free_context(&codec_context);
-    avformat_close_input(&format_context);
-    return {};
+    return false;
   }
 
-  if (avcodec_open2(codec_context, codec, nullptr) < 0) {
+  if (avcodec_open2(codec_context_, codec, nullptr) < 0) {
     std::cerr << "Could not open codec" << std::endl;
-    avcodec_free_context(&codec_context);
-    avformat_close_input(&format_context);
-    return {};
+    return false;
   }
 
-  AVFrame* frame = av_frame_alloc();
-  AVPacket* packet = av_packet_alloc();
+  frame_ = av_frame_alloc();
+  packet_ = av_packet_alloc();
 
-  if (!frame || !packet) {
+  if (frame_ == nullptr || packet_ == nullptr) {
     std::cerr << "Could not allocate frame or packet" << std::endl;
-    avcodec_free_context(&codec_context);
-    avformat_close_input(&format_context);
-    return {};
+    return false;
   }
 
-  while (av_read_frame(format_context, packet) >= 0) {
-    if (packet->stream_index != video_stream_index) {
-      continue;
-    }
-    if (!decode(codec_context, frame, packet)) {
-      return false;
-    }
-    av_packet_unref(packet);
+  sws_ctx_ =
+      sws_getContext(codec_context_->width, codec_context_->height,
+                     codec_context_->pix_fmt, 1920, 1080, AV_PIX_FMT_RGB24,
+                     SWS_FAST_BILINEAR, nullptr, nullptr, nullptr);
+  if (sws_ctx_ == nullptr) {
+    std::cerr << "Could not create sws context" << std::endl;
+    return false;
   }
-
-  av_frame_free(&frame);
-  av_packet_free(&packet);
-  avcodec_free_context(&codec_context);
-  avformat_close_input(&format_context);
   return true;
 }
 
-bool VideoDecoder::decode(AVCodecContext* dec_ctx, AVFrame* frame,
-                          const AVPacket* pkt) {
-  std::vector<uint8_t> rgb_data;
-
-  int ret = avcodec_send_packet(dec_ctx, pkt);
-  if (ret < 0) {
-    std::cerr << "Error sending a packet for decoding\n";
-    return {};
+VideoDecoder::~VideoDecoder() {
+  if (sws_ctx_ != nullptr) {
+    sws_freeContext(sws_ctx_);
+    sws_ctx_ = nullptr;
   }
-
-  constexpr AVPixelFormat target_format = AV_PIX_FMT_RGB24;
-
-  SwsContext* sws_ctx = nullptr;
-
-  while (true) {
-    constexpr int target_height = 1080;
-    constexpr int target_width = 1920;
-    ret = avcodec_receive_frame(dec_ctx, frame);
-    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
-      break;
-    }
-    if (ret < 0) {
-      std::cerr << "Error during decoding\n";
-      return false;
-    }
-
-    AVFrame* resized_frame = av_frame_alloc();
-    if (!resized_frame) {
-      std::cerr << "Failed to allocate resized frame\n";
-      return false;
-    }
-
-    resized_frame->format = target_format;
-    resized_frame->width = target_width;
-    resized_frame->height = target_height;
-
-    ret = av_frame_get_buffer(resized_frame, 32);
-    if (ret < 0) {
-      std::cerr << "Could not allocate buffer for resized frame\n";
-      av_frame_free(&resized_frame);
-      return false;
-    }
-
-    if (!sws_ctx) {
-      sws_ctx = sws_getContext(frame->width, frame->height,
-                               static_cast<AVPixelFormat>(frame->format),
-                               target_width, target_height, target_format,
-                               SWS_BILINEAR, nullptr, nullptr, nullptr);
-      if (!sws_ctx) {
-        std::cerr << "Could not initialize the conversion context\n";
-        av_frame_free(&resized_frame);
-        return false;
-      }
-    }
-
-    (void)sws_scale(sws_ctx, frame->data, frame->linesize, 0, frame->height,
-                    resized_frame->data, resized_frame->linesize);
-
-    constexpr int row_size = target_width * 3;
-    for (int y = 0; y < target_height; ++y) {
-      uint8_t* row_ptr =
-          resized_frame->data[0] + y * resized_frame->linesize[0];
-      (void)rgb_data.insert(rgb_data.end(), row_ptr, row_ptr + row_size);
-    }
-
-    av_frame_free(&resized_frame);
+  if (frame_ != nullptr) {
+    av_frame_free(&frame_);
+    frame_ = nullptr;
   }
-
-  if (sws_ctx) {
-    sws_freeContext(sws_ctx);
+  if (packet_ != nullptr) {
+    av_packet_free(&packet_);
+    packet_ = nullptr;
   }
-
-  return true;
+  if (codec_context_ != nullptr) {
+    avcodec_free_context(&codec_context_);
+    codec_context_ = nullptr;
+  }
+  if (format_context_ != nullptr) {
+    avformat_close_input(&format_context_);
+    format_context_ = nullptr;
+  }
 }
+
+std::optional<std::shared_ptr<models::FrameData>>
+VideoDecoder::get_next_frame() {
+  if (looped_) {
+    models::FrameData frame = video_data_.at(current_frame_);
+    current_frame_++;
+    if (current_frame_ >= frame_count_) {
+      current_frame_ = 0;
+    }
+
+    return std::make_shared<models::FrameData>(frame);
+  }
+  if (av_read_frame(format_context_, packet_) < 0) {
+    avcodec_send_packet(codec_context_, nullptr);
+
+    while (avcodec_receive_frame(codec_context_, frame_) == 0) {
+    }
+    looped_ = true;
+    av_seek_frame(format_context_, video_stream_index_, 0,
+                  AVSEEK_FLAG_BACKWARD);
+    avcodec_flush_buffers(codec_context_);
+
+    return std::nullopt;
+  }
+
+  if (packet_->stream_index != video_stream_index_) {
+    av_packet_unref(packet_);
+    return std::nullopt;
+  }
+
+  if (const auto ret = avcodec_send_packet(codec_context_, packet_); ret < 0) {
+    return std::nullopt;
+  }
+
+  if (const auto ret = avcodec_receive_frame(codec_context_, frame_);
+      ret != 0) {
+    return std::nullopt;
+  }
+
+  av_packet_unref(packet_);
+
+  if (frame_->data == nullptr) {
+    return std::nullopt;
+  }
+
+  uint8_t* dst_data[] = {image_data_.data.data(), nullptr, nullptr, nullptr};
+  int dst_linesize[] = {1920 * 3, 0, 0, 0};
+  if (const auto ret =
+          sws_scale(sws_ctx_, frame_->data, frame_->linesize, 0,
+                    codec_context_->height, dst_data, dst_linesize);
+      ret < 0) {
+    std::cerr << "Error: Failed to scale frame" << std::endl;
+    return std::nullopt;
+  }
+  video_data_.emplace_back(image_data_);
+  frame_count_++;
+  return std::make_shared<models::FrameData>(image_data_);
+}
+
 }  // namespace screen_controller::processing

@@ -14,7 +14,7 @@ namespace screen_controller::dbus {
 class BluetoothAgentManager {
  public:
   BluetoothAgentManager(std::shared_ptr<sdbus::IProxy> adapter_proxy);
-  ~BluetoothAgentManager() = delete;
+  ~BluetoothAgentManager() = default;
 
   BluetoothAgentManager(const BluetoothAgentManager&) = delete;
   BluetoothAgentManager& operator=(const BluetoothAgentManager&) = delete;

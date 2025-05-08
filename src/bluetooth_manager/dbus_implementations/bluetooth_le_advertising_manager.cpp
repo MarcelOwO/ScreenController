@@ -20,7 +20,8 @@ bool BluetoothLeAdvertisingManager::RegisterAdvertisement(
   try {
     (void)adapter_proxy_->callMethod(sdbus::MethodName("RegisterAdvertisement"))
         .onInterface(adv_manager_interface_name)
-        .withArguments(advertisement, options);
+        .withArguments(advertisement, options)
+        .dontExpectReply();
     return true;
   } catch (sdbus::Error& e) {
     std::cerr << e.what() << std::endl;

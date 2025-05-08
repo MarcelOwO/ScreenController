@@ -15,18 +15,19 @@ namespace screen_controller::processing {
 class WebpDecoder final : public Decoder {
  public:
   explicit WebpDecoder(std::string_view path);
-
-  virtual ~WebpDecoder() override = default;
-
+  virtual ~WebpDecoder() override ;
   WebpDecoder(const WebpDecoder&) = delete;
   WebpDecoder& operator=(const WebpDecoder&) = delete;
   WebpDecoder(WebpDecoder&&) = delete;
   WebpDecoder& operator=(WebpDecoder&&) = delete;
-  virtual std::optional<std::shared_ptr<models::FrameData>> get_next_frame() override;
-  //static std::optional<models::FrameData> WebpDecoder::process_file(
-   //   std::string_view path);
 
-private:
+  virtual bool init() override;
+
+  virtual std::optional<std::shared_ptr<models::FrameData>> get_next_frame()
+      override;
+
+ private:
+  std::vector<uint8_t> buffer_;
   bool is_loaded_;
   std::string_view path_;
 };

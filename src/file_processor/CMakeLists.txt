@@ -20,13 +20,6 @@ add_library(File STATIC file_processor.cpp file_processor.h
         decoders/decoder_factory.h)
 
 
-include_directories(/usr/include/aarch64-linux-gnu/libavcodec)
-include_directories(/usr/include/aarch64-linux-gnu/libavdevice)
-include_directories(/usr/include/aarch64-linux-gnu/libavutil)
-include_directories(/usr/include/aarch64-linux-gnu/libavformat)
-include_directories(/usr/include/aarch64-linux-gnu/libswscale)
-include_directories(/usr/include/webp)
-
 target_include_directories(File PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${AVFORMAT_INCLUDE_DIRS}

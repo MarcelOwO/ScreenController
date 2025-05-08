@@ -27,6 +27,7 @@ class BluetoothManager {
 
   using file_data_callback = std::function<void(
       std::string file_name, std::vector<std::byte> file_data)>;
+
   using command_callback = std::function<void(
       std::string command_name, std::vector<std::byte> data_data)>;
 
@@ -55,7 +56,6 @@ class BluetoothManager {
   command_callback command_callback_;
 
   bool register_advertisement();
-  bool setup_adapter();
   void unregister_agent();
   bool register_agent();
 };

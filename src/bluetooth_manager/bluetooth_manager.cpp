@@ -13,6 +13,8 @@
 #include <string>
 
 #include "dbus_implementations/bluetooth_adapter.h"
+#include "dbus_implementations/bluetooth_agent.h"
+#include "dbus_implementations/bluetooth_agent_manager.h"
 #include "dbus_implementations/bluetooth_le_advertising_manager.h"
 
 namespace screen_controller {
@@ -29,12 +31,11 @@ BluetoothManager::BluetoothManager()
       service_path_(sdbus::ObjectPath("/org/bluez/hci0/owo/service0001")),
       char_path_(sdbus::ObjectPath("/org/bluez/hci0/owo/service0001/char0001")),
       agent_path_(sdbus::ObjectPath("/org/bluez/hci0/owo/agent1")) {}
-
 BluetoothManager::~BluetoothManager() = default;
+
 void BluetoothManager::on_file_received(file_data_callback callback) {
   file_data_callback_ = std::move(callback);
 }
-
 void BluetoothManager::on_command_received(command_callback callback) {
   command_callback_ = std::move(callback);
 }
@@ -55,8 +56,23 @@ bool BluetoothManager::init() {
     return false;
   }
 
-  if (!setup_adapter()) {
-    std::cerr << "Failed to setup adapter" << std::endl;
+  dbus::BluetoothAdapter adapter(adapter_proxy_);
+
+  if (!adapter.SetAlias("ScreenController")) {
+    std::cerr << "Failed to set alias" << std::endl;
+    return false;
+  };
+
+  if (!adapter.SetDiscoverable(true)) {
+    std::cerr << "Failed to set discoverable" << std::endl;
+    return false;
+  }
+  if (!adapter.SetPowered(true)) {
+    std::cerr << "Failed to set powered" << std::endl;
+    return false;
+  }
+  if (!adapter.SetPairable(true)) {
+    std::cerr << "Failed to set pairable" << std::endl;
     return false;
   }
 
@@ -72,17 +88,21 @@ bool BluetoothManager::init() {
   try {
     std::string capabilities = "NoInputNoOutput";
 
-    const auto bluez_proxy =
+    const std::shared_ptr<sdbus::IProxy> bluez_proxy = std::move(
         sdbus::createProxy(*connection_, sdbus::ServiceName("org.bluez"),
-                           sdbus::ObjectPath("/org/bluez"));
+                           sdbus::ObjectPath("/org/bluez")));
 
-    (void)bluez_proxy->callMethod(sdbus::MethodName("RegisterAgent"))
-        .onInterface(agent_mgr_iface_)
-        .withArguments(agent_path_, capabilities);
+    dbus::BluetoothAgentManager agent_manager(bluez_proxy);
 
-    (void)bluez_proxy->callMethod(sdbus::MethodName("RequestDefaultAgent"))
-        .onInterface(agent_mgr_iface_)
-        .withArguments(agent_path_);
+    if (!agent_manager.RegisterAgent(agent_path_, capabilities)) {
+      std::cerr << "Failed to register agent." << std::endl;
+      return false;
+    }
+
+    if (!agent_manager.RequestDefaultAgent(agent_path_)) {
+      std::cerr << "Failed to request default agent." << std::endl;
+      return false;
+    }
 
     dbus::BluetoothLeAdvertisingManager bluetooth_le_advertising_manager(
         adapter_proxy_);
@@ -103,7 +123,6 @@ bool BluetoothManager::init() {
 
   return true;
 }
-
 bool BluetoothManager::register_advertisement() {
   const auto advertisement_obj =
       sdbus::createObject(*connection_, advertisement_path_);
@@ -169,33 +188,15 @@ void BluetoothManager::open_socket() {
   (void)ba2str(&rem_addr.l2_bdaddr, buffer.data());
   (void)close(l2_cap_socket);
 }
-bool BluetoothManager::setup_adapter() {
-  dbus::BluetoothAdapter adapter(adapter_proxy_);
-  if (!adapter.SetAlias("ScreenController")) {
-    return false;
-  };
-
-  if (!adapter.SetDiscoverable(true)) {
-    return false;
-  }
-  if (!adapter.SetPowered(true)) {
-    return false;
-  }
-  if (!adapter.SetPairable(true)) {
-    return false;
-  }
-
-  return true;
-}
 void BluetoothManager::unregister_agent() {
   const auto agent_mgr_iface = sdbus::InterfaceName("org.bluez.AgentManager1");
 
   adapter_proxy_->callMethod("UnregisterAgent")
       .onInterface(agent_mgr_iface)
       .withArguments(sdbus::ObjectPath("/org/bluez/hci0/owo/agent"));
+
   connection_->leaveEventLoop();
 }
-
 bool BluetoothManager::register_agent() {
   const auto agent_object = sdbus::createObject(*connection_, agent_path_);
 

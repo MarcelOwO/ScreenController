@@ -22,7 +22,7 @@ std::unique_ptr<processing::Decoder> DecoderFactory::create(
       return std::make_unique<processing::VideoDecoder>(name);
     }
     case common::FileType::kPng: {
-      return std::make_unique<processing::VideoDecoder>(name);
+      return std::make_unique<processing::StbDecoder>(name);
     }
     case common::FileType::kGif: {
       return std::make_unique<processing::VideoDecoder>(name);

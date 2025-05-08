@@ -36,6 +36,13 @@ bool FileProcessor::process_file(const std::string_view path) {
     return false;
   }
 
+  if (!decoder_->init()) {
+    std::cerr << "FileProcessor::process_file: failed to initialize decoder"
+              << std::endl;
+    decoder_.reset();
+
+    return false;
+  }
   return true;
 }
 
@@ -44,8 +51,10 @@ FileProcessor::get_processed_data() const {
   if (!decoder_) {
     std::cerr << "FileProcessor::get_processed_data: failed to get "
                  "decoder";
+
     return std::nullopt;
   }
+
   return decoder_->get_next_frame();
 }
 
