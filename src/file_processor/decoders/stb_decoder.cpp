@@ -4,6 +4,8 @@
 
 #include "stb_decoder.h"
 
+#include <ng-log/logging.h>
+
 #include <iostream>
 #include <optional>
 #include <vector>
@@ -16,46 +18,36 @@
 namespace screen_controller::processing {
 
 StbDecoder::StbDecoder(const std::string_view path)
-    : decoded_frames_(std::vector<uint8_t>(1920 * 1080 * 3)),
-      is_loaded_(false),
-      path_(path) {}
+    : is_loaded_(false), path_(path) {
+  LOG(INFO) << "Initialized STB-Decoder";
+}
 
+bool StbDecoder::has_data() {
+  return is_loaded_;
+}
 bool StbDecoder::init() {
-  models::FrameData image_data{};
+  frame_data_ = {};
+  frame_data_.data.resize(1920 * 1080 * 3);
 
-  const auto raw_data = stbi_load(path_.data(), &image_data.width,
-                                  &image_data.height, &image_data.channels, 3);
+  const auto raw_data =
+      stbi_load(path_.data(), &frame_data_.width, &frame_data_.height,
+                &frame_data_.channels, 3);
 
-  if (!raw_data) {
-    std::cerr << "FileProcessor::process_file: failed to load image"
-              << std::endl;
-    return false;
-  }
+  PCHECK(raw_data != nullptr) << "Failed to load image";
 
-  (void)stbir_resize_uint8_srgb(raw_data, image_data.width, image_data.height,
-                                0, decoded_frames_.data(), 1920, 1080, 0,
+
+  (void)stbir_resize_uint8_srgb(raw_data, frame_data_.width, frame_data_.height,
+                                0, frame_data_.data.data(), 1920, 1080, 0,
                                 STBIR_RGB);
 
-  if (decoded_frames_.empty()) {
-    std::cerr << "FileProcessor::process_file: failed to resize image"
-              << std::endl;
-    return false;
-  }
-
+  PCHECK(!frame_data_.data.empty()) << "Failed to resize image";
+  is_loaded_ = true;
   stbi_image_free(raw_data);
-
   return true;
 }
 
-std::optional<std::shared_ptr<models::FrameData>> StbDecoder::get_next_frame() {
-  if (is_loaded_) {
-    return std::nullopt;
-  }
-  models::FrameData image_data{
-      .data = decoded_frames_,
-  };
-  is_loaded_ = true;
-  return std::make_shared<models::FrameData>(image_data);
+std::optional<std::unique_ptr<models::FrameData>> StbDecoder::get_next_frame() {
+  return std::make_unique<models::FrameData>(frame_data_);
 }
 
 }  // namespace screen_controller::processing

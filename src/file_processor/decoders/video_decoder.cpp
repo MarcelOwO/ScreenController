@@ -4,42 +4,38 @@
 
 #include "video_decoder.h"
 
+#include <ng-log/logging.h>
+
 #include <fstream>
 #include <iostream>
 #include <vector>
 
 namespace screen_controller::processing {
-
 VideoDecoder::VideoDecoder(const std::string_view path)
-    : video_data_{},
-      image_data_{
-          .data = std::vector<uint8_t>(1920 * 1080 * 3, 0),
+    : video_stream_index_(-1),
+      frames_{},
+      frame_data_{
+          .data = std::vector<uint8_t>(static_cast<size_t>(1920 * 1080 * 3),
+                                       static_cast<uint8_t>(0)),
           .width = 1920,
           .height = 1080,
-          .channels = 3,
-      },
+          .channels = 3},
       path_(path),
       codec_context_(nullptr),
       format_context_(nullptr),
-      video_stream_index_(-1),
       frame_(nullptr),
       packet_(nullptr),
-      sws_ctx_(nullptr) {}
+      sws_ctx_(nullptr) {
+  LOG(INFO) << "Created VideoDecoder";
+}
 
 bool VideoDecoder::init() {
-  if (avformat_open_input(&format_context_, path_.data(), nullptr, nullptr) <
-      0) {
-    std::cerr << "FileProcessor::process_file: avformat_open_input error"
-              << std::endl;
+  PCHECK(avformat_open_input(&format_context_, path_.data(), nullptr,
+                             nullptr) >= 0)
+      << "Failed to open video file: " << path_;
 
-    return false;
-  }
-
-  if (avformat_find_stream_info(format_context_, nullptr) < 0) {
-    std::cerr << "FileProcessor::process_file: avformat_find_stream_info error"
-              << std::endl;
-    return false;
-  }
+  PCHECK(avformat_find_stream_info(format_context_, nullptr) >= 0)
+      << "avformat_find_stream_info error";
 
   for (unsigned int i = 0U; i < format_context_->nb_streams; ++i) {
     if (format_context_->streams[i]->codecpar->codec_type ==
@@ -49,35 +45,43 @@ bool VideoDecoder::init() {
     }
   }
 
-  if (video_stream_index_ == -1) {
-    std::cerr << "Error: Could not find a video stream in the file."
-              << std::endl;
-    return false;
-  }
-  const AVCodec* codec = avcodec_find_decoder(
-      format_context_->streams[video_stream_index_]->codecpar->codec_id);
+  PCHECK(video_stream_index_ != -1) << "Could not find a video stream";
+
+  const auto codec_id =
+      format_context_->streams[video_stream_index_]->codecpar->codec_id;
+  const AVCodec* codec = avcodec_find_decoder(codec_id);
 
   if (codec == nullptr) {
-    std::cerr << "Error: Failed to find decoder for codec ID: " << std::endl;
+    PLOG(ERROR) << "Failed to find decoder for codec ID: " << codec_id;
     return false;
   }
 
   codec_context_ = avcodec_alloc_context3(codec);
 
   if (codec_context_ == nullptr) {
-    std::cerr << "Could not allocate codec context" << std::endl;
+    PLOG(ERROR) << "Could not allocate codec context";
     return false;
   }
 
   if (avcodec_parameters_to_context(
           codec_context_,
           format_context_->streams[video_stream_index_]->codecpar) < 0) {
-    std::cerr << "Could not copy codec parameters" << std::endl;
+    PLOG(ERROR) << "Could not copy codec parameters to context";
+    return false;
+  }
+
+  const auto [num, den] =
+      format_context_->streams[video_stream_index_]->avg_frame_rate;
+  frame_rate_ = static_cast<double>(num / den);
+
+  if (av_hwdevice_ctx_create(&codec_context_->hw_device_ctx,
+                             AV_HWDEVICE_TYPE_DRM, nullptr, nullptr, 0) < 0) {
+    PLOG(ERROR) << "Could not create hardware device context";
     return false;
   }
 
   if (avcodec_open2(codec_context_, codec, nullptr) < 0) {
-    std::cerr << "Could not open codec" << std::endl;
+    PLOG(ERROR) << "Could not open codec";
     return false;
   }
 
@@ -85,7 +89,7 @@ bool VideoDecoder::init() {
   packet_ = av_packet_alloc();
 
   if (frame_ == nullptr || packet_ == nullptr) {
-    std::cerr << "Could not allocate frame or packet" << std::endl;
+    PLOG(ERROR) << "Could not allocate AVPacket";
     return false;
   }
 
@@ -94,9 +98,63 @@ bool VideoDecoder::init() {
                      codec_context_->pix_fmt, 1920, 1080, AV_PIX_FMT_RGB24,
                      SWS_FAST_BILINEAR, nullptr, nullptr, nullptr);
   if (sws_ctx_ == nullptr) {
-    std::cerr << "Could not create sws context" << std::endl;
+    PLOG(ERROR) << "Could not create sws context";
     return false;
   }
+
+  while (av_read_frame(format_context_, packet_) >= 0) {
+    if (packet_->stream_index != video_stream_index_) {
+      av_packet_unref(packet_);
+      PLOG(ERROR) << "Could not read frame";
+      return false;
+    }
+
+    if (const auto ret = avcodec_send_packet(codec_context_, packet_);
+        ret < 0) {
+      PLOG(ERROR) << "avcodec_send_packet error";
+      return false;
+    }
+
+    if (const auto ret = avcodec_receive_frame(codec_context_, frame_);
+        ret != 0) {
+      PLOG(ERROR) << "avcodec_receive_frame error";
+      return false;
+    }
+
+    av_packet_unref(packet_);
+
+    if (frame_->data == nullptr) {
+      PLOG(ERROR) << "Frame data is null";
+      return false;
+    }
+
+    auto* dst_data = frame_data_.data.data();
+    constexpr int dst_linesize = 1920 * 3;
+
+    if (sws_scale(sws_ctx_, frame_->data, frame_->linesize, 0,
+                  codec_context_->height, &dst_data, &dst_linesize) < 0) {
+      PLOG(ERROR) << "Could not scale frame";
+      std::cerr << "Error: Failed to scale frame" << std::endl;
+      return false;
+    }
+
+    frames_.push_back(frame_data_);
+    frame_count_++;
+  }
+
+  (void)avcodec_send_packet(codec_context_, nullptr);
+
+  while (avcodec_receive_frame(codec_context_, frame_) == 0) {
+  }
+
+  looped_ = true;
+  current_frame_ = 0;
+
+  (void)av_seek_frame(format_context_, video_stream_index_, 0,
+                      AVSEEK_FLAG_BACKWARD);
+
+  avcodec_flush_buffers(codec_context_);
+
   return true;
 }
 
@@ -122,63 +180,20 @@ VideoDecoder::~VideoDecoder() {
     format_context_ = nullptr;
   }
 }
+bool VideoDecoder::has_data() { return looped_; }
 
-std::optional<std::shared_ptr<models::FrameData>>
+std::optional<std::unique_ptr<models::FrameData>>
 VideoDecoder::get_next_frame() {
-  if (looped_) {
-    models::FrameData frame = video_data_.at(current_frame_);
-    current_frame_++;
-    if (current_frame_ >= frame_count_) {
-      current_frame_ = 0;
-    }
+  const models::FrameData& frame =
+      frames_.at(static_cast<size_t>(current_frame_));
 
-    return std::make_shared<models::FrameData>(frame);
-  }
-  if (av_read_frame(format_context_, packet_) < 0) {
-    avcodec_send_packet(codec_context_, nullptr);
+  current_frame_++;
 
-    while (avcodec_receive_frame(codec_context_, frame_) == 0) {
-    }
-    looped_ = true;
-    av_seek_frame(format_context_, video_stream_index_, 0,
-                  AVSEEK_FLAG_BACKWARD);
-    avcodec_flush_buffers(codec_context_);
-
-    return std::nullopt;
+  if (current_frame_ >= frame_count_) {
+    current_frame_ = 0;
   }
 
-  if (packet_->stream_index != video_stream_index_) {
-    av_packet_unref(packet_);
-    return std::nullopt;
-  }
-
-  if (const auto ret = avcodec_send_packet(codec_context_, packet_); ret < 0) {
-    return std::nullopt;
-  }
-
-  if (const auto ret = avcodec_receive_frame(codec_context_, frame_);
-      ret != 0) {
-    return std::nullopt;
-  }
-
-  av_packet_unref(packet_);
-
-  if (frame_->data == nullptr) {
-    return std::nullopt;
-  }
-
-  uint8_t* dst_data[] = {image_data_.data.data(), nullptr, nullptr, nullptr};
-  int dst_linesize[] = {1920 * 3, 0, 0, 0};
-  if (const auto ret =
-          sws_scale(sws_ctx_, frame_->data, frame_->linesize, 0,
-                    codec_context_->height, dst_data, dst_linesize);
-      ret < 0) {
-    std::cerr << "Error: Failed to scale frame" << std::endl;
-    return std::nullopt;
-  }
-  video_data_.emplace_back(image_data_);
-  frame_count_++;
-  return std::make_shared<models::FrameData>(image_data_);
+  return std::make_unique<models::FrameData>(frame);
 }
 
 }  // namespace screen_controller::processing

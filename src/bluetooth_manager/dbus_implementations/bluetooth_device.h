@@ -6,7 +6,7 @@
 #define BLUETOOTH_DEVICE_H
 
 #include <sdbus-c++/sdbus-c++.h>
-namespace screen_controller::dbus {
+namespace screen_controller::bluetooth::dbus {
 class BluetoothDevice {
  public:
   BluetoothDevice(std::shared_ptr<sdbus::IConnection> connection,

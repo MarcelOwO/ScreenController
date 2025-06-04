@@ -4,25 +4,26 @@
 
 #include "window_manager.h"
 
+#include <ng-log/logging.h>
+
 #include <iostream>
+
 namespace screen_controller {
 WindowManager::WindowManager() = default;
 
 bool WindowManager::init() {
-  glfwSetErrorCallback([](int, const char* description) {
-    std::cout << "Error: " << description << "\n";
+  LOG(INFO) << "Creating window manager";
+
+  (void)glfwSetErrorCallback([](int, const char* description) {
+    PLOG(ERROR) << "GLFW error: " << description;
   });
 
-  if (!glfwInit()) {
-    return false;
-  }
+  PCHECK(glfwInit()) << "Failed to initialize GLFW";
 
   window_ = glfwCreateWindow(1920, 1080, "My Title", glfwGetPrimaryMonitor(),
                              nullptr);
 
-  if (!window_) {
-    return false;
-  }
+  PCHECK(window_ != nullptr) << "Failed to create GLFW window";
 
   glfwMakeContextCurrent(window_);
 
@@ -33,16 +34,16 @@ bool WindowManager::should_close() const {
   return glfwWindowShouldClose(window_);
 }
 
-void WindowManager::poll_events() { return glfwPollEvents(); }
+void WindowManager::poll_events() const { return glfwPollEvents(); }
 
 void WindowManager::swap_buffers() const { glfwSwapBuffers(window_); }
 
-int WindowManager::get_height() {
+int WindowManager::get_height() const {
   const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
   return mode->height;
 }
 
-int WindowManager::get_width() {
+int WindowManager::get_width() const {
   const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
   return mode->width;
 }

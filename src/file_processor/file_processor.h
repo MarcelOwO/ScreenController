@@ -23,7 +23,7 @@ class FileProcessor {
   bool init();
   bool process_file(std::string_view path);
 
-  std::optional<std::shared_ptr<processing::models::FrameData>> get_processed_data() const;
+  std::optional<std::unique_ptr<processing::models::FrameData>> get_processed_data() const;
 
  private:
   std::unique_ptr<processing::Decoder> decoder_;

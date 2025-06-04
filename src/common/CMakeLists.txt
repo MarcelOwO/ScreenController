@@ -1,4 +1,9 @@
-add_library(common INTERFACE)
+add_library(common INTERFACE
+        command.h
+        file_type.h
+        pixel_data.h
+        bluetooth_packet.h
+)
 
 target_include_directories(common
         INTERFACE

@@ -5,6 +5,7 @@
 #include "shader.h"
 
 #include <linux/limits.h>
+#include <ng-log/logging.h>
 #include <unistd.h>
 
 #include <array>
@@ -15,6 +16,7 @@ Shader::Shader() = default;
 
 void Shader::init(const std::filesystem::path& vertex_path,
                   const std::filesystem::path& fragment_path) {
+  LOG(INFO) << "Creating shaders";
   std::string vertex_code{};
   std::string fragment_code{};
 
@@ -23,54 +25,44 @@ void Shader::init(const std::filesystem::path& vertex_path,
 
   std::array<char, PATH_MAX> result{};
 
-  try {
-    ssize_t count = readlink("/proc/self/exe", result.data(), PATH_MAX);
+  ssize_t count = readlink("/proc/self/exe", result.data(), PATH_MAX);
 
-    auto executable_path = std::filesystem::path(
-        std::string(result.data(), count > 0 ? count : 0));
+  PCHECK(count >= 0) << "Failed to read link: " << strerror(errno);
 
-    auto project_dir = executable_path.parent_path();
+  auto executable_path =
+      std::filesystem::path(std::string(result.data(), count > 0 ? count : 0));
 
-    v_shader_file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    f_shader_file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    ;
+  auto project_dir = executable_path.parent_path();
 
-    std::filesystem::path v_path(project_dir / vertex_path);
-    std::filesystem::path f_path(project_dir / fragment_path);
+  std::filesystem::path v_path(project_dir / vertex_path);
+  std::filesystem::path f_path(project_dir / fragment_path);
 
-    if (!exists(v_path)) {
-      std::cout << "Vertex shader file does not exist: " << v_path << std::endl;
-      return;
-    }
-    if (!exists(f_path)) {
-      std::cout << "Fragment shader file does not exist: " << f_path
-                << std::endl;
-      return;
-    }
+  PCHECK(std::filesystem::exists(v_path))
+      << "Vertex shader path does not exist: " << v_path;
+  PCHECK(std::filesystem::exists(f_path))
+      << "Fragment shader path does not exist: " << f_path;
 
-    v_shader_file.open(v_path);
-    f_shader_file.open(f_path);
+  v_shader_file.open(v_path);
+  f_shader_file.open(f_path);
 
-    std::stringstream v_shader_stream;
-    std::stringstream f_shader_stream;
+  PCHECK(v_shader_file.is_open() && f_shader_file.is_open())
+      << "Failed to open shader files: " << v_path << " " << f_path;
 
-    v_shader_stream << v_shader_file.rdbuf();
-    f_shader_stream << f_shader_file.rdbuf();
+  std::stringstream v_shader_stream{};
+  std::stringstream f_shader_stream{};
 
-    v_shader_file.close();
-    f_shader_file.close();
+  v_shader_stream << v_shader_file.rdbuf();
+  f_shader_stream << f_shader_file.rdbuf();
 
-    vertex_code = v_shader_stream.str();
-    fragment_code = f_shader_stream.str();
-  } catch (std::ifstream::failure& e) {
-    std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ: " << e.what()
-              << std::endl;
-  }
+  v_shader_file.close();
+  f_shader_file.close();
+
+  vertex_code = v_shader_stream.str();
+  fragment_code = f_shader_stream.str();
 
   GLenum err = glGetError();
-  if (err != GL_NO_ERROR) {
-    std::cerr << "OpenGL error: " << err << std::endl;
-  }
+  PCHECK(err == GL_NO_ERROR)
+      << "OpenGL error before shader compilation: " << err;
 
   const char* v_shader_code = vertex_code.c_str();
   const char* f_shader_code = fragment_code.c_str();
@@ -125,21 +117,13 @@ void Shader::check_compile_errors(const unsigned int shader,
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (success == 0) {
       glGetShaderInfoLog(shader, 1024, nullptr, info_log.data());
-      std::cout
-          << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n"
-          << info_log.data()
-          << "\n -- --------------------------------------------------- -- "
-          << std::endl;
+      PLOG(ERROR) << "Shader compilation error: " << info_log.data();
     }
   } else {
     glGetProgramiv(shader, GL_LINK_STATUS, &success);
     if (success == 0) {
       glGetProgramInfoLog(shader, 1024, nullptr, info_log.data());
-      std::cout
-          << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n"
-          << info_log.data()
-          << "\n -- --------------------------------------------------- -- "
-          << std::endl;
+      PLOG(ERROR) << "Program linking error: " << info_log.data();
     }
   }
 }

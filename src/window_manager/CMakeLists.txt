@@ -5,7 +5,7 @@ target_include_directories(Window
         ${CMAKE_CURRENT_SOURCE_DIR}  # This line is crucial
 )
 
-target_link_libraries(Window PUBLIC glfw)
+target_link_libraries(Window PUBLIC glfw ng-log)
 
 
 

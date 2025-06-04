@@ -1,12 +1,11 @@
 cmake_minimum_required(VERSION 3.25)
-project(ScreenController)
+project(ScreenController VERSION 1.0.0)
 
-set(CMAKE_CXX_STANDARD 26)
+set(CMAKE_CXX_STANDARD 23)
+
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
-add_compile_definitions(_GNU_SOURCE)
-add_compile_definitions(_POSIX_C_SOURCE=200809L)
-
+add_subdirectory(external)
 
 add_subdirectory(src/common)
 add_subdirectory(src/app)
@@ -16,11 +15,9 @@ add_subdirectory(src/bluetooth_manager)
 add_subdirectory(src/storage_manager)
 add_subdirectory(src/file_processor)
 
-add_subdirectory(external)
-
 add_executable(ScreenController src/main.cpp)
 
-target_link_libraries(ScreenController PRIVATE App common)
+target_link_libraries(ScreenController PRIVATE App common ng-log)
 
 add_custom_command(
         TARGET ScreenController POST_BUILD

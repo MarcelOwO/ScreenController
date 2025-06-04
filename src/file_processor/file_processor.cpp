@@ -3,6 +3,7 @@
 //
 
 #include <file_processor.h>
+#include <ng-log/logging.h>
 
 #include <filesystem>
 #include <iostream>
@@ -14,44 +15,41 @@
 
 namespace screen_controller {
 
-FileProcessor::FileProcessor() = default;
+FileProcessor::FileProcessor() {
+  LOG(INFO)<< "Initializing FileProcessor class";
+};
 
-FileProcessor::~FileProcessor() = default;
+FileProcessor::~FileProcessor() {
+  if (decoder_ != nullptr) {
+    decoder_.reset();
+  }
+};
 
 bool FileProcessor::init() { return true; }
 
 bool FileProcessor::process_file(const std::string_view path) {
   const auto type = get_type(path);
 
-  if (type == common::FileType::kNone) {
-    std::cout << "FileProcessor::process_file: unknown file type" << std::endl;
-    return false;
-  }
+  PCHECK(type != common::FileType::kNone)
+      << "File type not supported: " << path;
 
   decoder_ = processing::DecoderFactory::create(path, type);
 
-  if (!decoder_) {
-    std::cerr << "FileProcessor::process_file: failed to create decoder"
-              << std::endl;
-    return false;
-  }
+  PCHECK(decoder_ != nullptr) << "Failed to create decoder: " << path;
 
-  if (!decoder_->init()) {
-    std::cerr << "FileProcessor::process_file: failed to initialize decoder"
-              << std::endl;
-    decoder_.reset();
+  PCHECK(decoder_->init()) << "Failed to initialize decoder: " << path;
 
-    return false;
-  }
   return true;
 }
 
-std::optional<std::shared_ptr<processing::models::FrameData>>
+std::optional<std::unique_ptr<processing::models::FrameData>>
 FileProcessor::get_processed_data() const {
   if (!decoder_) {
-    std::cerr << "FileProcessor::get_processed_data: failed to get "
-                 "decoder";
+    PLOG(ERROR) << "Failed to get processed data";
+    return std::nullopt;
+  }
 
+  if (!decoder_->has_data()) {
     return std::nullopt;
   }
 

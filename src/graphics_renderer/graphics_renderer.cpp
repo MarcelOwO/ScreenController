@@ -4,18 +4,24 @@
 
 #include "graphics_renderer.h"
 
-#include <algorithm>
+#include <ng-log/logging.h>
+
 #include <array>
 #include <bit>
-#include <iostream>
-#include <span>
 
+#include "../file_processor/models/frame_data.h"
 #include "shader/shader.h"
 
 namespace screen_controller {
-GraphicsRenderer::GraphicsRenderer() : texture_(), vao_(), vbo_() {}
+namespace processing::models {
+struct FrameData;
+}
+GraphicsRenderer::GraphicsRenderer() : texture_(), vao_(), vbo_() {
+  LOG(INFO) << "Creating GraphicsRenderer";
+}
 
 GraphicsRenderer::~GraphicsRenderer() {
+  LOG(INFO) << "Cleaning up GraphicsRenderer";
   glDeleteTextures(1, &texture_);
   glDeleteBuffers(1, &vbo_);
   glDeleteVertexArrays(1, &vao_);
@@ -23,9 +29,7 @@ GraphicsRenderer::~GraphicsRenderer() {
 
 void GraphicsRenderer::init(const GLADloadproc dloadproc,
                             const int window_width, const int window_height) {
-  if (!gladLoadGLES2Loader(dloadproc)) {
-    return;
-  }
+  PCHECK(gladLoadGLES2Loader(dloadproc)) << "Failed to load GLAD";
 
   shader_.init(vertex_shader_source_path_, fragment_shader_source_path_);
 
@@ -81,9 +85,9 @@ void GraphicsRenderer::render() const {
   glBindVertexArray(0);
 }
 
-void GraphicsRenderer::set_texture(const std::span<const uint8_t> data) {
+void GraphicsRenderer::set_texture(const processing::models::FrameData* data) {
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1920, 1080, 0, GL_RGB,
-               GL_UNSIGNED_BYTE, data.data());
+               GL_UNSIGNED_BYTE, data->data.data());
   glGenerateMipmap(GL_TEXTURE_2D);
 }
 }  // namespace screen_controller

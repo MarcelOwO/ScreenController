@@ -4,16 +4,20 @@
 
 #include "bluetooth_agent_manager.h"
 
+#include <ng-log/logging.h>
+
 #include <iostream>
 #include <utility>
 
 #include "sdbus-c++/IProxy.h"
-namespace screen_controller::dbus {
+namespace screen_controller::bluetooth::dbus {
 BluetoothAgentManager::BluetoothAgentManager(
     std::shared_ptr<sdbus::IProxy> bluez_proxy)
     : bluez_proxy_(std::move(bluez_proxy)),
       agent_manager_interface_name_(
-          sdbus::InterfaceName("org.bluez.AgentManager1")) {}
+          sdbus::InterfaceName("org.bluez.AgentManager1")) {
+  LOG(INFO) << "Creating BluetoothAgentManager";
+}
 
 bool BluetoothAgentManager::RegisterAgent(sdbus::ObjectPath agent,
                                           std::string capability) const {
@@ -23,10 +27,11 @@ bool BluetoothAgentManager::RegisterAgent(sdbus::ObjectPath agent,
         .withArguments(agent, capability);
     return true;
   } catch (sdbus::Error& e) {
-    std::cerr << e.what() << std::endl;
+    PLOG(ERROR) << e.what();
     return false;
   }
 }
+
 bool BluetoothAgentManager::UnregisterAgent(sdbus::ObjectPath agent) const {
   try {
     (void)bluez_proxy_->callMethod(sdbus::MethodName("UnregisterAgent"))
@@ -34,10 +39,11 @@ bool BluetoothAgentManager::UnregisterAgent(sdbus::ObjectPath agent) const {
         .withArguments(agent);
     return true;
   } catch (sdbus::Error& e) {
-    std::cerr << e.what() << std::endl;
+    PLOG(ERROR) << e.what();
     return false;
   }
 }
+
 bool BluetoothAgentManager::RequestDefaultAgent(sdbus::ObjectPath agent) {
   try {
     (void)bluez_proxy_->callMethod(sdbus::MethodName("RequestDefaultAgent"))
@@ -45,7 +51,7 @@ bool BluetoothAgentManager::RequestDefaultAgent(sdbus::ObjectPath agent) {
         .withArguments(agent);
     return true;
   } catch (sdbus::Error& e) {
-    std::cerr << e.what() << std::endl;
+    PLOG(ERROR) << e.what();
     return false;
   }
 }

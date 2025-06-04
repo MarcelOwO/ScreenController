@@ -1,5 +1,5 @@
 
-add_library(App STATIC App.cpp App.h ../common/command.h)
+add_library(App STATIC App.cpp App.h)
 
 target_include_directories(App
         PUBLIC
@@ -8,6 +8,6 @@ target_include_directories(App
 
 target_link_libraries(App
         PUBLIC
-        Window Renderer Bluetooth glad Storage File)
+        Window Renderer Bluetooth glad Storage File ng-log)
 
 

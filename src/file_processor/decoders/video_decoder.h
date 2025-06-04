@@ -16,27 +16,28 @@ extern "C" {
 }
 
 namespace screen_controller::processing {
-
 class VideoDecoder final : public Decoder {
  public:
   explicit VideoDecoder(std::string_view path);
   virtual bool init() override;
   virtual ~VideoDecoder() override;
-
-  std::optional<std::shared_ptr<models::FrameData>> get_next_frame() override;
+  virtual bool has_data() override;
+  std::optional<std::unique_ptr<models::FrameData>> get_next_frame() override;
 
  private:
-  std::vector<models::FrameData> video_data_;
   bool looped_;
   int frame_count_;
   int current_frame_;
+  double frame_rate_;
+  int video_stream_index_;
 
-  models::FrameData image_data_;
+  std::vector<models::FrameData> frames_;
+  models::FrameData frame_data_;
+
   std::string_view path_;
 
   AVCodecContext* codec_context_;
   AVFormatContext* format_context_;
-  int video_stream_index_;
 
   AVFrame* frame_;
   AVPacket* packet_;

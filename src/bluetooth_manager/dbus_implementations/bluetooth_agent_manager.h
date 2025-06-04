@@ -10,7 +10,7 @@
 #include "sdbus-c++/IProxy.h"
 #include "sdbus-c++/Types.h"
 
-namespace screen_controller::dbus {
+namespace screen_controller::bluetooth::dbus {
 class BluetoothAgentManager {
  public:
   BluetoothAgentManager(std::shared_ptr<sdbus::IProxy> adapter_proxy);

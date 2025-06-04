@@ -12,7 +12,7 @@
 namespace sdbus {
 class IProxy;
 }
-namespace screen_controller::dbus {
+namespace screen_controller::bluetooth::dbus {
 
 class BluetoothAdapter {
  public:
@@ -23,6 +23,8 @@ class BluetoothAdapter {
   BluetoothAdapter& operator=(const BluetoothAdapter&) = delete;
   BluetoothAdapter(BluetoothAdapter&&) = delete;
   BluetoothAdapter& operator=(BluetoothAdapter&&) = delete;
+
+  bool init();
 
   bool StartDiscovery() const;
   bool StopDiscovery() const;

@@ -7,6 +7,8 @@
 
 #include <glad/glad.h>
 
+#include <memory>
+#include <optional>
 #include <span>
 #include <string>
 
@@ -14,6 +16,9 @@
 #include "shader/shader.h"
 
 namespace screen_controller {
+namespace processing::models {
+struct FrameData;
+}
 class GraphicsRenderer {
  public:
   GraphicsRenderer();
@@ -27,9 +32,8 @@ class GraphicsRenderer {
 
   void init(GLADloadproc dloadproc, int window_width, int window_height);
 
-  void set_texture(std::span<const uint8_t> data);
+  void set_texture(const processing::models::FrameData *data);
   void render() const;
-
 
  private:
   Shader shader_;

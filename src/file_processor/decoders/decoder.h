@@ -15,8 +15,9 @@ class Decoder {
  public:
   virtual ~Decoder() = default;
   virtual bool init() = 0;
-  virtual std::optional<std::shared_ptr<models::FrameData>>
+  virtual std::optional<std::unique_ptr<models::FrameData>>
   get_next_frame() = 0;
+  virtual bool has_data() = 0;
 };
 
 }  // namespace screen_controller::processing

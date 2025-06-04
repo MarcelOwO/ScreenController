@@ -4,14 +4,18 @@
 
 #include "bluetooth_device.h"
 
+#include <ng-log/logging.h>
+
 #include <iostream>
-namespace screen_controller::dbus {
+
+namespace screen_controller::bluetooth::dbus {
 
 BluetoothDevice::BluetoothDevice(std::shared_ptr<sdbus::IConnection> connection,
                                  const sdbus::ObjectPath& device)
-    : device_interface_("org.bluez.Device1") {
-  device_proxy_ =
-      sdbus::createProxy(*connection, sdbus::ServiceName("org.bluez"), device);
+    : device_proxy_(sdbus::createProxy(
+          *connection, sdbus::ServiceName("org.bluez"), device)),
+      device_interface_("org.bluez.Device1") {
+  PLOG(INFO) << "BluetoothDevice created";
 }
 
 bool BluetoothDevice::Connect() const {
@@ -19,17 +23,18 @@ bool BluetoothDevice::Connect() const {
     (void)device_proxy_->callMethod("Connect").onInterface(device_interface_);
     return true;
   } catch (sdbus::Error& e) {
-    std::cerr << e.what() << std::endl;
+    PLOG(ERROR) << e.what();
     return false;
   }
 }
+
 bool BluetoothDevice::Disconnect() const {
   try {
     (void)device_proxy_->callMethod("Disconnect")
         .onInterface(device_interface_);
     return true;
   } catch (sdbus::Error& e) {
-    std::cerr << e.what() << std::endl;
+    PLOG(INFO) <<e.what();
     return false;
   }
 }

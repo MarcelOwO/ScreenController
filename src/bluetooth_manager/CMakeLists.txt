@@ -10,10 +10,17 @@ add_library(Bluetooth STATIC bluetooth_manager.cpp bluetooth_manager.h
         dbus_implementations/bluetooth_le_advertising_manager.cpp
         dbus_implementations/bluetooth_le_advertising_manager.h
         dbus_implementations/bluetooth_adapter.cpp
-        dbus_implementations/bluetooth_adapter.h)
+        dbus_implementations/bluetooth_adapter.h
+        socket/l_2_cap_receiver.cpp
+        socket/l_2_cap_receiver.h
+        unpacker/unpacker.cpp
+        unpacker/unpacker.h)
 
-target_include_directories(Bluetooth PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(Bluetooth PUBLIC sdbus-c++ bluetooth)
+target_include_directories(Bluetooth PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(Bluetooth PUBLIC sdbus-c++ bluetooth ng-log libzstd_static)
 
 

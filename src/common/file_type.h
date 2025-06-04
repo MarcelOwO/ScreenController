@@ -6,7 +6,6 @@
 #define FILE_TYPE_H
 
 namespace screen_controller::common {
-
 enum class FileType {
   kJpg,
   kPng,

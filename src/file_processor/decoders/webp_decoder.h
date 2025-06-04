@@ -22,12 +22,12 @@ class WebpDecoder final : public Decoder {
   WebpDecoder& operator=(WebpDecoder&&) = delete;
 
   virtual bool init() override;
-
-  virtual std::optional<std::shared_ptr<models::FrameData>> get_next_frame()
+  virtual bool has_data() override;
+  virtual std::optional<std::unique_ptr<models::FrameData>> get_next_frame()
       override;
 
  private:
-  std::vector<uint8_t> buffer_;
+  models::FrameData frame_data_;
   bool is_loaded_;
   std::string_view path_;
 };

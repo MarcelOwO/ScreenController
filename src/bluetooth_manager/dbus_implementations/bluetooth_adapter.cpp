@@ -4,16 +4,34 @@
 
 #include "bluetooth_adapter.h"
 
+#include <ng-log/logging.h>
+
 #include <iostream>
 
 #include "sdbus-c++/IProxy.h"
 #include "sdbus-c++/Types.h"
 
-namespace screen_controller::dbus {
+namespace screen_controller::bluetooth::dbus {
 BluetoothAdapter::BluetoothAdapter(
     const std::shared_ptr<sdbus::IProxy>& adapter_proxy)
     : adapter_proxy_(adapter_proxy),
       adapter_interface_name_(sdbus::InterfaceName("org.bluez.Adapter1")) {}
+
+bool BluetoothAdapter::init() {
+  PCHECK(SetAlias("ScreenControllerApp")) << "Failed to set alias";
+
+  if (!GetPowered()) {
+    PCHECK(SetPowered(true)) << "Failed to set powered";
+  }
+  if (!GetDiscoverable()) {
+    PCHECK(SetDiscoverable(true)) << "Failed to set discoverable";
+  }
+  if (!GetPairable()) {
+    PCHECK(SetPairable(true)) << "Failed to set pairable";
+  }
+
+  return true;
+}
 
 bool BluetoothAdapter::StartDiscovery() const {
   try {
@@ -121,45 +139,82 @@ bool BluetoothAdapter::SetAlias(std::string_view alias) {
   }
 }
 uint32_t BluetoothAdapter::GetClass() {}
+
 bool BluetoothAdapter::GetConnectable() {}
 void BluetoothAdapter::SetConnectable(bool connectable) {}
-bool BluetoothAdapter::GetPowered() {}
-bool BluetoothAdapter::SetPowered(bool powered) const {
+
+bool BluetoothAdapter::GetPowered() {
+  try {
+    return adapter_proxy_->getProperty("Powered")
+        .onInterface(adapter_interface_name_)
+        .get<bool>();
+  } catch (const sdbus::Error& e) {
+    PLOG(ERROR) << e.what();
+    return false;
+  }
+}
+
+bool BluetoothAdapter::SetPowered(const bool powered) const {
   try {
     adapter_proxy_->setProperty("Powered")
         .onInterface(adapter_interface_name_)
         .toValue(powered);
     return true;
-  } catch (sdbus::Error& e) {
-    std::cerr << e.what() << std::endl;
+  } catch (const sdbus::Error& e) {
+    PLOG(ERROR) << e.what();
     return false;
   }
 }
-std::string_view BluetoothAdapter::GetPowerState() {}
-bool BluetoothAdapter::GetDiscoverable() {}
-bool BluetoothAdapter::SetDiscoverable(bool discoverable) const {
+std::string_view BluetoothAdapter::GetPowerState() {
+  PLOG(FATAL) << "Not implemented";
+  return std::string_view();
+}
+
+bool BluetoothAdapter::GetDiscoverable() {
+  try {
+    return adapter_proxy_->getProperty("Discoverable")
+        .onInterface(adapter_interface_name_)
+        .get<bool>();
+  } catch (const sdbus::Error& e) {
+    PLOG(ERROR) << e.what();
+    return false;
+  }
+}
+
+bool BluetoothAdapter::SetDiscoverable(const bool discoverable) const {
   try {
     adapter_proxy_->setProperty("Discoverable")
         .onInterface(adapter_interface_name_)
         .toValue(discoverable);
     return true;
-  } catch (sdbus::Error& e) {
-    std::cerr << e.what() << std::endl;
+  } catch (const sdbus::Error& e) {
+    PLOG(ERROR) << e.what();
     return false;
   }
 }
-bool BluetoothAdapter::GetPairable() {}
-bool BluetoothAdapter::SetPairable(bool pairable) const {
+bool BluetoothAdapter::GetPairable() {
+  try {
+    return adapter_proxy_->getProperty("Pairable")
+        .onInterface(adapter_interface_name_)
+        .get<bool>();
+  } catch (const sdbus::Error& e) {
+    PLOG(ERROR) << e.what();
+    return false;
+  }
+}
+
+bool BluetoothAdapter::SetPairable(const bool pairable) const {
   try {
     adapter_proxy_->setProperty("Pairable")
         .onInterface(adapter_interface_name_)
         .toValue(pairable);
     return true;
-  } catch (sdbus::Error& e) {
-    std::cerr << e.what() << std::endl;
+  } catch (const sdbus::Error& e) {
+    PLOG(ERROR) << e.what();
     return false;
   }
 }
+
 uint32_t BluetoothAdapter::GetPairableTimeout() {}
 void BluetoothAdapter::SetPairableTimeout(uint32_t timeout) {}
 uint32_t BluetoothAdapter::GetDiscoverableTimeout() {}

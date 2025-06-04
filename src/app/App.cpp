@@ -4,109 +4,123 @@
 
 #include "App.h"
 
+#include <ng-log/logging.h>
+
 #include <iostream>
 
 #include "command.h"
 
 namespace screen_controller {
 
-App::App() : running_(false) {}
+App::App() : running_(false) { LOG(INFO) << "Creating app"; }
 
 App::~App() {
+  LOG(INFO) << "Cleaning up App class";
   running_ = false;
   queue_condition_.notify_all();
-
   if (command_thread_.joinable()) {
     command_thread_.join();
   }
 }
 
 bool App::init() {
-  if (!storage_manager_.Init()) {
-    std::cerr << "Failed to initialize storage manager." << std::endl;
-    return false;
-  }
+  PCHECK(storage_manager_.Init()) << "Failed to initialize storage manager";
+  PCHECK(bluetooth_manager_.init()) << "Failed to initialize bluetooth manager";
+  PCHECK(file_processor_.init()) << "Failed to initialize file processor";
 
-  if (!bluetooth_manager_.init()) {
-    std::cerr << "Failed to initialize bluetooth manager." << std::endl;
-    return false;
-  }
+  bluetooth_manager_.on_blutooth_packet_received(
+      [this](common::BluetoothPacket packet) {
+        switch (packet.type) {
+          case 1: {  // command packet
+            const auto command = packet.name;
+            const auto it = command.find(':');
+            if (it == std::string::npos) {
+              LOG(ERROR) << "Invalid command format: " << command;
+              return;
+            }
+            const auto type = command.substr(0, it);
+            const auto name = command.substr(it + 1, command.size());
 
-  if (!file_processor_.init()) {
-    std::cerr << "Failed to initialize file processor." << std::endl;
-    return false;
-  }
+            if (type == "Select") {
+              LOG(INFO) << "Select command received: " << name;
+              if (!load_image(name, false)) {
+              }
+              break;
+            }
+            if (type == "Delete") {
+              LOG(INFO) << "Delete command received: " << name;
+              if (!storage_manager_.DeleteFile(name)) {
+                PLOG(WARNING) << "Failed to delete file: " << name;
+              }
+              break;
+            }
 
-  bluetooth_manager_.on_command_received(
-      [this](const std::string& command, const std::vector<std::byte>& data) {
-        {
-          std::lock_guard<std::mutex> lock(queue_mutex_);
-          (void)command_queue_.emplace(command, data);
+            break;
+          }
+          case 0: {  // file packet
+            if (!storage_manager_.SaveFile(packet.name, packet.data)) {
+              PLOG(WARNING) << "Failed to save file: " << packet.name;
+            }
+            break;
+          }
+          default: {
+            LOG(ERROR) << "Unknown packet type: "
+                       << static_cast<int>(packet.type);
+          }
         }
-        queue_condition_.notify_one();
       });
 
-  bluetooth_manager_.on_file_received(
-      [this](const std::string& name, const std::vector<std::byte>& data) {
-        if (!storage_manager_.SaveFile(name, data)) {
-          std::cerr << "Failed to save file." << std::endl;
-        }
-      });
+  PCHECK(window_manager_.init()) << "Failed to initialize window manager";
 
-  if (!window_manager_.init()) {
-    std::cerr << "Failed to initialize window manager." << std::endl;
-    return false;
-  }
+  renderer_.init(std::bit_cast<GLADloadproc>(window_manager_.address_pointer()),
+                 window_manager_.get_width(), window_manager_.get_height());
 
-  renderer_.init(std::bit_cast<GLADloadproc>(WindowManager::address_pointer()),
-                 WindowManager::get_width(), WindowManager::get_height());
-
-  if (!load_startup_image()) {
-    std::cerr << "Failed to load startup image." << std::endl;
-    return false;
-  }
+  PCHECK(load_image("sona.png", true)) << "Failed to load startup image";
 
   running_ = true;
 
   return true;
 }
-
-bool App::load_startup_image() {
-  const auto path = storage_manager_.GetPath("sticker.webp");
-
+bool App::load_image(std::string_view name, bool is_asset) {
+  const auto path = is_asset ? storage_manager_.GetResourcePath(name)
+                             : storage_manager_.GetUserFilePath(name);
   if (!std::filesystem::exists(path)) {
-    std::cerr << "FileProcessor::process_file: file not found" << std::endl;
+    PLOG(WARNING) << "File does not exist: " << path.string();
     return false;
   }
 
-  if (!file_processor_.process_file(path.c_str())) {
-    std::cerr << "Failed to load sticker.webp" << std::endl;
-    return false;
-  }
+  PCHECK(file_processor_.process_file(path.c_str()))
+      << "Failed to load startup image";
 
   process_frame();
 
   return true;
 }
+
 void App::process_frame() {
   const auto frame = file_processor_.get_processed_data();
 
   if (!frame.has_value()) {
+    LOG(WARNING) << "No frame data available";
     return;
   }
 
-  renderer_.set_texture(frame.value()->data);
+  renderer_.set_texture(frame.value().get());
 }
 
 void App::render_loop() {
   while (!window_manager_.should_close()) {
+    bluetooth_manager_.run();
     process_frame();
     window_manager_.update([this] { renderer_.render(); });
-    WindowManager::poll_events();
+    window_manager_.poll_events();
+    std::this_thread::sleep_for(std::chrono::milliseconds(16));
   }
 }
+
 void App::handle_commands() {
   while (true) {
+    bluetooth_manager_.run();
     std::unique_lock<std::mutex> lock(queue_mutex_);
     queue_condition_.wait(lock, [this] { return !command_queue_.empty(); });
     auto [command, command_data] = command_queue_.front();
@@ -155,7 +169,7 @@ void App::command_callback(const std::string& command,
           break;
         }
         default: {
-          std::cout << "Unknown command: " << command << std::endl;
+          PLOG(ERROR) << "Unknown command: " << command;
           break;
         }
       }

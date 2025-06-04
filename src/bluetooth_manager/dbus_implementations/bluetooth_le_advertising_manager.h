@@ -8,12 +8,13 @@
 
 #include "sdbus-c++/IProxy.h"
 
-namespace screen_controller::dbus {
+namespace screen_controller::bluetooth::dbus {
 class BluetoothLeAdvertisingManager {
  public:
   explicit BluetoothLeAdvertisingManager(
       const std::shared_ptr<sdbus::IProxy>& adapter_proxy);
-  ~BluetoothLeAdvertisingManager() ;
+  ~BluetoothLeAdvertisingManager();
+
   BluetoothLeAdvertisingManager(const BluetoothLeAdvertisingManager&) = delete;
   BluetoothLeAdvertisingManager& operator=(
       const BluetoothLeAdvertisingManager&) = delete;
@@ -32,7 +33,8 @@ class BluetoothLeAdvertisingManager {
   std::optional<std::unordered_map<std::string, sdbus::Variant>>
   GetSupportedCapabilities() const;
   std::optional<std::vector<std::string>> GetSupportedFeatures() const;
-private:
+
+ private:
   std::shared_ptr<sdbus::IProxy> adapter_proxy_;
   sdbus::InterfaceName adv_manager_interface_name;
 };

@@ -28,7 +28,7 @@ class App {
 
   WindowManager window_manager_;
   GraphicsRenderer renderer_;
-  BluetoothManager bluetooth_manager_;
+  bluetooth::BluetoothManager bluetooth_manager_;
   StorageManager storage_manager_;
   FileProcessor file_processor_;
 
@@ -36,7 +36,7 @@ class App {
   std::mutex queue_mutex_;
   std::condition_variable queue_condition_;
 
-  bool load_startup_image();
+  bool load_image(std::string_view name, bool is_asset);
   void process_frame();
   void render_loop();
   void handle_commands();

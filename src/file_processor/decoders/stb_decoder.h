@@ -21,13 +21,14 @@ class StbDecoder final : public Decoder {
   StbDecoder(StbDecoder&&) = delete;
   StbDecoder& operator=(const StbDecoder&) = delete;
   StbDecoder& operator=(StbDecoder&&) = delete;
+  virtual bool has_data() override;
 
   virtual bool init() override;
-  virtual std::optional<std::shared_ptr<models::FrameData>> get_next_frame()
+  virtual std::optional<std::unique_ptr<models::FrameData>> get_next_frame()
       override;
 
  private:
-  std::vector<uint8_t> decoded_frames_;
+  models::FrameData frame_data_;
   bool is_loaded_;
   std::string_view path_;
 };

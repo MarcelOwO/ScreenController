@@ -5,7 +5,7 @@
 #include "bluetooth_le_advertising_manager.h"
 
 #include <iostream>
-namespace screen_controller::dbus {
+namespace screen_controller::bluetooth::dbus {
 BluetoothLeAdvertisingManager::BluetoothLeAdvertisingManager(
     const std::shared_ptr<sdbus::IProxy>& adapter_proxy)
     : adapter_proxy_(adapter_proxy),
@@ -79,7 +79,7 @@ BluetoothLeAdvertisingManager::GetSupportedIncludes() const {
     return std::nullopt;
   }
 }
-std::optional<std::vector<std::string>> screen_controller::dbus::
+std::optional<std::vector<std::string>> screen_controller::bluetooth::dbus::
     BluetoothLeAdvertisingManager::GetSupportedSecondaryChannels() const {
   try {
     const auto value = adapter_proxy_->getProperty("SupportedSecondaryChannels")

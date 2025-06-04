@@ -43,4 +43,5 @@ target_link_libraries(File
         ${AVUTIL_LIBRARIES}
         ${SWSCALE_LIBRARIES}
         ${WEBP_LIBRARIES}
+        ng-log
 )

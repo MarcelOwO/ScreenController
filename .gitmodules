@@ -11,3 +11,15 @@
 [submodule "external/FFmpeg"]
 	path = external/FFmpeg
 	url = https://github.com/FFmpeg/FFmpeg.git
+[submodule "external/protobuf"]
+	path = external/protobuf
+	url = https://github.com/protocolbuffers/protobuf.git
+[submodule "external/imgui"]
+	path = external/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "external/ng-log"]
+	path = external/ng-log
+	url = https://github.com/ng-log/ng-log.git
+[submodule "external/zstd"]
+	path = external/zstd
+	url = https://github.com/facebook/zstd.git

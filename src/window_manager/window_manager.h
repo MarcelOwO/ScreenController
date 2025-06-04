@@ -19,13 +19,13 @@ class WindowManager {
   bool init();
   void update(const std::function<void()>& render) const;
 
-  [[nodiscard]] bool should_close() const;
-  static void poll_events();
+  bool should_close() const;
+  void poll_events() const;
 
   void swap_buffers() const;
 
-  static int get_height();
-  static int get_width();
+  int get_height() const;
+  int get_width() const;
 
   static GLFWglproc (*address_pointer())(const char* procname);
 
