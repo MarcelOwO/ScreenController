@@ -69,21 +69,21 @@ void Unpacker::decompress(const std::span<std::byte> span,
   }
 
   const int start_file = index;
+
   const int size = static_cast<int>(span.size()) - start_file;
   const std::span<const std::byte> src(span.data() + start_file, size);
 
   const size_t decompressed_size =
       ZSTD_getFrameContentSize(src.data(), src.size());
-  if (decompressed_size == ZSTD_CONTENTSIZE_ERROR) {
-    LOG(ERROR) << "Not a valid compressed frame";
-    return;
-  }
-  if (decompressed_size == ZSTD_CONTENTSIZE_UNKNOWN) {
-    LOG(ERROR) << "Compressed size is unknown";
-    return;
-  }
+
+  CHECK(decompressed_size != ZSTD_CONTENTSIZE_ERROR)
+      << "Not a valid compressed frame";
+
+  CHECK(decompressed_size != ZSTD_CONTENTSIZE_UNKNOWN)
+      << "Compressed size is unknown";
 
   packet.data = std::vector<std::byte>(decompressed_size);
+
   const size_t result = ZSTD_decompress(packet.data.data(), decompressed_size,
                                         src.data(), src.size());
 
@@ -91,7 +91,7 @@ void Unpacker::decompress(const std::span<std::byte> span,
     LOG(ERROR) << "Decompression failed: " << ZSTD_getErrorName(result);
     return;
   }
+
   LOG(INFO) << "Decompressed successfully";
 }
-
 }  // namespace screen_controller::bluetooth

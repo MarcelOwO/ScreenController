@@ -13,7 +13,7 @@
 namespace screen_controller::bluetooth::dbus {
 class BluetoothAgentManager {
  public:
-  BluetoothAgentManager(std::shared_ptr<sdbus::IProxy> adapter_proxy);
+  BluetoothAgentManager(const std::shared_ptr<sdbus::IProxy>& adapter_proxy);
   ~BluetoothAgentManager() = default;
 
   BluetoothAgentManager(const BluetoothAgentManager&) = delete;
@@ -21,9 +21,9 @@ class BluetoothAgentManager {
   BluetoothAgentManager(BluetoothAgentManager&&) = delete;
   BluetoothAgentManager& operator=(BluetoothAgentManager&&) = delete;
 
-  bool RegisterAgent(sdbus::ObjectPath agent, std::string capability) const;
-  bool UnregisterAgent(sdbus::ObjectPath agent) const;
-  bool RequestDefaultAgent(sdbus::ObjectPath agent);
+  bool RegisterAgent(const sdbus::ObjectPath& agent, std::string_view capability) const;
+  bool UnregisterAgent(const sdbus::ObjectPath& agent) const;
+  bool RequestDefaultAgent(const sdbus::ObjectPath& agent);
 
  private:
   std::shared_ptr<sdbus::IProxy> bluez_proxy_;

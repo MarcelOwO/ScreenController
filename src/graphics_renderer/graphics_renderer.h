@@ -33,6 +33,11 @@ class GraphicsRenderer {
   void init(GLADloadproc dloadproc, int window_width, int window_height);
 
   void set_texture(const processing::models::FrameData *data);
+  void set_fallback_texture();
+  void update_ratio(int width, int height);
+
+  void rotate();
+
   void render() const;
 
  private:

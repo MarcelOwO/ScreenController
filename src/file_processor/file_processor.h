@@ -9,9 +9,10 @@
 
 #include "../common/file_type.h"
 #include "decoders/decoder.h"
+
 namespace screen_controller {
 class FileProcessor {
- public:
+public:
   FileProcessor();
   ~FileProcessor();
 
@@ -20,14 +21,15 @@ class FileProcessor {
   FileProcessor(FileProcessor&&) = delete;
   FileProcessor& operator=(FileProcessor&&) = delete;
 
-  bool init();
+  bool init() const;
   bool process_file(std::string_view path);
 
-  std::optional<std::unique_ptr<processing::models::FrameData>> get_processed_data() const;
+  std::optional<std::unique_ptr<processing::models::FrameData>>
+  get_processed_data() const;
 
- private:
+private:
   std::unique_ptr<processing::Decoder> decoder_;
   static common::FileType get_type(std::string_view name);
 };
-}  // namespace screen_controller
+} // namespace screen_controller
 #endif  // FILE_PROCESSOR_H

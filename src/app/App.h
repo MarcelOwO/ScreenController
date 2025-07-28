@@ -13,6 +13,7 @@
 
 #include <memory>
 #include <queue>
+#include <thread>
 
 namespace screen_controller {
 class App {
@@ -20,11 +21,12 @@ class App {
   App();
   ~App();
   bool init();
+  bool process_command(const common::BluetoothPacket& packet);
   void run();
 
  private:
   bool running_;
-  std::thread command_thread_;
+  std::jthread command_thread_;
 
   WindowManager window_manager_;
   GraphicsRenderer renderer_;
@@ -32,16 +34,14 @@ class App {
   StorageManager storage_manager_;
   FileProcessor file_processor_;
 
-  std::queue<std::pair<std::string, std::vector<std::byte>>> command_queue_;
+  std::queue<common::BluetoothPacket> command_queue_;
   std::mutex queue_mutex_;
   std::condition_variable queue_condition_;
 
   bool load_image(std::string_view name, bool is_asset);
   void process_frame();
   void render_loop();
-  void handle_commands();
-  void command_callback(const std::string& command,
-                        const std::vector<std::byte>& data);
+  void handle_commands(const std::stop_token& stop_token);
 };
 }  // namespace screen_controller
 #endif  // APP_H

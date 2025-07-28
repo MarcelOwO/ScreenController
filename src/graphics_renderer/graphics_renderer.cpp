@@ -8,8 +8,11 @@
 
 #include <array>
 #include <bit>
-
+#include <glm/mat4x4.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
 #include "../file_processor/models/frame_data.h"
+#include "glm/gtc/type_ptr.hpp"
+#include "glm/gtx/rotate_vector.hpp"
 #include "shader/shader.h"
 
 namespace screen_controller {
@@ -89,5 +92,55 @@ void GraphicsRenderer::set_texture(const processing::models::FrameData* data) {
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1920, 1080, 0, GL_RGB,
                GL_UNSIGNED_BYTE, data->data.data());
   glGenerateMipmap(GL_TEXTURE_2D);
+}
+void GraphicsRenderer::set_fallback_texture() {
+  LOG(INFO) << "Setting fallback texture";
+  constexpr int width = 1920;
+  constexpr int height = 1080;
+  std::vector<unsigned char> black_image(width * height * 3,
+                                         0);  // RGB black image
+
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
+               GL_UNSIGNED_BYTE, black_image.data());
+  glGenerateMipmap(GL_TEXTURE_2D);
+}
+void GraphicsRenderer::update_ratio(int width, int height) {
+  const float image_aspect = static_cast<float>(width) / height;
+  const float screen_aspect = static_cast<float>(1920) / 1080;
+
+  float plane_width = 1.0F;
+  float plane_height = 1.0F;
+
+  // Adjust plane dimensions to fit the screen
+  if (image_aspect > screen_aspect) {
+    plane_width = 1.0F;
+    plane_height = screen_aspect / image_aspect;
+  } else {
+    plane_height = 1.0F;
+    plane_width = image_aspect / screen_aspect;
+  }
+
+  const std::array<float, 16> vertices = {
+      -plane_width, plane_height,  0.0F, 0.0F,  // Top-left
+      -plane_width, -plane_height, 0.0F, 1.0F,  // Bottom-left
+      plane_width,  plane_height,  1.0F, 0.0F,  // Top-right
+      plane_width,  -plane_height, 1.0F, 1.0F   // Bottom-right
+  };
+
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices.data(),
+               GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void GraphicsRenderer::rotate() {
+  static float angle = 90.0F;
+
+  angle += glm::radians(90.0F);  // Increment rotation by 90 degrees
+
+  const glm::mat4 rotation =
+      glm::rotate(glm::mat4(1.0F), angle, glm::vec3(0.0F, 0.0F, 1.0F));
+
+  shader_.set_mat4("uRotation", rotation);
 }
 }  // namespace screen_controller

@@ -24,8 +24,8 @@ class WindowManager {
 
   void swap_buffers() const;
 
-  int get_height() const;
-  int get_width() const;
+  static int get_height();
+  static int get_width();
 
   static GLFWglproc (*address_pointer())(const char* procname);
 

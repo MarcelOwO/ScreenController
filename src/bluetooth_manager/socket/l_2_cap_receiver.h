@@ -24,7 +24,8 @@ class L2CapReceiver {
   L2CapReceiver(L2CapReceiver&&) = delete;
   L2CapReceiver& operator=(L2CapReceiver&&) = delete;
 
-  void OnReceived(std::function<void(const std::span<std::byte>)> callback);
+  void OnReceived(
+      const std::function<void(const std::span<std::byte>)>& callback);
 
   bool init();
   void run();
@@ -35,7 +36,10 @@ class L2CapReceiver {
   int l2_cap_socket_;
   int client_socket_;
 
+  std::array<uint8_t, static_cast<size_t>(65335)> buffer_;
+
   std::function<void(const std::span<std::byte>)> on_received_;
+
   std::vector<std::byte> received_bytes_;
 
   bool SetSocketOption(int level, int option, int value) const;
@@ -44,7 +48,7 @@ class L2CapReceiver {
   void SetSendBufferSize(int value);
   void SetFlushable(int value);
   void SetDefer(int value);
-  void SetNonBlocking();
+  void SetNonBlocking() const;
 };
 
 }  // namespace screen_controller::bluetooth

@@ -16,66 +16,68 @@ namespace screen_controller::bluetooth::dbus {
 
 class BluetoothAdapter {
  public:
-  BluetoothAdapter(const std::shared_ptr<sdbus::IProxy>& adapter_proxy);
+  explicit BluetoothAdapter(
+      const std::shared_ptr<sdbus::IProxy> &adapter_proxy);
   ~BluetoothAdapter() = default;
 
-  BluetoothAdapter(const BluetoothAdapter&) = delete;
-  BluetoothAdapter& operator=(const BluetoothAdapter&) = delete;
-  BluetoothAdapter(BluetoothAdapter&&) = delete;
-  BluetoothAdapter& operator=(BluetoothAdapter&&) = delete;
+  BluetoothAdapter(const BluetoothAdapter &) = delete;
+  BluetoothAdapter &operator=(const BluetoothAdapter &) = delete;
+  BluetoothAdapter(BluetoothAdapter &&) = delete;
+  BluetoothAdapter &operator=(BluetoothAdapter &&) = delete;
 
   bool init();
 
-  bool StartDiscovery() const;
-  bool StopDiscovery() const;
+  bool start_discovery() const;
+  bool stop_discovery() const;
 
-  bool RemoveDevice(const sdbus::ObjectPath& device) const;
-  bool SetDiscovery(
+  bool remove_device(const sdbus::ObjectPath &device) const;
+
+  bool set_discovery(
       std::unordered_map<std::string, sdbus::Variant> filter) const;
-  std::optional<std::vector<std::string>> GetDiscoveryFilters() const;
-  std::optional<sdbus::ObjectPath> ConnectDevice(
-      std::unordered_map<std::string, sdbus::Variant> properties);
+  std::optional<std::vector<std::string>> get_discovery_filters() const;
+  std::optional<sdbus::ObjectPath> connect_device(
+      std::unordered_map<std::string, sdbus::Variant> properties) const;
 
-  std::optional<std::string_view> GetAddress();
-  std::string_view GettAddressType();
-  std::string_view GetName();
-  std::string_view GetAlias();
+  std::optional<std::string_view> get_address() const;
+  std::string_view gett_address_type();
+  std::string_view get_name();
+  std::string_view get_alias();
 
-  bool SetAlias(std::string_view alias);
-  uint32_t GetClass();
+  bool set_alias(std::string_view alias) const;
+  uint32_t get_class();
 
-  bool GetConnectable();
-  void SetConnectable(bool connectable);
+  bool get_connectable();
+  void set_connectable(bool connectable);
 
-  bool GetPowered();
-  bool SetPowered(bool powered) const;
-  std::string_view GetPowerState();
+  bool get_powered();
+  bool set_powered(bool powered) const;
+  std::string_view get_power_state();
 
-  bool GetDiscoverable();
-  bool SetDiscoverable(bool discoverable) const;
+  bool get_discoverable();
+  bool set_discoverable(bool discoverable) const;
 
-  bool GetPairable();
-  bool SetPairable(bool pairable) const;
+  bool get_pairable();
+  bool set_pairable(bool pairable) const;
 
-  uint32_t GetPairableTimeout();
-  void SetPairableTimeout(uint32_t timeout);
+  uint32_t get_pairable_timeout();
+  void set_pairable_timeout(uint32_t timeout);
 
-  uint32_t GetDiscoverableTimeout();
-  void SetDiscoverableTimeout(uint32_t timeout);
+  uint32_t get_discoverable_timeout();
+  void set_discoverable_timeout(uint32_t timeout);
 
-  bool GetDiscovering();
-  std::vector<std::string> GetUuids();
-  std::string_view GetModalias();
-  std::vector<std::string> GetRoles();
-  std::vector<std::string> GetExperimentalFeatures();
-  uint16_t GetManufacturer();
-  uint8_t GetVersion();
+  bool get_discovering();
+  std::vector<std::string> get_uuids();
+  std::string_view get_modalias();
+  std::vector<std::string> get_roles();
+  std::vector<std::string> get_experimental_features();
+  uint16_t get_manufacturer();
+  uint8_t get_version();
 
  private:
   std::shared_ptr<sdbus::IProxy> adapter_proxy_;
   sdbus::InterfaceName adapter_interface_name_;
 };
 
-}  // namespace screen_controller::dbus
+}  // namespace screen_controller::bluetooth::dbus
 
 #endif  // BLUETOOTH_ADAPTER_H

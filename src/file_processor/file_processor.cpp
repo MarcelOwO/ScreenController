@@ -16,7 +16,7 @@
 namespace screen_controller {
 
 FileProcessor::FileProcessor() {
-  LOG(INFO)<< "Initializing FileProcessor class";
+  LOG(INFO) << "Creating Fileprocessor";
 };
 
 FileProcessor::~FileProcessor() {
@@ -25,7 +25,7 @@ FileProcessor::~FileProcessor() {
   }
 };
 
-bool FileProcessor::init() { return true; }
+bool FileProcessor::init() const { return true; }
 
 bool FileProcessor::process_file(const std::string_view path) {
   const auto type = get_type(path);
@@ -37,7 +37,10 @@ bool FileProcessor::process_file(const std::string_view path) {
 
   PCHECK(decoder_ != nullptr) << "Failed to create decoder: " << path;
 
-  PCHECK(decoder_->init()) << "Failed to initialize decoder: " << path;
+  if (!decoder_->init()) {
+    LOG(WARNING) << "Failed to initialize decoder: " << path;
+    return false;
+  }
 
   return true;
 }

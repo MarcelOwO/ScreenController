@@ -9,7 +9,8 @@
 #include <iostream>
 
 namespace screen_controller {
-WindowManager::WindowManager() = default;
+WindowManager::WindowManager() : window_() {
+};
 
 bool WindowManager::init() {
   LOG(INFO) << "Creating window manager";
@@ -18,12 +19,12 @@ bool WindowManager::init() {
     PLOG(ERROR) << "GLFW error: " << description;
   });
 
-  PCHECK(glfwInit()) << "Failed to initialize GLFW";
+  CHECK(glfwInit() != 0) << "Failed to initialize GLFW";
 
   window_ = glfwCreateWindow(1920, 1080, "My Title", glfwGetPrimaryMonitor(),
                              nullptr);
 
-  PCHECK(window_ != nullptr) << "Failed to create GLFW window";
+  CHECK(window_ != nullptr) << "Failed to create GLFW window";
 
   glfwMakeContextCurrent(window_);
 
@@ -31,29 +32,29 @@ bool WindowManager::init() {
 }
 
 bool WindowManager::should_close() const {
-  return glfwWindowShouldClose(window_);
+  return glfwWindowShouldClose(window_) != 0;
 }
 
 void WindowManager::poll_events() const { return glfwPollEvents(); }
 
 void WindowManager::swap_buffers() const { glfwSwapBuffers(window_); }
 
-int WindowManager::get_height() const {
+int WindowManager::get_height() {
   const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
   return mode->height;
 }
 
-int WindowManager::get_width() const {
+int WindowManager::get_width() {
   const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
   return mode->width;
 }
 
-GLFWglproc (*WindowManager::address_pointer())(const char* procname) {
+GLFWglproc (* WindowManager::address_pointer())(const char* procname) {
   return &glfwGetProcAddress;
 }
 
 void WindowManager::update(const std::function<void()>& render) const {
-  if (!window_) {
+  if (window_ == nullptr) {
     return;
   }
 
@@ -65,10 +66,9 @@ void WindowManager::update(const std::function<void()>& render) const {
 }
 
 WindowManager::~WindowManager() {
-  if (window_) {
+  if (window_ != nullptr) {
     glfwDestroyWindow(window_);
   }
   glfwTerminate();
 }
-
-}  // namespace screen_controller
+} // namespace screen_controller

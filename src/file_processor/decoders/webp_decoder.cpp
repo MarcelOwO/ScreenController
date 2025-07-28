@@ -26,34 +26,39 @@ WebpDecoder::~WebpDecoder() = default;
 bool WebpDecoder::init() {
   std::ifstream file(path_.data(), std::ios::binary | std::ios::ate);
 
-  PCHECK(file.is_open()) << "Failed to open file: " << path_;
+  CHECK(file.is_open()) << "Failed to open file: " << path_;
 
   const std::streamsize size = file.tellg();
 
-  PCHECK(size > 0) << "File is empty or could not be read: " << path_;
+  if (size <= 0) {
+    LOG(ERROR) << "File is empty or could not be read: " << path_;
+    file.close();
+    return false;
+  }
+
+  CHECK(size > 0) << "File is empty or could not be read: " << path_;
 
   (void)file.seekg(0, std::ios::beg);
 
   std::vector<uint8_t> input_buffer(size);
 
-  PCHECK(file.read(reinterpret_cast<char *>(input_buffer.data()), size))
+  CHECK(file.read(reinterpret_cast<char *>(input_buffer.data()), size))
       << "Failed to read file: " << path_;
 
   file.close();
 
   WebPDecoderConfig config;
 
-  PCHECK(WebPInitDecoderConfig(&config) >= 0) << "WebPInitDecoderConfig failed";
+  CHECK(WebPInitDecoderConfig(&config) >= 0) << "WebPInitDecoderConfig failed";
 
-  PCHECK(WebPGetFeatures(input_buffer.data(), input_buffer.size(),
-                         &config.input) == VP8_STATUS_OK)
+  CHECK(WebPGetFeatures(input_buffer.data(), input_buffer.size(),
+                        &config.input) == VP8_STATUS_OK)
       << "WebPGetFeatures failed";
 
-  config.options.use_scaling = 1;
-  config.options.scaled_width = 1920;
-  config.options.scaled_height = 1080;
+  const int width = config.input.width;
+  const int height = config.input.height;
 
-  constexpr size_t output_size = 1920 * 1080 * 3;
+  const size_t output_size = width * height * 3;
 
   config.output.colorspace = MODE_RGB;
 
@@ -61,12 +66,13 @@ bool WebpDecoder::init() {
          VP8_STATUS_OK)
       << "WebPDecode failed with code: ";
 
-  const auto a = config.output.private_memory;
+  const auto private_memory = config.output.private_memory;
 
   frame_data_ = {
-      .data = std::vector<uint8_t>(a, output_size + a),
-      .width = config.output.width,
-      .height = config.output.height,
+      .data =
+          std::vector<uint8_t>(private_memory, output_size + private_memory),
+      .width = width,
+      .height = height,
       .channels = 3,
   };
   is_loaded_ = true;

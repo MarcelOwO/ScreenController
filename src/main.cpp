@@ -8,13 +8,13 @@ int main(int argc, char* argv[]) {
   (void)setenv("DISPLAY", ":0", 1);
 
   nglog::InitializeLogging(argv[0]);
-  FLAGS_logtostderr = 1;
+  FLAGS_logtostderr = true;
 
   LOG(INFO) << "Starting Screen Controller App";
 
   screen_controller::App app;
 
-  PCHECK(app.init()) << "Failed to initialize app";
+  CHECK(app.init()) << "Failed to initialize app";
 
   app.run();
 

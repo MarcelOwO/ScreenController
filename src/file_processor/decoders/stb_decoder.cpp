@@ -19,7 +19,7 @@ namespace screen_controller::processing {
 
 StbDecoder::StbDecoder(const std::string_view path)
     : is_loaded_(false), path_(path) {
-  LOG(INFO) << "Initialized STB-Decoder";
+  LOG(INFO) << "Creating STB-Decoder";
 }
 
 bool StbDecoder::has_data() {

@@ -13,7 +13,7 @@ namespace screen_controller::bluetooth::dbus {
 class BluetoothAgent {
  public:
   BluetoothAgent(const std::shared_ptr<sdbus::IConnection>& connection,
-                 sdbus::ObjectPath device);
+                 const sdbus::ObjectPath& device);
   ~BluetoothAgent() = default;
   BluetoothAgent(const BluetoothAgent&) = delete;
   BluetoothAgent& operator=(const BluetoothAgent&) = delete;

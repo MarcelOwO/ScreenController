@@ -10,6 +10,10 @@
 
 #include <array>
 #include <filesystem>
+#define GLM_ENABLE_EXPERIMENTAL
+
+#include "glm/gtc/type_ptr.hpp"
+#include "glm/gtx/quaternion.hpp"
 
 namespace screen_controller {
 Shader::Shader() = default;
@@ -102,6 +106,10 @@ void Shader::set_bool(const std::string& name, const bool value) const {
 
 void Shader::set_int(const std::string& name, const int value) const {
   glUniform1i(glGetUniformLocation(id_, name.c_str()), value);
+}
+void Shader::set_mat4(const std::string& name, glm::mat4 value) const {
+  glUniformMatrix4fv(glGetUniformLocation(id_, name.c_str()), 1, GL_FALSE,
+                     glm::value_ptr(value));
 }
 
 GLint Shader::get_uniform_location(const std::string& name) const {
