@@ -15,7 +15,9 @@ namespace screen_controller::bluetooth::dbus {
 BluetoothAdapter::BluetoothAdapter(
     const std::shared_ptr<sdbus::IProxy> &adapter_proxy)
     : adapter_proxy_(adapter_proxy),
-      adapter_interface_name_(sdbus::InterfaceName("org.bluez.Adapter1")) {}
+      adapter_interface_name_(sdbus::InterfaceName("org.bluez.Adapter1")) {
+  LOG(INFO)<< "Creating BluetoothAdapter";
+}
 
 bool BluetoothAdapter::init() {
   PCHECK(set_alias("ScreenControllerApp")) << "Failed to set alias";

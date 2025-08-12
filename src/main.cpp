@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "App.h"
+#include "app.h"
 
 int main(int argc, char* argv[]) {
   (void)setenv("DISPLAY", ":0", 1);

@@ -15,6 +15,7 @@ BluetoothLEAdvertisement::BluetoothLEAdvertisement(
   : le_advertisement_interface_name_(
         sdbus::InterfaceName("org.bluez.LEAdvertisement1")),
     le_advertisement_(sdbus::createObject(*connection, path)) {
+  LOG(INFO)<<"Creating BluetoothLEAdvertisement";
 }
 
 void BluetoothLEAdvertisement::init() const {

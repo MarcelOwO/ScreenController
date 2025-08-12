@@ -5,15 +5,12 @@
 #ifndef BLUETOOTH_MANAGER_H
 #define BLUETOOTH_MANAGER_H
 
-#include <sdbus-c++/sdbus-c++.h>
 
 #include <functional>
-#include <string>
-#include <vector>
 
 #include "../common/bluetooth_packet.h"
-#include "../common/command.h"
-#include "socket/l_2_cap_receiver.h"
+#include "dbus/dbus_manager.h"
+#include "socket/l2cap_receiver.h"
 
 namespace screen_controller::bluetooth {
 
@@ -30,22 +27,13 @@ class BluetoothManager {
   bool init();
   void run();
 
-  void on_blutooth_packet_received(
-      std::function<void(common::BluetoothPacket)> callback);
+  void on_packet_received(
+      std::function<void(const common::BluetoothPacket& packet)> callback);
 
  private:
   L2CapReceiver l2_cap_receiver_;
-
-  std::shared_ptr<sdbus::IConnection> connection_;
-  std::shared_ptr<sdbus::IProxy> adapter_proxy_;
-  std::shared_ptr<sdbus::IProxy> bluez_proxy;
-  std::chrono::time_point<std::chrono::steady_clock> last_time_point_;
-
-  sdbus::ObjectPath advertisement_path_;
-
-  sdbus::ObjectPath agent_path_;
-
-  std::function<void(screen_controller::common::BluetoothPacket)> bluetooth_callback_;
+  std::unique_ptr<dbus::DbusManager> dbus_manager_;
+  std::function<void(const common::BluetoothPacket& packet)> bluetooth_callback_;
 };
 }  // namespace screen_controller::bluetooth
 

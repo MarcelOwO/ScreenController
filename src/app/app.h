@@ -9,9 +9,10 @@
 #include <../file_processor/file_processor.h>
 #include <../graphics_renderer/graphics_renderer.h>
 #include <../storage_manager/storage_manager.h>
+#include <../updater/updater.h>
 #include <../window_manager/window_manager.h>
 
-#include <memory>
+#include <condition_variable>
 #include <queue>
 #include <thread>
 
@@ -33,6 +34,7 @@ class App {
   bluetooth::BluetoothManager bluetooth_manager_;
   StorageManager storage_manager_;
   FileProcessor file_processor_;
+  Updater updater_;
 
   std::queue<common::BluetoothPacket> command_queue_;
   std::mutex queue_mutex_;

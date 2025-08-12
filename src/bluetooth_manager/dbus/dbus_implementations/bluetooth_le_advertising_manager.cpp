@@ -14,6 +14,7 @@ BluetoothLeAdvertisingManager::BluetoothLeAdvertisingManager(
   : adapter_proxy_(adapter_proxy),
     adv_manager_interface_name(
         sdbus::InterfaceName("org.bluez.LEAdvertisingManager1")) {
+  LOG(INFO)<<"Creating BluetoothLeAdvertisingManager";
 }
 
 BluetoothLeAdvertisingManager::~BluetoothLeAdvertisingManager() = default;

@@ -14,7 +14,7 @@ BluetoothDevice::BluetoothDevice(std::shared_ptr<sdbus::IConnection> connection,
   : device_proxy_(sdbus::createProxy(
         *connection, sdbus::ServiceName("org.bluez"), device)),
     device_interface_("org.bluez.Device1") {
-  LOG(INFO) << "BluetoothDevice created";
+  LOG(INFO) << "Creating BluetoothDevice";
 }
 
 bool BluetoothDevice::Connect() const {
