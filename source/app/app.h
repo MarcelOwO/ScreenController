@@ -25,6 +25,10 @@ class App {
   bool process_command(const common::BluetoothPacket& packet);
   void run();
 
+
+
+  AppSettings settings;
+
  private:
   bool running_;
   std::jthread command_thread_;
