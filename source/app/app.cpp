@@ -20,6 +20,8 @@ App::~App() {
 }
 
 bool App::init() {
+  (void)setenv("DISPLAY", ":0", 1);
+
   if (!updater_.CheckForUpdates()) {
     LOG(INFO) << "No updates available";
   };
