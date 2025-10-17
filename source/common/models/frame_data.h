@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace screen_controller::processing::models {
+namespace screen_controller::common {
 
 struct FrameData {
   std::vector<uint8_t> data;

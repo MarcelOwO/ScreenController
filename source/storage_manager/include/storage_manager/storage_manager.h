@@ -5,34 +5,44 @@
 #ifndef STORAGE_MANAGER_H
 #define STORAGE_MANAGER_H
 
+#include <logging/logger.h>
+#include <models/error_enum.h>
+
+#include <expected>
 #include <filesystem>
-#include <map>
 #include <optional>
 #include <span>
-#include <string>
 #include <vector>
 
 namespace screen_controller {
 class StorageManager {
  public:
-  StorageManager();
+  StorageManager(const std::shared_ptr<Logger>& logger);
   ~StorageManager();
+  StorageManager(const StorageManager&) = delete;
+  StorageManager& operator=(const StorageManager&) = delete;
+  StorageManager(StorageManager&&) = delete;
+  StorageManager& operator=(StorageManager&&) = delete;
 
-  bool Init() const;
+  [[nodiscard]] std::expected<void, common::ErrorEnum> Init() const;
+
   std::optional<std::vector<std::byte>> LoadResource(
       std::string_view name) const;
+
   std::optional<std::vector<std::byte>> LoadFile(std::string_view name) const;
 
-  bool SaveFile(std::string_view name, std::span<std::byte> data);
-  bool SaveFile(std::string_view name, const std::vector<std::byte>& data);
-  bool DeleteFile(std::string_view path);
+  bool SaveFile(std::string_view name, std::span<std::byte> data) const;
+  bool SaveFile(std::string_view name,
+                const std::vector<std::byte>& data) const;
+  bool DeleteFile(std::string_view path) const;
 
   std::filesystem::path GetUserFilePath(std::string_view name) const;
   std::filesystem::path GetResourcePath(std::string_view name) const;
+
  private:
+  std::shared_ptr<Logger> logger_;
   std::filesystem::path asset_path_;
   std::filesystem::path user_files_path_;
-
 };
 }  // namespace screen_controller
 

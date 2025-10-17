@@ -2,33 +2,43 @@
 // Created by marce on 4/2/2025.
 //
 
-#include "window_manager.h"
-
-#include <ng-log/logging.h>
-
-#include <iostream>
+#include <window_manager/window_manager.h>
 
 namespace screen_controller {
-WindowManager::WindowManager() : window_() {
+
+WindowManager::WindowManager(std::shared_ptr<Logger> logger)
+    : window_(), logger_(logger) {
+  logger_->LogInfo("Creating WindowManager");
 };
 
-bool WindowManager::init() {
-  LOG(INFO) << "Creating window manager";
+std::expected<void, ErrorEnum> WindowManager::init() {
+  logger_->LogInfo("Initializing window manager");
 
-  (void)glfwSetErrorCallback([](int, const char* description) {
-    PLOG(ERROR) << "GLFW error: " << description;
+  glfwSetErrorCallback([](int, const char* description) {
+    //Fix later lol
+    //logger_->LogError(std::string("GLFW error: ") + description);
   });
 
-  CHECK(glfwInit() != 0) << "Failed to initialize GLFW";
+  if (glfwInit() != GLFW_TRUE) {
+    logger_->LogError("Failed to initialize GLFW");
+  }
 
   window_ = glfwCreateWindow(1920, 1080, "My Title", glfwGetPrimaryMonitor(),
                              nullptr);
 
-  CHECK(window_ != nullptr) << "Failed to create GLFW window";
+  if (window_ == nullptr) {
+    logger_->LogError("Failed to create GLFW window");
+    return std::unexpected(ErrorEnum::ERROR);
+  }
+
+  if (window_ == nullptr) {
+    logger_->LogError("Feailed to create GLFW window");
+    return std::unexpected(ErrorEnum::ERROR);
+  }
 
   glfwMakeContextCurrent(window_);
 
-  return true;
+  return {};
 }
 
 bool WindowManager::should_close() const {
@@ -49,7 +59,7 @@ int WindowManager::get_width() {
   return mode->width;
 }
 
-GLFWglproc (* WindowManager::address_pointer())(const char* procname) {
+GLFWglproc (*WindowManager::address_pointer())(const char* procname) {
   return &glfwGetProcAddress;
 }
 
@@ -57,11 +67,8 @@ void WindowManager::update(const std::function<void()>& render) const {
   if (window_ == nullptr) {
     return;
   }
-
   render();
-
   glfwSwapBuffers(window_);
-
   glfwSwapInterval(1);
 }
 
@@ -71,4 +78,4 @@ WindowManager::~WindowManager() {
   }
   glfwTerminate();
 }
-} // namespace screen_controller
+}  // namespace screen_controller

@@ -2,16 +2,26 @@
 // Created by marce on 4/2/2025.
 //
 
-#include "app.h"
+#include "include/app/app.h"
 
-#include <ng-log/logging.h>
-
+#include <logging/logger.h>
 
 namespace screen_controller {
-App::App() : running_(false) { LOG(INFO) << "Creating app"; }
+
+App::App()
+    : running_(false),
+      logger_(std::make_shared<Logger>(settings.app_name)),
+      window_manager_(logger_),
+      renderer_(logger_),
+      bluetooth_manager_(logger_),
+      storage_manager_(logger_),
+      file_processor_(logger_) {
+  (void)setenv("DISPLAY", ":0", 1);
+  logger_->LogInfo("Creating App class");
+}
 
 App::~App() {
-  LOG(INFO) << "Cleaning up App class";
+  logger_->LogInfo("Cleaning up App class");
   running_ = false;
   queue_condition_.notify_all();
   if (command_thread_.joinable()) {
@@ -20,15 +30,23 @@ App::~App() {
 }
 
 bool App::init() {
+  logger_->LogInfo("Creating app");
+  logger_->LogInfo("Setting DISPLAY environment variable to :0");
+
   (void)setenv("DISPLAY", ":0", 1);
 
-  if (!updater_.CheckForUpdates()) {
-    LOG(INFO) << "No updates available";
-  };
-
-  CHECK(storage_manager_.Init()) << "Failed to initialize storage manager";
-  CHECK(bluetooth_manager_.init()) << "Failed to initialize bluetooth manager";
-  CHECK(file_processor_.init()) << "Failed to initialize file processor";
+  if (const auto res = storage_manager_.Init(); !res.has_value()) {
+    logger_->LogError("Failed to initialize storage manager");
+    return false;
+  }
+  if (const auto res = bluetooth_manager_.init(); !res.has_value()) {
+    logger_->LogError("Failed to init bluetooth mananger");
+    return false;
+  }
+  if (const auto res = file_processor_.init(); !res.has_value()) {
+    logger_->LogError("Failed to init file processor");
+    return false;
+  }
 
   bluetooth_manager_.on_packet_received(
       [this](const common::BluetoothPacket& packet) {

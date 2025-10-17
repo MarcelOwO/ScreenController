@@ -4,7 +4,7 @@
 
 #include "bluetooth_agent_manager.h"
 
-#include <ng-log/logging.h>
+#include <logging/logger.h>
 
 #include <iostream>
 #include <utility>

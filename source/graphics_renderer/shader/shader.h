@@ -7,23 +7,24 @@
 
 #include <glad/glad.h>
 
+#include <expected>
 #include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <sstream>
 #include <string>
 
 #include "glm/fwd.hpp"
+#include "logging/logger.h"
+#include "models/error_enum.h"
 
 namespace screen_controller {
 class Shader {
  public:
   unsigned int id_;
 
-  Shader();
+  explicit Shader(const std::shared_ptr<Logger>& logger);
 
-  void init(const std::filesystem::path& vertex_path,
-            const std::filesystem::path& fragment_path);
+  [[nodiscard]] std::expected<void, common::ErrorEnum> init(
+      const std::filesystem::path& vertex_path,
+      const std::filesystem::path& fragment_path);
 
   void use() const;
   void set_float(const std::string& name, float value) const;
@@ -34,8 +35,9 @@ class Shader {
   [[nodiscard]] GLint get_uniform_location(const std::string& name) const;
 
  private:
-  static void check_compile_errors(unsigned int shader,
-                                   const std::string& type);
+  std::shared_ptr<Logger> logger_;
+
+  void check_compile_errors(unsigned int shader, const std::string& type);
 };
 }  // namespace screen_controller
 #endif  // SHADER_H

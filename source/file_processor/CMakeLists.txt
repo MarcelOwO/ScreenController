@@ -7,27 +7,27 @@ pkg_check_modules(SWSCALE REQUIRED libswscale)
 
 pkg_check_modules(WEBP REQUIRED libwebp
 )
-add_library(File STATIC file_processor.cpp file_processor.h
+add_library(File STATIC
+        file_processor.cpp
         decoders/video_decoder.cpp
-        decoders/video_decoder.h
         decoders/stb_decoder.cpp
-        decoders/stb_decoder.h
         decoders/webp_decoder.cpp
-        decoders/webp_decoder.h
-        decoders/decoder.h
-        models/frame_data.h
         decoders/decoder_factory.cpp
-        decoders/decoder_factory.h)
+)
 
-
-target_include_directories(File PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}
+target_include_directories(File
+        PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/.
         ${AVFORMAT_INCLUDE_DIRS}
         ${AVCODEC_INCLUDE_DIRS}
         ${AVUTIL_INCLUDE_DIRS}
         ${SWSCALE_INCLUDE_DIRS}
         ${WEBP_INCLUDE_DIRS}
 )
+
 
 target_link_directories(File PUBLIC
         ${AVFORMAT_LIBRARY_DIRS}
@@ -38,10 +38,13 @@ target_link_directories(File PUBLIC
 )
 
 target_link_libraries(File
+        PUBLIC
+        Logger common
+        PRIVATE
         ${AVFORMAT_LIBRARIES}
         ${AVCODEC_LIBRARIES}
         ${AVUTIL_LIBRARIES}
         ${SWSCALE_LIBRARIES}
         ${WEBP_LIBRARIES}
-        ng-log
+
 )

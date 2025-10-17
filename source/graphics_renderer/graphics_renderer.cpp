@@ -2,37 +2,41 @@
 // Created by marce on 4/2/2025.
 //
 
-#include "graphics_renderer.h"
+#include "include/graphics_renderer.h"
 
-#include <ng-log/logging.h>
 
 #include <array>
 #include <bit>
 #include <glm/mat4x4.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
-#include "../file_processor/models/frame_data.h"
+#include <expected>
+
+#include "../common/models/frame_data.h"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtx/rotate_vector.hpp"
+#include "models/error_enum.h"
 #include "shader/shader.h"
 
 namespace screen_controller {
-namespace processing::models {
-struct FrameData;
-}
-GraphicsRenderer::GraphicsRenderer() : texture_(), vao_(), vbo_() {
-  LOG(INFO) << "Creating GraphicsRenderer";
+
+GraphicsRenderer::GraphicsRenderer(const std::shared_ptr<Logger>& logger) : logger_(logger), texture_(), vao_(), vbo_() {
+  logger_->LogInfo("Creating GraphicsRenderer");
 }
 
 GraphicsRenderer::~GraphicsRenderer() {
-  LOG(INFO) << "Cleaning up GraphicsRenderer";
+  logger_->LogInfo("Cleaning up GraphicsRenderer");
   glDeleteTextures(1, &texture_);
   glDeleteBuffers(1, &vbo_);
   glDeleteVertexArrays(1, &vao_);
 }
 
-void GraphicsRenderer::init(const GLADloadproc dloadproc,
-                            const int window_width, const int window_height) {
-  PCHECK(gladLoadGLES2Loader(dloadproc)) << "Failed to load GLAD";
+std::expected<void, common::ErrorEnum> GraphicsRenderer::init(
+    const GLADloadproc dloadproc, const int window_width,
+    const int window_height) {
+  if (gladLoadGLES2Loader(dloadproc)==0) {
+   logger_->LogError("Failed to load GLAD");
+    return std::unexpected(common::ErrorEnum::ERROR);
+  }
 
   shader_.init(vertex_shader_source_path_, fragment_shader_source_path_);
 
@@ -88,13 +92,13 @@ void GraphicsRenderer::render() const {
   glBindVertexArray(0);
 }
 
-void GraphicsRenderer::set_texture(const processing::models::FrameData* data) {
+void GraphicsRenderer::set_texture(const common::FrameData* data) {
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1920, 1080, 0, GL_RGB,
                GL_UNSIGNED_BYTE, data->data.data());
   glGenerateMipmap(GL_TEXTURE_2D);
 }
 void GraphicsRenderer::set_fallback_texture() {
-  LOG(INFO) << "Setting fallback texture";
+  logger_->LogInfo("Settig fallback texture");
   constexpr int width = 1920;
   constexpr int height = 1080;
   std::vector<unsigned char> black_image(width * height * 3,

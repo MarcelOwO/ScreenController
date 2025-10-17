@@ -2,9 +2,7 @@
 // Created by marce on 4/23/2025.
 //
 
-#include "storage_manager.h"
-
-#include <ng-log/logging.h>
+#include <storage_manager/storage_manager.h>
 
 #include <filesystem>
 #include <fstream>
@@ -12,25 +10,29 @@
 #include <optional>
 
 namespace screen_controller {
-StorageManager::StorageManager()
-    : asset_path_("assets"), user_files_path_("files") {
-  LOG(INFO) << "Creating StorageManager";
+StorageManager::StorageManager(const std::shared_ptr<Logger>& logger)
+    : logger_(logger), asset_path_("assets"), user_files_path_("files") {
+  logger_->LogInfo("Creating StorageManager");
 }
 
 StorageManager::~StorageManager() = default;
 
-bool StorageManager::Init() const {
+std::expected<void, ErrorEnum> StorageManager::Init() const {
   if (!std::filesystem::exists(user_files_path_)) {
-    PCHECK(std::filesystem::create_directory(user_files_path_))
-        << "Error creating directory " << user_files_path_;
+    if (!std::filesystem::create_directory(user_files_path_)) {
+      logger_->LogError("Error creating directory");
+      return std::unexpected(ErrorEnum::ERROR);
+    }
   }
 
   if (!std::filesystem::exists(asset_path_)) {
-    PCHECK(std::filesystem::create_directory(asset_path_))
-        << "Error creating directory " << asset_path_;
+    if (!std::filesystem::create_directory(asset_path_)) {
+      logger_->LogError("Error creating directory");
+      return std::unexpected(ErrorEnum::ERROR);
+    }
   }
 
-  return true;
+  return {};
 }
 
 std::optional<std::vector<std::byte>> StorageManager::LoadResource(
@@ -38,24 +40,24 @@ std::optional<std::vector<std::byte>> StorageManager::LoadResource(
   auto path = GetResourcePath(name);
 
   if (!std::filesystem::exists(path)) {
-    PLOG(ERROR) << "Resource path does not exist: " << path.string();
+    logger_->LogError("Resource path does not exist: " + path.string());
     return std::nullopt;
   }
   if (!std::filesystem::is_regular_file(path)) {
-    PLOG(ERROR) << "Resource path is not a regular file: " << path.string();
+    logger_->LogError("Resource path is not a regular file: " + path.string());
     return std::nullopt;
   }
 
   std::ifstream file(path, std::ios::binary | std::ios::ate);
 
   if (!file.is_open()) {
-    PLOG(ERROR) << "Failed to open file: " << path.string();
+    logger_->LogError("Failed to open file: " + path.string());
     return std::nullopt;
   }
 
   std::streamsize size = file.tellg();
   if (size < 0) {
-    PLOG(ERROR) << "Error reading file: " << name;
+    logger_->LogError("Error reading file:" + std::string(name));
     return std::nullopt;
   }
 
@@ -63,7 +65,7 @@ std::optional<std::vector<std::byte>> StorageManager::LoadResource(
 
   std::vector<std::byte> buffer(static_cast<size_t>(size));
   if (!file.read(reinterpret_cast<char*>(buffer.data()), size)) {
-    PLOG(ERROR) << "Error reading file: " << name;
+    logger_->LogError( "Error reading file: " + std::string(name));
     return std::nullopt;
   }
   return buffer;
@@ -74,23 +76,23 @@ std::optional<std::vector<std::byte>> StorageManager::LoadFile(
   const auto path = GetUserFilePath(name);
 
   if (!std::filesystem::exists(path)) {
-    PLOG(ERROR) << "File path does not exist: " << path.string();
+    logger_->LogError( "File path does not exist: " + path.string());
     return std::nullopt;
   }
   if (!std::filesystem::is_regular_file(path)) {
-    PLOG(ERROR) << "Resource path does not exist: " << path.string();
+    logger_->LogError( "Resource path does not exist: " + path.string());
     return std::nullopt;
   }
 
   std::ifstream file(path, std::ios::binary | std::ios::ate);
   if (!file.is_open()) {
-    PLOG(ERROR) << "Error opening file: " << name;
+    logger_->LogError( "Error opening file: " + std::string(name));
     return std::nullopt;
   }
 
   std::streamsize size = file.tellg();
   if (size < 0) {
-    PLOG(ERROR) << "Error reading file: " << name;
+    logger_->LogError( "Error reading file: " + std::string(name));
     return std::nullopt;
   }
 
@@ -98,60 +100,60 @@ std::optional<std::vector<std::byte>> StorageManager::LoadFile(
 
   std::vector<std::byte> buffer(static_cast<size_t>(size));
   if (!file.read(reinterpret_cast<char*>(buffer.data()), size)) {
-    PLOG(ERROR) << "Error reading file: " << name;
+    logger_->LogError( "Error reading file: " + std::string(name));
     return std::nullopt;
   }
   return buffer;
 }
 bool StorageManager::SaveFile(std::string_view name,
-                              std::span<std::byte> data) {
+                              std::span<std::byte> data) const {
   const auto path = GetUserFilePath(name);
   std::ofstream file(path, std::ios::binary | std::ios::ate);
   if (!file.is_open()) {
-    PLOG(ERROR) << "Error opening file: " << name;
+    logger_->LogError( "Error opening file: " + std::string(name));
     return false;
   }
 
   if (!file.write(reinterpret_cast<const char*>(data.data()), data.size())) {
-    PLOG(ERROR) << "Error writing file: " << name;
+    logger_->LogError( "Error writing file: " + std::string(name));
     file.close();
     if (!std::filesystem::remove(path)) {
-      PLOG(ERROR) << "Error removing file: " << name;
+      logger_->LogError( "Error removing file: " + std::string(name));
     }
     return false;
   }
-  PLOG(INFO) << "File saved successfully: " << name;
+  logger_->LogInfo("File saved successfully: " + std::string(name));
   return true;
 }
 
 bool StorageManager::SaveFile(std::string_view name,
-                              const std::vector<std::byte>& data) {
+                              const std::vector<std::byte>& data) const {
   const auto path = GetUserFilePath(name);
   std::ofstream file(path, std::ios::binary | std::ios::ate);
   if (!file.is_open()) {
-    PLOG(ERROR) << "Error opening file: " << name;
+    logger_->LogError( "Error opening file: " + std::string(name));
     return false;
   }
 
   if (!file.write(reinterpret_cast<const char*>(data.data()), data.size())) {
-    PLOG(ERROR) << "Error writing file: " << name;
+    logger_->LogError( "Error writing file: " + std::string(name));
     file.close();
     if (!std::filesystem::remove(path)) {
-      PLOG(ERROR) << "Error removing file: " << name;
+      logger_->LogError( "Error removing file: " + std::string(name));
     }
     return false;
   }
   return true;
 }
-bool StorageManager::DeleteFile(std::string_view name) {
+bool StorageManager::DeleteFile(std::string_view name) const {
   const auto path = GetUserFilePath(name);
   if (!std::filesystem::exists(path)) {
-    PLOG(ERROR) << "Could not find file for deletion" << path.string();
+    logger_->LogError( "Could not find file for deletion" + path.string());
     return true;
   }
 
   if (!std::filesystem::remove(path)) {
-    PLOG(ERROR) << "Error removing file: " << name;
+    logger_->LogError("Error removing file: " + std::string(name));
     return false;
   }
   return true;

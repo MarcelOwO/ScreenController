@@ -7,19 +7,28 @@
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#include <logging/logger.h>
+#include <models/error_enum.h>
 
+#include <expected>
 #include <functional>
+#include <memory>
 
 namespace screen_controller {
 class WindowManager {
  public:
-  WindowManager();
+  explicit WindowManager(std::shared_ptr<Logger> logger);
   ~WindowManager();
+  WindowManager(const WindowManager&) = delete;
+  WindowManager& operator=(const WindowManager&) = delete;
+  WindowManager(WindowManager&&) = delete;
+  WindowManager& operator=(WindowManager&&) = delete;
 
-  bool init();
+  [[nodiscard]] std::expected<void, common::ErrorEnum> init();
+
   void update(const std::function<void()>& render) const;
 
-  bool should_close() const;
+  [[nodiscard]] bool should_close() const;
   void poll_events() const;
 
   void swap_buffers() const;
@@ -31,6 +40,7 @@ class WindowManager {
 
  private:
   GLFWwindow* window_;
+  std::shared_ptr<Logger> logger_;
 };
 }  // namespace screen_controller
 

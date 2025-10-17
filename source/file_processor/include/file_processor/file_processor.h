@@ -4,16 +4,21 @@
 
 #ifndef FILE_PROCESSOR_H
 #define FILE_PROCESSOR_H
+#include <decoders/decoder.h>
+#include <file_type.h>
+#include <logging/logger.h>
 
+#include <expected>
+#include <memory>
 #include <optional>
 
-#include "../common/file_type.h"
-#include "decoders/decoder.h"
+#include "models/error_enum.h"
+#include "models/frame_data.h"
 
 namespace screen_controller {
 class FileProcessor {
 public:
-  FileProcessor();
+  explicit FileProcessor(const std::shared_ptr<Logger>& logger);
   ~FileProcessor();
 
   FileProcessor(const FileProcessor&) = delete;
@@ -21,13 +26,14 @@ public:
   FileProcessor(FileProcessor&&) = delete;
   FileProcessor& operator=(FileProcessor&&) = delete;
 
-  bool init() const;
+  [[nodiscard]] std::expected<void, common::ErrorEnum> init() const;
   bool process_file(std::string_view path);
 
-  std::optional<std::unique_ptr<processing::models::FrameData>>
+  [[nodiscard]] std::optional<std::unique_ptr<common::FrameData>>
   get_processed_data() const;
 
 private:
+  std::shared_ptr<Logger> logger_;
   std::unique_ptr<processing::Decoder> decoder_;
   static common::FileType get_type(std::string_view name);
 };
