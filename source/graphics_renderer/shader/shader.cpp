@@ -5,22 +5,29 @@
 #include "shader.h"
 
 #include <linux/limits.h>
-#include <ng-log/logging.h>
 #include <unistd.h>
 
 #include <array>
 #include <filesystem>
+#include <fstream>
 #define GLM_ENABLE_EXPERIMENTAL
+
+#include <expected>
 
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtx/quaternion.hpp"
+#include "models/error_enum.h"
 
 namespace screen_controller {
-Shader::Shader() = default;
+Shader::Shader(const std::shared_ptr<Logger>& logger) : logger_(logger) {
+  logger_->LogInfo("Creating shader");
+}
 
-void Shader::init(const std::filesystem::path& vertex_path,
-                  const std::filesystem::path& fragment_path) {
-  LOG(INFO) << "Creating shaders";
+std::expected<void, common::ErrorEnum> Shader::init(
+    const std::filesystem::path& vertex_path,
+    const std::filesystem::path& fragment_path) {
+  logger_->LogInfo("Initializing shaders");
+
   std::string vertex_code{};
   std::string fragment_code{};
 
@@ -30,8 +37,10 @@ void Shader::init(const std::filesystem::path& vertex_path,
   std::array<char, PATH_MAX> result{};
 
   ssize_t count = readlink("/proc/self/exe", result.data(), PATH_MAX);
-
-  PCHECK(count >= 0) << "Failed to read link: " << strerror(errno);
+  if (count < 0) {
+    logger_->LogError("Failed to read link " + std::string(strerror(errno)));
+    return std::unexpected(common::ErrorEnum::ERROR);
+  }
 
   auto executable_path =
       std::filesystem::path(std::string(result.data(), count > 0 ? count : 0));
@@ -41,16 +50,24 @@ void Shader::init(const std::filesystem::path& vertex_path,
   std::filesystem::path v_path(project_dir / vertex_path);
   std::filesystem::path f_path(project_dir / fragment_path);
 
-  PCHECK(std::filesystem::exists(v_path))
-      << "Vertex shader path does not exist: " << v_path;
-  PCHECK(std::filesystem::exists(f_path))
-      << "Fragment shader path does not exist: " << f_path;
+  if (!std::filesystem::exists(v_path)) {
+    logger_->LogError("Vertex shader path does not exist: " + f_path.string());
+    return std::unexpected(common::ErrorEnum::ERROR);
+  }
+
+  if (!std::filesystem::exists(f_path)) {
+    logger_->LogError("Fragment shader path does not exist: " +
+                      f_path.string());
+    return std::unexpected(common::ErrorEnum::ERROR);
+  }
 
   v_shader_file.open(v_path);
   f_shader_file.open(f_path);
-
-  PCHECK(v_shader_file.is_open() && f_shader_file.is_open())
-      << "Failed to open shader files: " << v_path << " " << f_path;
+  if (!v_shader_file.is_open() || !f_shader_file.is_open()) {
+    logger_->LogError("Failed to open shader files" + v_path.string() + " " +
+                      f_path.string());
+    return std::unexpected(common::ErrorEnum::ERROR);
+  }
 
   std::stringstream v_shader_stream{};
   std::stringstream f_shader_stream{};
@@ -64,9 +81,11 @@ void Shader::init(const std::filesystem::path& vertex_path,
   vertex_code = v_shader_stream.str();
   fragment_code = f_shader_stream.str();
 
-  GLenum err = glGetError();
-  PCHECK(err == GL_NO_ERROR)
-      << "OpenGL error before shader compilation: " << err;
+  if (GLenum err = glGetError(); err != GL_NO_ERROR) {
+    logger_->LogError("OpenGL error before shader compilation: " +
+                      std::to_string(err));
+    return std::unexpected(common::ErrorEnum::ERROR);
+  }
 
   const char* v_shader_code = vertex_code.c_str();
   const char* f_shader_code = fragment_code.c_str();
@@ -92,6 +111,8 @@ void Shader::init(const std::filesystem::path& vertex_path,
   check_compile_errors(id_, "PROGRAM");
   glDeleteShader(vertex);
   glDeleteShader(fragment);
+
+  return {};
 }
 
 void Shader::use() const { glUseProgram(id_); }
@@ -125,13 +146,14 @@ void Shader::check_compile_errors(const unsigned int shader,
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (success == 0) {
       glGetShaderInfoLog(shader, 1024, nullptr, info_log.data());
-      PLOG(ERROR) << "Shader compilation error: " << info_log.data();
+      logger_->LogError("Shader compilation error: " + std::string(info_log.data()));
+
     }
   } else {
     glGetProgramiv(shader, GL_LINK_STATUS, &success);
     if (success == 0) {
       glGetProgramInfoLog(shader, 1024, nullptr, info_log.data());
-      PLOG(ERROR) << "Program linking error: " << info_log.data();
+      logger_->LogError("Program linking error: " + std::string(info_log.data()));
     }
   }
 }

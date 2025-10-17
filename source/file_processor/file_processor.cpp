@@ -2,21 +2,21 @@
 // Created by marce on 4/23/2025.
 //
 
-#include <file_processor.h>
-#include <ng-log/logging.h>
+#include <include/file_processor/file_processor.h>
 
 #include <filesystem>
 #include <iostream>
 #include <unordered_map>
 
-#include "../common/file_type.h"
+#include <file_type.h>
+
 #include "decoders/decoder_factory.h"
 #include "decoders/stb_decoder.h"
 
 namespace screen_controller {
 
-FileProcessor::FileProcessor() {
-  LOG(INFO) << "Creating Fileprocessor";
+FileProcessor::FileProcessor(const std::shared_ptr<Logger> &logger) : logger_(logger) {
+  logger->LogInfo("Creating FileProcessor");
 };
 
 FileProcessor::~FileProcessor() {

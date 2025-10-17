@@ -1,9 +1,7 @@
 // Created by marce on 4/2/2025.
 //
 
-#include "bluetooth_manager.h"
-
-#include <ng-log/logging.h>
+#include "include/bluetooth_manager/bluetooth_manager.h"
 
 #include <fstream>
 #include <iostream>
@@ -12,8 +10,9 @@
 #include "unpacker/unpacker.h"
 
 namespace screen_controller::bluetooth {
-BluetoothManager::BluetoothManager() {
-  LOG(INFO) << "Creating BluetoothManager";
+BluetoothManager::BluetoothManager(std::shared_ptr<Logger> logger)
+    : logger_(logger) {
+  logger_->LogInfo("Creating BluetoothManager");
 }
 
 BluetoothManager::~BluetoothManager() = default;
@@ -23,11 +22,17 @@ void BluetoothManager::on_packet_received(
   bluetooth_callback_ = std::move(callback);
 }
 
-bool BluetoothManager::init() {
-  LOG(INFO) << "Initializing BluetoothManager";
-  //CHECK(dbus_manager_->init()) << "Failed to init DBusManager";
+std::expected<void, common::ErrorEnum> BluetoothManager::init() {
+  logger_->LogInfo("Initializing BluetoothManager");
+  if (!dbus_manager_->init()) {
+    logger_->LogError("Failed to init DBusManager");
+    return std::unexpected(common::ErrorEnum::ERROR);
+  }
+  if (!l2_cap_receiver_.init()) {
+    logger_->LogError("Failed to init L2CAP receiver");
+    return std::unexpected(common::ErrorEnum::ERROR);
+  }
 
-  CHECK(l2_cap_receiver_.init()) << "Failed to initialize L2CAP receiver";
 
   l2_cap_receiver_.OnReceived([this](const std::span<std::byte> data) {
     common::BluetoothPacket packet{};
@@ -37,11 +42,11 @@ bool BluetoothManager::init() {
     bluetooth_callback_(packet);
   });
 
-  return true;
+  return {};
 }
 
 void BluetoothManager::run() {
   l2_cap_receiver_.poll_socket();
-  //dbus_manager_->poll_adapters();
+  // dbus_manager_->poll_adapters();
 }
 }  // namespace screen_controller::bluetooth

@@ -1,22 +1,23 @@
-#include <ng-log/logging.h>
 
-#include <iostream>
+#include <app/app.h>
 
-#include "app.h"
+#include <exception>
 
 int main(int argc, char* argv[]) {
-  (void)setenv("DISPLAY", ":0", 1);
+  try {
+    screen_controller::App app;
+    app.settings = screen_controller::AppSettings{
+        .app_name = "ScreenController",
+    };
 
-  nglog::InitializeLogging(argv[0]);
-  FLAGS_logtostderr = true;
+    if (!app.init()) {
+      return EXIT_FAILURE;
+    }
 
-  LOG(INFO) << "Starting Screen Controller App";
+    app.run();
 
-  screen_controller::App app;
-
-  CHECK(app.init()) << "Failed to initialize app";
-
-  app.run();
-
+  } catch (const std::exception& e) {
+    return EXIT_FAILURE;
+  }
   return EXIT_SUCCESS;
 }
