@@ -4,23 +4,20 @@
 
 #include <window_manager/window_manager.h>
 
+#include <utility>
+
 namespace screen_controller {
 
-WindowManager::WindowManager(std::shared_ptr<Logger> logger)
+WindowManager::WindowManager(const std::shared_ptr<Logger>& logger)
     : window_(), logger_(logger) {
   logger_->LogInfo("Creating WindowManager");
-};
-
-std::expected<void, ErrorEnum> WindowManager::init() {
-  logger_->LogInfo("Initializing window manager");
 
   glfwSetErrorCallback([](int, const char* description) {
-    //Fix later lol
-    //logger_->LogError(std::string("GLFW error: ") + description);
   });
 
   if (glfwInit() != GLFW_TRUE) {
     logger_->LogError("Failed to initialize GLFW");
+    throw std::runtime_error("Failed to initialize GLFW");
   }
 
   window_ = glfwCreateWindow(1920, 1080, "My Title", glfwGetPrimaryMonitor(),
@@ -28,18 +25,11 @@ std::expected<void, ErrorEnum> WindowManager::init() {
 
   if (window_ == nullptr) {
     logger_->LogError("Failed to create GLFW window");
-    return std::unexpected(ErrorEnum::ERROR);
-  }
-
-  if (window_ == nullptr) {
-    logger_->LogError("Feailed to create GLFW window");
-    return std::unexpected(ErrorEnum::ERROR);
+    throw std::runtime_error("Failed to create GLFW window");
   }
 
   glfwMakeContextCurrent(window_);
-
-  return {};
-}
+};
 
 bool WindowManager::should_close() const {
   return glfwWindowShouldClose(window_) != 0;

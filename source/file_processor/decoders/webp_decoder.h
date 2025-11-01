@@ -8,13 +8,14 @@
 #include <string_view>
 
 #include "decoder.h"
-#include "models/frame_data.h"
+#include "logging/logger.h"
+#include <models/frame_data.h>
 
 namespace screen_controller::processing {
 
 class WebpDecoder final : public Decoder {
  public:
-  explicit WebpDecoder(std::string_view path);
+  explicit WebpDecoder(std::string_view path,const std::shared_ptr<Logger>& logger);
   virtual ~WebpDecoder() override ;
   WebpDecoder(const WebpDecoder&) = delete;
   WebpDecoder& operator=(const WebpDecoder&) = delete;
@@ -23,11 +24,12 @@ class WebpDecoder final : public Decoder {
 
   virtual bool init() override;
   virtual bool has_data() override;
-  virtual std::optional<std::unique_ptr<models::FrameData>> get_next_frame()
+  virtual std::optional<std::unique_ptr<common::FrameData>> get_next_frame()
       override;
 
  private:
-  models::FrameData frame_data_;
+  std::shared_ptr<Logger> logger_;
+  common::FrameData frame_data_;
   bool is_loaded_;
   std::string_view path_;
 };

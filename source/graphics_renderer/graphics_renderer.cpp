@@ -2,8 +2,7 @@
 // Created by marce on 4/2/2025.
 //
 
-#include "include/graphics_renderer.h"
-
+#include "include/graphics_renderer/graphics_renderer.h"
 
 #include <array>
 #include <bit>
@@ -19,7 +18,8 @@
 
 namespace screen_controller {
 
-GraphicsRenderer::GraphicsRenderer(const std::shared_ptr<Logger>& logger) : logger_(logger), texture_(), vao_(), vbo_() {
+GraphicsRenderer::GraphicsRenderer(const std::shared_ptr<Logger>& logger)
+    : logger_(logger), shader_(logger_), texture_(), vao_(), vbo_() {
   logger_->LogInfo("Creating GraphicsRenderer");
 }
 
@@ -33,12 +33,18 @@ GraphicsRenderer::~GraphicsRenderer() {
 std::expected<void, common::ErrorEnum> GraphicsRenderer::init(
     const GLADloadproc dloadproc, const int window_width,
     const int window_height) {
-  if (gladLoadGLES2Loader(dloadproc)==0) {
-   logger_->LogError("Failed to load GLAD");
+
+  if (gladLoadGLES2Loader(dloadproc) == 0) {
+    logger_->LogError("Failed to load GLAD");
     return std::unexpected(common::ErrorEnum::ERROR);
   }
 
-  shader_.init(vertex_shader_source_path_, fragment_shader_source_path_);
+  if (const auto res = shader_.init(vertex_shader_source_path_,
+                                    fragment_shader_source_path_);
+      !res) {
+    logger_->LogError("Failed to init shader");
+    return std::unexpected(common::ErrorEnum::ERROR);
+  }
 
   glViewport(0, 0, window_width, window_height);
 
@@ -75,6 +81,8 @@ std::expected<void, common::ErrorEnum> GraphicsRenderer::init(
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+  return{};
 }
 
 void GraphicsRenderer::render() const {
@@ -98,17 +106,17 @@ void GraphicsRenderer::set_texture(const common::FrameData* data) {
   glGenerateMipmap(GL_TEXTURE_2D);
 }
 void GraphicsRenderer::set_fallback_texture() {
-  logger_->LogInfo("Settig fallback texture");
+  logger_->LogInfo("Setting fallback texture");
   constexpr int width = 1920;
   constexpr int height = 1080;
-  std::vector<unsigned char> black_image(width * height * 3,
+  const std::vector<unsigned char> black_image(width * height * 3,
                                          0);  // RGB black image
 
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
                GL_UNSIGNED_BYTE, black_image.data());
   glGenerateMipmap(GL_TEXTURE_2D);
 }
-void GraphicsRenderer::update_ratio(int width, int height) {
+void GraphicsRenderer::update_ratio(const int width, const int height) const {
   const float image_aspect = static_cast<float>(width) / height;
   const float screen_aspect = static_cast<float>(1920) / 1080;
 
@@ -137,7 +145,7 @@ void GraphicsRenderer::update_ratio(int width, int height) {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void GraphicsRenderer::rotate() {
+void GraphicsRenderer::rotate() const {
   static float angle = 90.0F;
 
   angle += glm::radians(90.0F);  // Increment rotation by 90 degrees

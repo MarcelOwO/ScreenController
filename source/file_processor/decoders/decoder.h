@@ -7,7 +7,7 @@
 #include <memory>
 #include <optional>
 
-#include "models/frame_data.h"
+#include <models/frame_data.h>
 
 namespace screen_controller::processing {
 
@@ -15,7 +15,7 @@ class Decoder {
  public:
   virtual ~Decoder() = default;
   virtual bool init() = 0;
-  virtual std::optional<std::unique_ptr<models::FrameData>>
+  virtual std::optional<std::unique_ptr<common::FrameData>>
   get_next_frame() = 0;
   virtual bool has_data() = 0;
 };

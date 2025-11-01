@@ -18,13 +18,13 @@
 #include <string>
 
 #include "models/error_enum.h"
-#include "shader/shader.h"
+#include "../../shader/shader.h"
 
 namespace screen_controller {
 
 class GraphicsRenderer {
  public:
-  GraphicsRenderer(const std::shared_ptr<Logger> &logger);
+  explicit GraphicsRenderer(const std::shared_ptr<Logger> &logger);
   ~GraphicsRenderer();
 
   struct Color {
@@ -39,9 +39,9 @@ class GraphicsRenderer {
 
   void set_texture(const common::FrameData *data);
   void set_fallback_texture();
-  void update_ratio(int width, int height);
+  void update_ratio(int width, int height) const;
 
-  void rotate();
+  void rotate() const;
 
   void render() const;
 

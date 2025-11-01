@@ -24,7 +24,7 @@ class StorageManager {
   StorageManager(StorageManager&&) = delete;
   StorageManager& operator=(StorageManager&&) = delete;
 
-  [[nodiscard]] std::expected<void, common::ErrorEnum> Init() const;
+  [[nodiscard]] std::expected<void, std::error_code> Init() const;
 
   std::optional<std::vector<std::byte>> LoadResource(
       std::string_view name) const;

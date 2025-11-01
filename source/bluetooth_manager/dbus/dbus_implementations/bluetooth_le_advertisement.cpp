@@ -4,30 +4,28 @@
 
 #include "bluetooth_le_advertisement.h"
 
-#include <iostream>
-
-#include "ng-log/logging.h"
-
-namespace screen_controller::bluetooth::dbus {
+namespace screen_controller {
 BluetoothLEAdvertisement::BluetoothLEAdvertisement(
+    const std::shared_ptr<Logger>& logger,
     const std::shared_ptr<sdbus::IConnection>& connection,
     const sdbus::ObjectPath& path)
-  : le_advertisement_interface_name_(
-        sdbus::InterfaceName("org.bluez.LEAdvertisement1")),
-    le_advertisement_(sdbus::createObject(*connection, path)) {
-  LOG(INFO)<<"Creating BluetoothLEAdvertisement";
-}
+    : logger_(logger),
+      le_advertisement_interface_name_(
+          sdbus::InterfaceName("org.bluez.LEAdvertisement1")),
+      le_advertisement_(sdbus::createObject(*connection, path)) {
+  logger_->LogInfo("Creating BluetoothLEAdvertisement");
 
-void BluetoothLEAdvertisement::init() const {
   le_advertisement_
-      ->addVTable(sdbus::registerMethod("Release").withNoReply().implementedAs(
-                      [] { LOG(INFO) << "Advertisement is released"; }),
-                  sdbus::registerProperty("Type").withGetter(
-                      [] { return std::string("peripheral"); }),
-                  sdbus::registerProperty("ServiceUUIDs").withGetter([=] {
-                    return std::vector<std::string>{
-                        std::string("69696969-6969-6969-6969-696969696969")};
-                  }))
+      ->addVTable(
+          sdbus::registerMethod("Release").withNoReply().implementedAs(
+              [this] { logger_->LogInfo("Advertisement is released"); }),
+          sdbus::registerProperty("Type").withGetter(
+              [] { return std::string("peripheral"); }),
+          sdbus::registerProperty("ServiceUUIDs").withGetter([=] {
+            return std::vector<std::string>{
+                std::string("69696969-6969-6969-6969-696969696969")};
+          }))
       .forInterface(sdbus::InterfaceName(le_advertisement_interface_name_));
 }
-} // namespace screen_controller::dbus
+
+}  // namespace screen_controller

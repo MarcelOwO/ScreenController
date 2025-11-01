@@ -17,14 +17,12 @@
 #include <thread>
 
 #include "app_settings.h"
-#include "graphics_renderer.h"
 
 namespace screen_controller {
 class App {
  public:
   App();
   ~App();
-  bool init();
   bool process_command(const common::BluetoothPacket& packet);
   void run();
 
@@ -35,10 +33,11 @@ class App {
   std::jthread command_thread_;
 
   std::shared_ptr<Logger> logger_;
+  std::shared_ptr<AppSettings> settings_;
 
   WindowManager window_manager_;
   GraphicsRenderer renderer_;
-  bluetooth::BluetoothManager bluetooth_manager_;
+  BluetoothManager bluetooth_manager_;
   StorageManager storage_manager_;
   FileProcessor file_processor_;
 

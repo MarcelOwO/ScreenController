@@ -9,7 +9,7 @@
 #include <bluetooth/hci_lib.h>
 #include <bluetooth/l2cap.h>
 #include <fcntl.h>
-#include <ng-log/logging.h>
+#include <logging/logger.h>
 #include <sys/poll.h>
 #include <unistd.h>
 
@@ -18,25 +18,27 @@
 #include <cstring>
 #include <functional>
 #include <iostream>
+#include <memory>
 #include <vector>
 
 #include "../../../external/stb/stb_image.h"
 #include "socket_helper/socket_helper.h"
 #include "socket_implementations/socket_options.h"
 
-namespace screen_controller::bluetooth {
+namespace screen_controller {
 
 constexpr uint16_t kMagic = 0xBEEF;
 constexpr size_t kHeaderMin = 2 + 1 + 4;
-constexpr uint32_t kMaxNameLen = 1u << 20;
-constexpr uint32_t kMaxPayload = 16u << 20;
+constexpr uint32_t kMaxNameLen = 1u + 20;
+constexpr uint32_t kMaxPayload = 16u + 20;
 
-L2CapReceiver::L2CapReceiver() : l2_cap_socket_(-1), client_socket_(-1) {
-  LOG(INFO) << "Creating L2CapReceiver";
+L2CapReceiver::L2CapReceiver(const std::shared_ptr<Logger>& logger)
+    : logger_(logger), socket_options_(logger) {
+  logger_->LogInfo("Creating L2CapReceiver");
 }
 
 L2CapReceiver::~L2CapReceiver() {
-  LOG(INFO) << "Cleaning up L2CapReceiver";
+  logger_->LogInfo("Cleaning up L2CapReceiver");
   if (client_socket_ >= 0) {
     (void)close(client_socket_);
   }
@@ -61,16 +63,39 @@ void L2CapReceiver::OnError(
 }
 
 bool L2CapReceiver::init() {
-  LOG(INFO) << "Initializing L2CapReceiver";
+  logger_->LogInfo("Initializing L2CapReceiver");
   l2_cap_socket_ = socket(PF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP);
-  CHECK(l2_cap_socket_ >= 0)
-      << "Failed to create l2cap socket:" << strerror(errno);
+  if (l2_cap_socket_ < 0) {
+    logger_->LogError("Failed to create l2cap socket:" +
+                      std::string(strerror(errno)));
+  }
 
-  SocketOptions::SetReceiveBufferSize(l2_cap_socket_, 256 * 1024);
-  SocketOptions::SetSendBufferSize(l2_cap_socket_, 256 * 1024);
-  SocketOptions::SetReuseAddress(l2_cap_socket_, 1);
-  SocketOptions::SetFlushable(l2_cap_socket_, 1);
-  SocketOptions::SetNonBlocking(l2_cap_socket_);
+  auto res = socket_options_.SetReceiveBufferSize(l2_cap_socket_, 256 * 1024);
+  if (!res) {
+    logger_->LogError("Failed to set receive buffer size");
+    return false;
+  }
+
+  res = socket_options_.SetSendBufferSize(l2_cap_socket_, 256 * 1024);
+  if (!res) {
+    logger_->LogError("Failed to set receive buffer size");
+    return false;
+  }
+  res = socket_options_.SetReuseAddress(l2_cap_socket_, 1);
+  if (!res) {
+    logger_->LogError("Failed to set receive buffer size");
+    return false;
+  }
+  res = socket_options_.SetFlushable(l2_cap_socket_, 1);
+  if (!res) {
+    logger_->LogError("Failed to set receive buffer size");
+    return false;
+  }
+  res = socket_options_.SetNonBlocking(l2_cap_socket_);
+  if (!res) {
+    logger_->LogError("Failed to set receive buffer size");
+    return false;
+  }
 
   l2cap_options options{};
   socklen_t optlen = sizeof(options);
@@ -80,12 +105,15 @@ bool L2CapReceiver::init() {
     options.imtu = std::max<int>(options.imtu, 2048);
     options.omtu = std::max<int>(options.omtu, 2048);
 
-    CHECK(setsockopt(l2_cap_socket_, SOL_L2CAP, L2CAP_OPTIONS, &options,
-                     sizeof(options)) == 0)
-        << "Failed to set L2CAP options: " << strerror(errno);
+    if (setsockopt(l2_cap_socket_, SOL_L2CAP, L2CAP_OPTIONS, &options,
+                   sizeof(options)) != 0) {
+      logger_->LogError("Failed to set L2cap options: " +
+                        std::string(strerror(errno)));
+      return false;
+    }
 
   } else {
-    LOG(WARNING) << "getsockopt(L2CAP_OPTIONS) failed, using default options";
+    logger_->LogInfo("getsockopt(L2CAP_OPTIONS) failed, using default options");
   }
 
   sockaddr_l2 loc_addr = {
@@ -96,12 +124,14 @@ bool L2CapReceiver::init() {
 
   if (bind(l2_cap_socket_, reinterpret_cast<sockaddr*>(&loc_addr),
            sizeof(loc_addr)) < 0) {
-    LOG(ERROR) << "Failed to bind l2cap socket with error: " << strerror(errno);
+    logger_->LogError("Failed to bind l2cap socket with error: " +
+                      std::string(strerror(errno)));
     return false;
   }
 
   if (listen(l2_cap_socket_, 1) < 0) {
-    LOG(ERROR) << "Failed to listen on l2cap socket" << strerror(errno);
+    logger_->LogError("Failed to listen on l2cap socket" +
+                      std::string(strerror(errno)));
     return false;
   }
 
@@ -124,7 +154,7 @@ void L2CapReceiver::CheckClient() {
 
   if (fd < 0) {
     if (errno != EAGAIN && errno != EWOULDBLOCK) {
-      LOG(WARNING) << "accept() failed";
+      logger_->LogInfo(" accept() failed ");
     }
     return;
   }
@@ -133,7 +163,8 @@ void L2CapReceiver::CheckClient() {
 
   std::array<char, 18> addrstr{};
   (void)ba2str(&raddr.l2_bdaddr, addrstr.data());
-  LOG(INFO) << "Accepted connection from " << batostr(&raddr.l2_bdaddr);
+  logger_->LogInfo("Accepted connection from " +
+                   std::string(batostr(&raddr.l2_bdaddr)));
 
   l2cap_options options{};
   socklen_t optlen = sizeof(options);
@@ -141,11 +172,12 @@ void L2CapReceiver::CheckClient() {
       0) {
     imtu_ = std::max<int>(options.imtu, 256);
     omtu_ = std::max<int>(options.omtu, 256);
-    LOG(INFO) << "Negotiated L2CAP: IMTU=" << imtu_ << " OMTU=" << omtu_
-              << " mode=" << int(options.mode);
+    logger_->LogInfo("Negotiated L2CAP: IMTU=" + std::to_string(imtu_) +
+                     " OMTU=" + std::to_string(omtu_) +
+                     " mode=" + std::to_string(int(options.mode)));
   } else {
-    LOG(WARNING) << "getsockopt(L2CAP_OPTIONS) failed on client: "
-                 << strerror(errno) << " — defaulting to 672";
+    logger_->LogInfo("getsockopt(L2CAP_OPTIONS) failed on client: " +
+                     std::string(strerror(errno)) + " — defaulting to 672");
     imtu_ = omtu_ = 672;
   }
 
@@ -169,7 +201,7 @@ void L2CapReceiver::poll_socket() {
   }
 
   if (pfd.revents & (POLLERR | POLLHUP | POLLRDHUP)) {
-    LOG(INFO) << "Client closed or error";
+    logger_->LogInfo("Client closed or error");
     (void)close(client_socket_);
     client_socket_ = -1;
     received_data_.clear();
@@ -188,7 +220,7 @@ void L2CapReceiver::ReadAllAvailable() {
       if (errno == EAGAIN || errno == EWOULDBLOCK) {
         break;
       }
-      LOG(ERROR) << "recv :" << strerror(errno);
+      logger_->LogError("recv :" + std::string(strerror(errno)));
       if (on_error_) {
         on_error_(errno, "peek failed");
       }
@@ -196,7 +228,7 @@ void L2CapReceiver::ReadAllAvailable() {
       break;
     }
     if (need == 1) {
-      LOG(INFO) << "Peer initiated close";
+      logger_->LogInfo("Peer initiated close");
       (void)close(client_socket_);
       client_socket_ = -1;
       break;
@@ -206,11 +238,11 @@ void L2CapReceiver::ReadAllAvailable() {
         recv(client_socket_, temp_record_.data(), temp_record_.size(), 0);
     if (n <= 0) {
       if (n == 0) {
-        LOG(INFO) << "Peer closed during read";
+        logger_->LogInfo("Peer closed during read");
         (void)close(client_socket_);
         client_socket_ = -1;
       } else {
-        LOG(ERROR) << "recv(): " << strerror(errno);
+        logger_->LogError("recv(): " + std::string(strerror(errno)));
         if (on_error_) {
           on_error_(errno, "recv failed");
         }
@@ -238,7 +270,7 @@ bool L2CapReceiver::ExtractOnePacket() {
     off++;
   }
 
-  if (off>0) {
+  if (off > 0) {
     (void)buf.erase(buf.begin(), buf.begin() + off);
   }
 
@@ -254,7 +286,7 @@ bool L2CapReceiver::ExtractOnePacket() {
   const uint32_t name_len = SocketHelper::le32(&buf[3]);
 
   if (name_len > kMaxNameLen) {
-    LOG(ERROR) << "Name too large: " << name_len;
+    logger_->LogError("Name too large: " + name_len);
     if (on_error_) {
       on_error_(-1, "name too long");
     }
@@ -289,16 +321,15 @@ bool L2CapReceiver::ExtractOnePacket() {
     }
     if (on_received_) {
       current_payload_.assign(packet.name.begin(), packet.name.end());
-      std::span<std::byte> s(
-          reinterpret_cast<std::byte*>(current_payload_.data()),
-          current_payload_.size());
+      const std::span s(reinterpret_cast<std::byte*>(current_payload_.data()),
+                        current_payload_.size());
       on_received_(s);
     }
     return true;
   }
   const size_t need = after_name + 8 + static_cast<size_t>(payload_len);
   if (payload_len > kMaxPayload) {
-    LOG(ERROR) << "Payload too large: " << payload_len;
+    logger_->LogError("Payload too large: " + payload_len);
     if (on_error_) {
       on_error_(-2, "payload too large");
     }
@@ -315,7 +346,8 @@ bool L2CapReceiver::ExtractOnePacket() {
 
   if (const uint32_t calc = SocketHelper::Crc32(payload_ptr, payload_len);
       calc != crc32) {
-    LOG(ERROR) << "CRC mismatch: calc=" << calc << " pkt=" << crc32;
+    logger_->LogError("CRC mismatch: calc=" + std::to_string(calc) +
+                      " pkt=" + std::to_string(crc32));
     if (on_error_) {
       on_error_(-3, "crc mismatch");
     }
@@ -360,7 +392,7 @@ bool L2CapReceiver::SendPacket(const uint8_t type, const std::string_view name,
   const ssize_t n =
       send(client_socket_, bytes.data(), bytes.size(), MSG_NOSIGNAL);
   if (n < 0) {
-    LOG(ERROR) << "send(): " << strerror(errno);
+    logger_->LogInfo("send():" + std::string(strerror(errno)));
     if (on_error_) {
       on_error_(errno, "send failed");
     }
@@ -412,14 +444,14 @@ void L2CapReceiver::TryEnable2MDefaultPhy() {
   };
 
   if (const int ret = hci_send_req(dd, &rq, 1000); ret < 0 || status != 0x00) {
-    LOG(INFO) << "LE Set Default PHY (2M) not enabled (ret=" << ret
-              << ", status=0x" << std::hex << static_cast<int>(status)
-              << std::dec << ")";
+    logger_->LogInfo(
+        "LE Set Default PHY (2M) not enabled (ret=" + std::to_string(ret) +
+        ", status=0x" + std::to_string(status) + +")");
   } else {
-    LOG(INFO) << "Default LE PHY set to prefer 2M.";
+    logger_->LogInfo("Default LE PHY set to prefer 2M.");
   }
 
   hci_close_dev(dd);
 }
 
-}  // namespace screen_controller::bluetooth
+}  // namespace screen_controller

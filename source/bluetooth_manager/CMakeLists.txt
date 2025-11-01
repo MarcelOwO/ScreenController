@@ -11,7 +11,7 @@ add_library(Bluetooth
         unpacker/unpacker.cpp
         socket/socket_helper/socket_helper.cpp
         socket/socket_implementations/socket_options.cpp
-        )
+)
 
 target_include_directories(Bluetooth
         PUBLIC

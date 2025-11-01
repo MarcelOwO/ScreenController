@@ -4,7 +4,7 @@
 
 #include "socket_helper.h"
 
-namespace screen_controller::bluetooth {
+namespace screen_controller {
 void SocketHelper::BuildPacketBytes(const uint8_t type, const uint16_t kMagic,
                                     const std::string_view name,
                                     const std::span<const std::byte> payload,
@@ -68,4 +68,4 @@ uint32_t SocketHelper::le32(const uint8_t* p) {
          (static_cast<uint32_t>(p[3]) << 24);
 }
 
-}  // namespace screen_controller::bluetooth
+}  // namespace screen_controller

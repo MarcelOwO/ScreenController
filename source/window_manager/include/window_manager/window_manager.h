@@ -17,22 +17,18 @@
 namespace screen_controller {
 class WindowManager {
  public:
-  explicit WindowManager(std::shared_ptr<Logger> logger);
+  explicit WindowManager(const std::shared_ptr<Logger>& logger);
   ~WindowManager();
+
   WindowManager(const WindowManager&) = delete;
   WindowManager& operator=(const WindowManager&) = delete;
   WindowManager(WindowManager&&) = delete;
   WindowManager& operator=(WindowManager&&) = delete;
 
-  [[nodiscard]] std::expected<void, common::ErrorEnum> init();
-
   void update(const std::function<void()>& render) const;
-
   [[nodiscard]] bool should_close() const;
   void poll_events() const;
-
   void swap_buffers() const;
-
   static int get_height();
   static int get_width();
 

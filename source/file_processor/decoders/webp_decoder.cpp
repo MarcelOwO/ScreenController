@@ -7,18 +7,17 @@
 #include <webp/decode.h>
 
 #include <fstream>
-#include <iostream>
 #include <optional>
 #include <string_view>
 
-#include "models/frame_data.h"
-#include "ng-log/logging.h"
+#include <models/frame_data.h>
 
 namespace screen_controller::processing {
 
-WebpDecoder::WebpDecoder(const std::string_view path)
-    : is_loaded_(false), path_(path) {
-  LOG(INFO) << "Created WebpDecoder";
+WebpDecoder::WebpDecoder(const std::string_view path,
+                         const std::shared_ptr<Logger>& logger)
+    : logger_(logger), is_loaded_(false), path_(path) {
+  logger_->LogInfo("Created WebpDecoder");
 }
 
 WebpDecoder::~WebpDecoder() = default;
@@ -26,34 +25,44 @@ WebpDecoder::~WebpDecoder() = default;
 bool WebpDecoder::init() {
   std::ifstream file(path_.data(), std::ios::binary | std::ios::ate);
 
-  CHECK(file.is_open()) << "Failed to open file: " << path_;
+  if (!file.is_open()) {
+    logger_->LogError("Failed to open file: " + std::string(path_));
+  }
 
   const std::streamsize size = file.tellg();
 
   if (size <= 0) {
-    LOG(ERROR) << "File is empty or could not be read: " << path_;
+    logger_->LogError("File is empty or could not be read: " +
+                      std::string(path_));
     file.close();
     return false;
   }
 
-  CHECK(size > 0) << "File is empty or could not be read: " << path_;
+  if (size <= 0) {
+    logger_->LogError("File is empty or could not be read: " +
+                      std::string(path_));
+  }
 
   (void)file.seekg(0, std::ios::beg);
 
   std::vector<uint8_t> input_buffer(size);
 
-  CHECK(file.read(reinterpret_cast<char *>(input_buffer.data()), size))
-      << "Failed to read file: " << path_;
+  if (!file.read(reinterpret_cast<char*>(input_buffer.data()), size)) {
+    logger_->LogError(" Failed to read file: " + std::string(path_));
+  }
 
   file.close();
 
   WebPDecoderConfig config;
 
-  CHECK(WebPInitDecoderConfig(&config) >= 0) << "WebPInitDecoderConfig failed";
+  if (WebPInitDecoderConfig(&config) < 0) {
+    logger_->LogError("WebPInitDecoderConfig failed");
+  }
 
-  CHECK(WebPGetFeatures(input_buffer.data(), input_buffer.size(),
-                        &config.input) == VP8_STATUS_OK)
-      << "WebPGetFeatures failed";
+  if (WebPGetFeatures(input_buffer.data(), input_buffer.size(),
+                      &config.input) != VP8_STATUS_OK) {
+    logger_->LogError("WebPGetFeatures failed");
+  }
 
   const int width = config.input.width;
   const int height = config.input.height;
@@ -62,9 +71,10 @@ bool WebpDecoder::init() {
 
   config.output.colorspace = MODE_RGB;
 
-  PCHECK(WebPDecode(input_buffer.data(), input_buffer.size(), &config) ==
-         VP8_STATUS_OK)
-      << "WebPDecode failed with code: ";
+  if (WebPDecode(input_buffer.data(), input_buffer.size(), &config) !=
+      VP8_STATUS_OK) {
+    logger_->LogError("WebPDecode failed with code: ");
+  }
 
   const auto private_memory = config.output.private_memory;
 
@@ -80,11 +90,12 @@ bool WebpDecoder::init() {
 
   return true;
 }
+
 bool WebpDecoder::has_data() { return is_loaded_; }
 
-std::optional<std::unique_ptr<models::FrameData>>
+std::optional<std::unique_ptr<common::FrameData>>
 WebpDecoder::get_next_frame() {
-  return std::make_unique<models::FrameData>(frame_data_);
+  return std::make_unique<common::FrameData>(frame_data_);
 }
 
 }  // namespace screen_controller::processing

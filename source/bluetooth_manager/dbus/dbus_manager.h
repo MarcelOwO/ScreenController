@@ -5,35 +5,41 @@
 #ifndef DBUSMANAGER_H
 #define DBUSMANAGER_H
 
+#include <logging/logger.h>
+
 #include <memory>
 
 #include "sdbus-c++/IConnection.h"
 #include "sdbus-c++/IProxy.h"
 #include "sdbus-c++/Types.h"
+#include <string_view>
 
-namespace screen_controller::bluetooth::dbus {
+namespace screen_controller {
 
 class DbusManager {
  public:
-  DbusManager();
+  explicit DbusManager(const std::shared_ptr<Logger>& logger, std::string_view alias);
   ~DbusManager() = default;
+
   DbusManager(const DbusManager&) = delete;
   DbusManager& operator=(const DbusManager&) = delete;
   DbusManager(DbusManager&&) = delete;
   DbusManager& operator=(DbusManager&&) = delete;
 
-  bool init();
-
   void poll_adapters();
+  void setup_adapter() const;
 
  private:
-  std::shared_ptr<sdbus::IConnection> connection_= nullptr;
-  std::shared_ptr<sdbus::IProxy> adapter_proxy_= nullptr;
-  std::shared_ptr<sdbus::IProxy> bluez_proxy_ = nullptr;
-  sdbus::ObjectPath advertisement_path_{sdbus::ObjectPath("/org/bluez/hci0/owo")};
-  sdbus::ObjectPath agent_path_{sdbus::ObjectPath("/org/bluez/hci0/owo/agent1")};
-  std::chrono::time_point<std::chrono::steady_clock> last_time_point_ = std::chrono::steady_clock::now();
+  std::string alias_;
+  std::shared_ptr<Logger> logger_;
+
+  std::shared_ptr<sdbus::IConnection> connection_;
+  std::shared_ptr<sdbus::IProxy> adapter_proxy_;
+  std::shared_ptr<sdbus::IProxy> bluez_proxy_;
+  sdbus::ObjectPath advertisement_path_;
+  sdbus::ObjectPath agent_path_;
+  std::chrono::time_point<std::chrono::steady_clock> last_time_point_;
 };
-}  // namespace screen_controller::bluetooth::dbus
+}  // namespace screen_controller
 
 #endif  // DBUSMANAGER_H

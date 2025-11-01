@@ -4,7 +4,7 @@
 
 #ifndef FILE_PROCESSOR_H
 #define FILE_PROCESSOR_H
-#include <decoders/decoder.h>
+#include "../../decoders/decoder.h"
 #include <file_type.h>
 #include <logging/logger.h>
 
@@ -26,7 +26,6 @@ public:
   FileProcessor(FileProcessor&&) = delete;
   FileProcessor& operator=(FileProcessor&&) = delete;
 
-  [[nodiscard]] std::expected<void, common::ErrorEnum> init() const;
   bool process_file(std::string_view path);
 
   [[nodiscard]] std::optional<std::unique_ptr<common::FrameData>>
