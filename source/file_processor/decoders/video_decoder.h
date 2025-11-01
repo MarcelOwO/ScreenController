@@ -8,6 +8,7 @@
 #include <string_view>
 
 #include "decoder.h"
+#include "logging/logger.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -18,11 +19,12 @@ extern "C" {
 namespace screen_controller::processing {
 class VideoDecoder final : public Decoder {
  public:
-  explicit VideoDecoder(std::string_view path);
+  explicit VideoDecoder(std::string_view path,
+                        const std::shared_ptr<Logger>& logger);
   virtual bool init() override;
   virtual ~VideoDecoder() override;
   virtual bool has_data() override;
-  std::optional<std::unique_ptr<models::FrameData>> get_next_frame() override;
+  std::optional<std::unique_ptr<common::FrameData>> get_next_frame() override;
 
  private:
   bool looped_;
@@ -30,9 +32,10 @@ class VideoDecoder final : public Decoder {
   int current_frame_;
   double frame_rate_;
   int video_stream_index_;
+  std::shared_ptr<Logger> logger_;
 
-  std::vector<models::FrameData> frames_;
-  models::FrameData frame_data_;
+  std::vector<common::FrameData> frames_;
+  common::FrameData frame_data_;
 
   std::string_view path_;
 

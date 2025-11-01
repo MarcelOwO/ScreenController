@@ -17,18 +17,18 @@ StorageManager::StorageManager(const std::shared_ptr<Logger>& logger)
 
 StorageManager::~StorageManager() = default;
 
-std::expected<void, ErrorEnum> StorageManager::Init() const {
+std::expected<void, std::error_code> StorageManager::Init() const {
   if (!std::filesystem::exists(user_files_path_)) {
     if (!std::filesystem::create_directory(user_files_path_)) {
       logger_->LogError("Error creating directory");
-      return std::unexpected(ErrorEnum::ERROR);
+      return std::unexpected(std::make_error_code(std::errc::io_error));
     }
   }
 
   if (!std::filesystem::exists(asset_path_)) {
     if (!std::filesystem::create_directory(asset_path_)) {
       logger_->LogError("Error creating directory");
-      return std::unexpected(ErrorEnum::ERROR);
+      return std::unexpected(std::make_error_code(std::errc::io_error));
     }
   }
 

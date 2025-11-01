@@ -2,63 +2,66 @@
 // Created by marce on 05/08/2025.
 //
 
+#include "dbus_manager.h"
+
 #include "dbus_implementations/bluetooth_adapter.h"
 #include "dbus_implementations/bluetooth_agent.h"
 #include "dbus_implementations/bluetooth_agent_manager.h"
 #include "dbus_implementations/bluetooth_le_advertisement.h"
 #include "dbus_implementations/bluetooth_le_advertising_manager.h"
-#include "dbus_manager.h"
-#include "ng-log/logging.h"
+#include "logging/logger.h"
 #include "sdbus-c++/Types.h"
+#include <string_view>
 
-namespace screen_controller::bluetooth::dbus {
-DbusManager::DbusManager(){
-  LOG(INFO) << "Creating DBusManager";
-}
+namespace screen_controller {
+DbusManager::DbusManager(const std::shared_ptr<Logger>& logger, std::string_view alias)
+    : alias_(alias),
+      logger_(logger),
+      advertisement_path_({sdbus::ObjectPath("/org/bluez/hci0/owo")}),
+      agent_path_({sdbus::ObjectPath("/org/bluez/hci0/owo/agent1")})
 
-bool DbusManager::init() {
-  LOG(INFO) << "Initializing DBusManager";
-    connection_ = sdbus::createSystemBusConnection();
-  CHECK(connection_ != nullptr) << "Failed to create system bus connection";
+{
+  logger_->LogInfo("Creating DBusManager");
+  last_time_point_ = std::chrono::steady_clock::now();
+  connection_ = sdbus::createSystemBusConnection();
 
   adapter_proxy_ =
       sdbus::createProxy(*connection_, sdbus::ServiceName("org.bluez"),
                          sdbus::ObjectPath("/org/bluez/hci0"));
-  CHECK(adapter_proxy_ != nullptr) << "Failed to create adapter proxy";
 
   bluez_proxy_ =
       sdbus::createProxy(*connection_, sdbus::ServiceName("org.bluez"),
                          sdbus::ObjectPath("/org/bluez"));
 
-  CHECK(bluez_proxy_ != nullptr) << "Failed to create bluez proxy";
+  setup_adapter();
 
-  BluetoothAdapter adapter(adapter_proxy_);
-
-  CHECK(adapter.init()) << "Failed to initialize adapter";
-  const BluetoothLeAdvertisingManager advertising_manager(adapter_proxy_);
-  const BluetoothAgent agent(connection_, agent_path_);
-  agent.init();
+  const BluetoothLeAdvertisingManager advertising_manager(logger_,
+                                                          adapter_proxy_);
+  const BluetoothAgent agent(logger_, connection_, agent_path_);
 
   const std::string capabilities = "NoInputNoOutput";
-  BluetoothAgentManager agent_manager(bluez_proxy_);
 
-  CHECK(agent_manager.RegisterAgent(agent_path_, capabilities))
-      << "Failed to register agent";
+  BluetoothAgentManager agent_manager(logger_, bluez_proxy_);
 
-  CHECK(agent_manager.RequestDefaultAgent(agent_path_))
-      << "Failed to request default agent";
+  if (!agent_manager.RegisterAgent(agent_path_, capabilities)) {
+    logger_->LogError("Failed to register agent");
+  }
 
-  const BluetoothLEAdvertisement advertisement(connection_,
+  if (!agent_manager.RequestDefaultAgent(agent_path_)) {
+    logger_->LogError("Failed to request default agent");
+  }
+
+  const BluetoothLEAdvertisement advertisement(logger_, connection_,
                                                advertisement_path_);
 
-  advertisement.init();
-
-  CHECK(advertising_manager.RegisterAdvertisement(
-      advertisement_path_, std::unordered_map<std::string, sdbus::Variant>()))
-      << "Failed to register advertisement";
+  if (!advertising_manager.RegisterAdvertisement(
+          advertisement_path_,
+          std::unordered_map<std::string, sdbus::Variant>())) {
+    logger_->LogError("Failed to register advertisement");
+    return;
+  }
 
   connection_->enterEventLoopAsync();
-  return true;
 }
 
 void DbusManager::poll_adapters() {
@@ -73,11 +76,45 @@ void DbusManager::poll_adapters() {
 
   last_time_point_ = current_time;
 
-  BluetoothAdapter adapter(adapter_proxy_);
+  setup_adapter();
+}
 
-  if (!adapter.init()) {
-    LOG(ERROR) << "Failed to initialize adapter";
+void DbusManager::setup_adapter() const {
+  BluetoothAdapter adapter(logger_, adapter_proxy_);
+
+  const auto res = adapter.get_alias();
+
+  if (!res) {
+    logger_->LogError("Failed to get alias name");
+    return;
+  }
+
+  if (const auto current_alias = res.value(); current_alias != alias_) {
+    const auto res = adapter.set_alias(alias_);
+
+    if (!res) {
+      logger_->LogError("Failed to set alias");
+      return;
+    }
+  }
+
+  if (!adapter.get_powered()) {
+    if (!adapter.set_powered(true)) {
+      logger_->LogError("Failed to set powered");
+    }
+  }
+
+  if (!adapter.get_discoverable()) {
+    if (!adapter.set_discoverable(true)) {
+      logger_->LogError("Failed to set discoverable");
+    }
+  }
+
+  if (!adapter.get_pairable()) {
+    if (adapter.set_pairable(true)) {
+      logger_->LogError("Failed to set pairable");
+    }
   }
 }
 
-}  // namespace screen_controller::bluetooth::dbus
+}  // namespace screen_controller

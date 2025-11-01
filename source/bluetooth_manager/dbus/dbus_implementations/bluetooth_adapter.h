@@ -4,80 +4,71 @@
 
 #ifndef BLUETOOTH_ADAPTER_H
 #define BLUETOOTH_ADAPTER_H
+
+#include <logging/logger.h>
+
+#include <expected>
 #include <memory>
+#include <string_view>
 
 #include "sdbus-c++/IConnection.h"
+#include "sdbus-c++/IProxy.h"
 #include "sdbus-c++/Types.h"
 
-namespace sdbus {
-class IProxy;
-}
-namespace screen_controller::bluetooth::dbus {
+namespace screen_controller {
 
 class BluetoothAdapter {
  public:
   explicit BluetoothAdapter(
-      const std::shared_ptr<sdbus::IProxy> &adapter_proxy);
+      const std::shared_ptr<Logger>& logger,
+      const std::shared_ptr<sdbus::IProxy>& adapter_proxy);
+
   ~BluetoothAdapter() = default;
 
-  BluetoothAdapter(const BluetoothAdapter &) = delete;
-  BluetoothAdapter &operator=(const BluetoothAdapter &) = delete;
-  BluetoothAdapter(BluetoothAdapter &&) = delete;
-  BluetoothAdapter &operator=(BluetoothAdapter &&) = delete;
+  BluetoothAdapter(const BluetoothAdapter&) = delete;
+  BluetoothAdapter& operator=(const BluetoothAdapter&) = delete;
+  BluetoothAdapter(BluetoothAdapter&&) = delete;
+  BluetoothAdapter& operator=(BluetoothAdapter&&) = delete;
 
-  bool init();
+  [[nodiscard]] std::expected<void, std::error_code> start_discovery() const;
 
-  bool start_discovery() const;
-  bool stop_discovery() const;
+  [[nodiscard]] std::expected<void, std::error_code> stop_discovery() const;
 
-  bool remove_device(const sdbus::ObjectPath &device) const;
+  [[nodiscard]] std::expected<void, std::error_code> remove_device(
+      const sdbus::ObjectPath& device) const;
 
-  bool set_discovery(
-      std::unordered_map<std::string, sdbus::Variant> filter) const;
-  std::optional<std::vector<std::string>> get_discovery_filters() const;
-  std::optional<sdbus::ObjectPath> connect_device(
-      std::unordered_map<std::string, sdbus::Variant> properties) const;
+  [[nodiscard]] std::expected<void, std::error_code> set_discovery(
+      const std::unordered_map<std::string, sdbus::Variant>& filter) const;
+  [[nodiscard]] std::optional<std::vector<std::string>> get_discovery_filters()
+      const;
+  [[nodiscard]] std::optional<sdbus::ObjectPath> connect_device(
+      const std::unordered_map<std::string, sdbus::Variant>& properties) const;
 
-  std::optional<std::string_view> get_address() const;
-  std::string_view gett_address_type();
-  std::string_view get_name();
-  std::string_view get_alias();
+  [[nodiscard]] std::optional<std::string_view> get_address() const;
 
-  bool set_alias(std::string_view alias) const;
-  uint32_t get_class();
+  [[nodiscard]] std::expected<void, std::error_code> set_alias(
+      std::string_view alias) const;
 
-  bool get_connectable();
-  void set_connectable(bool connectable);
+  [[nodiscard]] std::expected<std::string_view, std::error_code> get_alias()
+      const;
 
-  bool get_powered();
-  bool set_powered(bool powered) const;
-  std::string_view get_power_state();
 
-  bool get_discoverable();
-  bool set_discoverable(bool discoverable) const;
+
+  [[nodiscard]] bool get_powered() const;
+  [[nodiscard]] bool set_powered(bool powered) const;
+
+  [[nodiscard]] bool get_discoverable() const;
+  [[nodiscard]] bool set_discoverable(bool discoverable) const;
 
   bool get_pairable();
-  bool set_pairable(bool pairable) const;
-
-  uint32_t get_pairable_timeout();
-  void set_pairable_timeout(uint32_t timeout);
-
-  uint32_t get_discoverable_timeout();
-  void set_discoverable_timeout(uint32_t timeout);
-
-  bool get_discovering();
-  std::vector<std::string> get_uuids();
-  std::string_view get_modalias();
-  std::vector<std::string> get_roles();
-  std::vector<std::string> get_experimental_features();
-  uint16_t get_manufacturer();
-  uint8_t get_version();
+  [[nodiscard]] bool set_pairable(bool pairable) const;
 
  private:
+  std::shared_ptr<Logger> logger_;
   std::shared_ptr<sdbus::IProxy> adapter_proxy_;
   sdbus::InterfaceName adapter_interface_name_;
 };
 
-}  // namespace screen_controller::bluetooth::dbus
+}  // namespace screen_controller
 
 #endif  // BLUETOOTH_ADAPTER_H

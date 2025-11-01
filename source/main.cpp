@@ -7,12 +7,8 @@ int main(int argc, char* argv[]) {
   try {
     screen_controller::App app;
     app.settings = screen_controller::AppSettings{
-        .app_name = "ScreenController",
+        .app_name = "ScreenControllerApp",
     };
-
-    if (!app.init()) {
-      return EXIT_FAILURE;
-    }
 
     app.run();
 

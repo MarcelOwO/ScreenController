@@ -14,11 +14,28 @@ target_link_libraries(ScreenController
 PRIVATE
 App common ng-log)
 
-
-add_custom_command(
-        TARGET ScreenController POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/assets"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/resources"
-        "${CMAKE_BINARY_DIR}/assets"
+install(TARGETS ScreenController
+        RUNTIME DESTINATION bin
 )
+
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/resources/
+        DESTINATION share/screencontroller/assets
+)
+
+set(CPACK_PACKAGE_NAME "screencontroller")
+set(CPACK_PACKAGE_VENDOR "MarcelOwO")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Screen Controller — A C++ desktop application for display management.")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MarcelOwO")
+set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
+set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+set(CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
+
+set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
+
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_${CMAKE_SYSTEM_PROCESSOR}")
+
+set(CPACK_GENERATOR "DEB")
+
+include(CPack)

@@ -4,28 +4,31 @@
 
 #ifndef UNPACKER_H
 #define UNPACKER_H
+#include <bluetooth_packet.h>
+
+#include <expected>
+#include <memory>
 #include <span>
 
-#include "../common/bluetooth_packet.h"
+#include "logging/logger.h"
+#include "models/error_enum.h"
 
-namespace screen_controller::bluetooth {
+namespace screen_controller {
 class Unpacker final {
  public:
-  Unpacker();
+  explicit Unpacker(const std::shared_ptr<Logger>& logger);
   virtual ~Unpacker();
 
-  void decompress(const std::span<std::byte> span,
-                  common::BluetoothPacket &packet);
+  void decompress(std::span<std::byte> span, common::BluetoothPacket& packet) const;
 
-  Unpacker(const Unpacker &) = delete;
-  Unpacker &operator=(const Unpacker &) = delete;
-  Unpacker(Unpacker &&) = delete;
-  Unpacker &operator=(Unpacker &&) = delete;
-
-  void init();
+  Unpacker(const Unpacker&) = delete;
+  Unpacker& operator=(const Unpacker&) = delete;
+  Unpacker(Unpacker&&) = delete;
+  Unpacker& operator=(Unpacker&&) = delete;
 
  private:
+  std::shared_ptr<Logger> logger_;
 };
-}  // namespace screen_controller::bluetooth
+}  // namespace screen_controller
 
 #endif  // UNPACKER_H

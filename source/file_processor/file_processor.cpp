@@ -1,21 +1,20 @@
 //
 // Created by marce on 4/23/2025.
 //
-
+#include <file_type.h>
 #include <include/file_processor/file_processor.h>
 
 #include <filesystem>
 #include <iostream>
 #include <unordered_map>
 
-#include <file_type.h>
-
 #include "decoders/decoder_factory.h"
 #include "decoders/stb_decoder.h"
 
 namespace screen_controller {
 
-FileProcessor::FileProcessor(const std::shared_ptr<Logger> &logger) : logger_(logger) {
+FileProcessor::FileProcessor(const std::shared_ptr<Logger> &logger)
+    : logger_(logger) {
   logger->LogInfo("Creating FileProcessor");
 };
 
@@ -25,30 +24,34 @@ FileProcessor::~FileProcessor() {
   }
 };
 
-bool FileProcessor::init() const { return true; }
-
 bool FileProcessor::process_file(const std::string_view path) {
   const auto type = get_type(path);
 
-  PCHECK(type != common::FileType::kNone)
-      << "File type not supported: " << path;
+  if (type == common::FileType::kNone) {
+    logger_->LogError("File type not supported: " + std::string(path));
+    return false;
+  }
 
-  decoder_ = processing::DecoderFactory::create(path, type);
+  decoder_ = processing::DecoderFactory::create(path, type, logger_);
 
-  PCHECK(decoder_ != nullptr) << "Failed to create decoder: " << path;
+  if (decoder_ == nullptr) {
+    logger_->LogError("Decoder not supported for file: " + std::string(path));
+    return false;
+  }
 
   if (!decoder_->init()) {
-    LOG(WARNING) << "Failed to initialize decoder: " << path;
+    logger_->LogError("Failed to initialize decoder for file: " +
+                      std::string(path));
     return false;
   }
 
   return true;
 }
 
-std::optional<std::unique_ptr<processing::models::FrameData>>
+std::optional<std::unique_ptr<common::FrameData>>
 FileProcessor::get_processed_data() const {
   if (!decoder_) {
-    PLOG(ERROR) << "Failed to get processed data";
+    logger_->LogError("Decoder not initialized");
     return std::nullopt;
   }
 

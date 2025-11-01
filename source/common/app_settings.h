@@ -1,12 +1,12 @@
 #ifndef APP_SETTINGS_H
 #define APP_SETTINGS_H
 
-namespace screen_controller{
+#include <string_view>
 
-struct AppSettings{
+namespace screen_controller {
 
-std::string_view app_name;
-
+struct AppSettings {
+  std::string_view app_name;
 };
 }  // namespace screen_controller
 #endif  // APP_SETTINGS_H

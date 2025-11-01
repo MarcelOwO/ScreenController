@@ -9,7 +9,7 @@
 #include <span>
 #include <string_view>
 #include <vector>
-namespace screen_controller::bluetooth {
+namespace screen_controller {
 class SocketHelper {
  public:
   static void BuildPacketBytes(uint8_t type, uint16_t kMagic,
@@ -22,6 +22,6 @@ class SocketHelper {
   static uint32_t le32(const uint8_t* p);
 };
 
-}  // namespace screen_controller::bluetooth
+}  // namespace screen_controller
 
 #endif  // SOCKETHELPER_H

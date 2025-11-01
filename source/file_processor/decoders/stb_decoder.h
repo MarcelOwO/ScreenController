@@ -8,13 +8,15 @@
 #include <optional>
 
 #include "decoder.h"
+#include "logging/logger.h"
 #include "models/frame_data.h"
 
 namespace screen_controller::processing {
 
 class StbDecoder final : public Decoder {
  public:
-  explicit StbDecoder(std::string_view path);
+  explicit StbDecoder(std::string_view path,
+                      const std::shared_ptr<Logger>& logger);
   virtual ~StbDecoder() override = default;
 
   StbDecoder(const StbDecoder&) = delete;
@@ -24,11 +26,12 @@ class StbDecoder final : public Decoder {
   virtual bool has_data() override;
 
   virtual bool init() override;
-  virtual std::optional<std::unique_ptr<models::FrameData>> get_next_frame()
+  virtual std::optional<std::unique_ptr<common::FrameData>> get_next_frame()
       override;
 
  private:
-  models::FrameData frame_data_;
+  common::FrameData frame_data_;
+  std::shared_ptr<Logger> logger_;
   bool is_loaded_;
   std::string_view path_;
 };

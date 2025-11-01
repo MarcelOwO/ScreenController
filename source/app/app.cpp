@@ -1,23 +1,50 @@
 //
 // Created by marce on 4/2/2025.
 //
-
-#include "include/app/app.h"
-
+#include <app/app.h>
 #include <logging/logger.h>
+#include <chrono>
+#include <thread>
 
 namespace screen_controller {
 
 App::App()
     : running_(false),
       logger_(std::make_shared<Logger>(settings.app_name)),
+      settings_{std::make_shared<AppSettings>(settings)},
       window_manager_(logger_),
       renderer_(logger_),
-      bluetooth_manager_(logger_),
+      bluetooth_manager_(logger_,settings_),
       storage_manager_(logger_),
       file_processor_(logger_) {
+  logger_->LogInfo("Creating app");
+
   (void)setenv("DISPLAY", ":0", 1);
-  logger_->LogInfo("Creating App class");
+
+  if (const auto res = storage_manager_.Init(); !res.has_value()) {
+    logger_->LogError("Failed to initialize storage manager");
+    return;
+  }
+
+  bluetooth_manager_.on_packet_received(
+      [this](const common::BluetoothPacket& packet) {
+        logger_->LogInfo("Received Bluetooth packet: " + packet.name);
+        (void)command_queue_.emplace(packet);
+      });
+
+  const auto res = renderer_.init(
+      std::bit_cast<GLADloadproc>(WindowManager::address_pointer()),
+      WindowManager::get_width(), WindowManager::get_height());
+
+  if (!res) {
+    logger_->LogError("Failed to initialize renderer");
+  }
+
+  if (!load_image("startup_files/sona.png", true)) {
+    logger_->LogError("Failed to load startup image");
+  }
+
+  running_ = true;
 }
 
 App::~App() {
@@ -29,46 +56,8 @@ App::~App() {
   }
 }
 
-bool App::init() {
-  logger_->LogInfo("Creating app");
-  logger_->LogInfo("Setting DISPLAY environment variable to :0");
-
-  (void)setenv("DISPLAY", ":0", 1);
-
-  if (const auto res = storage_manager_.Init(); !res.has_value()) {
-    logger_->LogError("Failed to initialize storage manager");
-    return false;
-  }
-  if (const auto res = bluetooth_manager_.init(); !res.has_value()) {
-    logger_->LogError("Failed to init bluetooth mananger");
-    return false;
-  }
-  if (const auto res = file_processor_.init(); !res.has_value()) {
-    logger_->LogError("Failed to init file processor");
-    return false;
-  }
-
-  bluetooth_manager_.on_packet_received(
-      [this](const common::BluetoothPacket& packet) {
-        LOG(INFO) << "Received Bluetooth packet: " << packet.name;
-        (void)command_queue_.emplace(packet);
-      });
-
-  CHECK(window_manager_.init()) << "Failed to initialize window manager";
-
-  renderer_.init(std::bit_cast<GLADloadproc>(window_manager_.address_pointer()),
-                 window_manager_.get_width(), window_manager_.get_height());
-
-  if (!load_image("startup_files/sona.png", true)) {
-    LOG(ERROR) << "Failed to load startup image";
-  }
-
-  running_ = true;
-
-  return true;
-}
 bool App::process_command(const common::BluetoothPacket& packet) {
-  LOG(INFO) << "Received packet: " << packet.name;
+  logger_->LogInfo("Received packet: " + packet.name);
 
   switch (packet.type) {
     case 1: {  // command packet
@@ -77,7 +66,7 @@ bool App::process_command(const common::BluetoothPacket& packet) {
       const auto it = command.find(':');
 
       if (it == std::string::npos) {
-        LOG(ERROR) << "Invalid command format: " << command;
+        logger_->LogError("Invalid command format: " + command);
         return false;
       }
 
@@ -85,51 +74,51 @@ bool App::process_command(const common::BluetoothPacket& packet) {
       const auto name = command.substr(it + 1, command.size());
 
       if (type == "Select") {
-        LOG(INFO) << "Select command received: " << name;
+        logger_->LogInfo("Select command received: " + name);
         if (!load_image(name, false)) {
-          LOG(ERROR) << "Failed to load image: " << name;
+          logger_->LogError("Failed to load image: " + name);
         }
         return true;
       }
       if (type == "Delete") {
-        LOG(INFO) << "Delete command received: " << name;
+        logger_->LogInfo("Delete command received: " + name);
         if (!storage_manager_.DeleteFile(name)) {
-          PLOG(WARNING) << "Failed to delete file: " << name;
+          logger_->LogError("Failed to delete file: " + name);
         }
         return true;
       }
       if (type == "Rotate") {
-        LOG(INFO) << "Rotate command received:";
+        logger_->LogInfo("Rotate command received:");
         renderer_.rotate();
         return true;
       }
-      LOG(ERROR) << "Unknown command type: " << type;
+      logger_->LogError("Unknown command type: " + type);
       return false;
     }
     case 0: {  // file packet
       if (!storage_manager_.SaveFile(packet.name, packet.data)) {
-        LOG(ERROR) << "Failed to save file: " << packet.name;
+        logger_->LogError("Failed to save file: " + packet.name);
       }
       return true;
     }
     default: {
-      LOG(ERROR) << "Unknown packet type: " << static_cast<int>(packet.type);
+      logger_->LogError("Unknown packet type: " + std::to_string(packet.type));
       return false;
     }
   }
-  return false;
 }
+
 bool App::load_image(const std::string_view name, const bool is_asset) {
   const auto path = is_asset ? storage_manager_.GetResourcePath(name)
                              : storage_manager_.GetUserFilePath(name);
 
   if (!std::filesystem::exists(path)) {
-    LOG(ERROR) << "File does not exist: " << path.string();
+    logger_->LogError("File does not exist: " + path.string());
     return false;
   }
 
   if (!file_processor_.process_file(path.c_str())) {
-    LOG(ERROR) << "Failed to process file: " << path.string();
+    logger_->LogError("Failed to process file: " + path.string());
     return false;
   }
 
@@ -156,7 +145,7 @@ void App::render_loop() {
     process_frame();
     window_manager_.update([this] { renderer_.render(); });
     window_manager_.poll_events();
-    std::this_thread::sleep_for(std::chrono::milliseconds(16));
+    std::this_thread::sleep_for(std::chrono::milliseconds{16});
   }
 }
 
@@ -166,7 +155,7 @@ void App::handle_commands(const std::stop_token& stop_token) {
     std::unique_lock lock(queue_mutex_);
     queue_condition_.wait(lock, [this] { return !command_queue_.empty(); });
     if (auto packet = command_queue_.front(); !process_command(packet)) {
-      LOG(ERROR) << "Failed to process command: " << packet.name;
+      logger_->LogError("Failed to process command: " + packet.name);
     }
     command_queue_.pop();
     lock.unlock();

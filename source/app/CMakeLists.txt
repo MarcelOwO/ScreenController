@@ -7,6 +7,6 @@ target_include_directories(App
 
 target_link_libraries(App
         PUBLIC
-        Window Renderer Bluetooth glad Storage File Logger Updater common)
+        Window Renderer Bluetooth glad Storage File Logger  common)
 
 

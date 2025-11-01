@@ -10,15 +10,18 @@
 
 #include <fstream>
 #include <functional>
+#include <memory>
 #include <span>
 #include <vector>
 
-#include "models/packet.h"
+#include "../models/packet.h"
+#include "logging/logger.h"
+#include "socket_implementations/socket_options.h"
 
-namespace screen_controller::bluetooth {
+namespace screen_controller {
 class L2CapReceiver {
  public:
-  L2CapReceiver();
+  explicit L2CapReceiver(const std::shared_ptr<Logger>& logger);
   ~L2CapReceiver();
 
   L2CapReceiver(const L2CapReceiver&) = delete;
@@ -48,15 +51,16 @@ class L2CapReceiver {
   void ReadAllAvailable();
   bool ExtractOnePacket();
 
-
-
   void TryEnable2MDefaultPhy();
 
   int l2_cap_socket_{-1};
   int client_socket_{-1};
 
+  SocketOptions socket_options_;
+
   int imtu_{672};
   int omtu_{672};
+  std::shared_ptr<Logger> logger_;
 
   std::vector<uint8_t> received_buffer_;
   std::vector<uint8_t> temp_record_;
@@ -68,6 +72,6 @@ class L2CapReceiver {
   std::function<void(int, std::string_view)> on_error_;
 };
 
-}  // namespace screen_controller::bluetooth
+}  // namespace screen_controller
 
 #endif  // L_2_CAP_RECEIVER_H

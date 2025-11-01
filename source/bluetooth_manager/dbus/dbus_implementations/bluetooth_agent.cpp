@@ -4,80 +4,98 @@
 
 #include "bluetooth_agent.h"
 
-#include <ng-log/logging.h>
-
-#include <iostream>
-#include <utility>
-
 #include "bluetooth_device.h"
-namespace screen_controller::bluetooth::dbus {
+namespace screen_controller {
 
 BluetoothAgent::BluetoothAgent(
+    const std::shared_ptr<Logger>& logger,
     const std::shared_ptr<sdbus::IConnection>& connection,
     const sdbus::ObjectPath& device)
-    : agent_path_(device),
+    : logger_(logger),
+      agent_path_(device),
       agent_object_(sdbus::createObject(*connection, agent_path_)),
       connection_(connection) {
-  LOG(INFO) << "Creating BluetoothAgent";
-}
+  logger_->LogInfo("Creating BluetoothAgent");
 
-void BluetoothAgent::init() const {
   agent_object_
       ->addVTable(
           sdbus::registerMethod("Release").withNoReply().implementedAs(
-              [this] { PLOG(INFO) << "BluetoothAgent released"; }),
+              [this] { logger_->LogInfo("BluetoothAgent released"); }),
           sdbus::registerMethod("RequestPinCode")
               .implementedAs([this](const sdbus::ObjectPath& device_path) {
-                PLOG(INFO) << "RequestPinCode";
-                BluetoothDevice device_object(connection_, device_path);
-                PLOG(INFO) << "Device name: " << device_object.GetAlias();
+                logger_->LogInfo("RequestPinCode");
+                const BluetoothDevice device_object(logger_, connection_,
+                                                    device_path);
+
+                if (const auto res = device_object.GetName(); res.has_value()) {
+                  logger_->LogInfo("Device name: " + std::string(res.value()));
+                }
+
                 return std::string("0000");
               }),
           sdbus::registerMethod("DisplayPinCode")
               .implementedAs([this](const sdbus::ObjectPath& device,
-                                 const std::string& pincode) {
-                PLOG(INFO) << "DisplayPinCode: " << pincode;
-                BluetoothDevice device_object(connection_, device);
-                PLOG(INFO) << "Device name: " << device_object.GetAlias();
+                                    const std::string& pincode) {
+                logger_->LogInfo("DisplayPinCode: " + pincode);
+                const BluetoothDevice device_object(logger_, connection_,
+                                                    device);
+                if (const auto res = device_object.GetName()) {
+                  logger_->LogInfo("Device name: " + res.value());
+                }
               }),
           sdbus::registerMethod("RequestPasskey")
               .implementedAs([=](const sdbus::ObjectPath& device) {
-                PLOG(INFO) << "RequestPasskey";
-                BluetoothDevice device_object(connection_, device);
-                PLOG(INFO) << "Device name: " << device_object.GetAlias();
+                logger_->LogInfo("RequestPasskey");
+                const BluetoothDevice device_object(logger_, connection_,
+                                                    device);
+                if (const auto res = device_object.GetName()) {
+                  logger_->LogInfo("Device name: " + res.value());
+                }
+
                 return 1234;
               }),
           sdbus::registerMethod("DisplayPasskey")
               .implementedAs([=](const sdbus::ObjectPath& device,
                                  const uint32_t passkey,
                                  const uint16_t entered) {
-                PLOG(INFO) << "DisplayPasskey: " << passkey
-                           << " Entered: " << entered;
-                BluetoothDevice device_object(connection_, device);
-                PLOG(INFO) << "Device name: " << device_object.GetAlias();
+                logger_->LogInfo("DisplayPasskey: " + std::to_string(passkey) +
+                                 " Entered: " + std::to_string(entered));
+                const BluetoothDevice device_object(logger_, connection_,
+                                                    device);
+                const auto res = device_object.GetName();
+                logger_->LogInfo("Device name: " + res.value());
               }),
           sdbus::registerMethod("RequestConfirmation")
               .implementedAs(
                   [=](const sdbus::ObjectPath& device, const uint32_t passkey) {
-                    PLOG(INFO) << "RequestConfirmation: " << passkey;
-                    BluetoothDevice device_object(connection_, device);
-                    PLOG(INFO) << "Device name: " << device_object.GetAlias();
+                    logger_->LogInfo("RequestConfirmation: " + passkey);
+                    const BluetoothDevice device_object(logger_, connection_,
+                                                        device);
+                    if (const auto res = device_object.GetName()) {
+                      logger_->LogInfo("Device name: " + res.value());
+                    }
                   }),
           sdbus::registerMethod("RequestAuthorization")
               .implementedAs([this](const sdbus::ObjectPath& device) {
-                BluetoothDevice device_object(connection_, device);
-                PLOG(INFO) << "Device name: " << device_object.GetAlias();
-                PLOG(INFO) << "RequestAuthorization";
+                logger_->LogInfo("RequestAuthorization");
+                const BluetoothDevice device_object(logger_, connection_,
+                                                    device);
+                const auto res = device_object.GetName();
+                logger_->LogInfo("Device name: " + res.value());
               }),
           sdbus::registerMethod("AuthorizeService")
               .implementedAs([this](const sdbus::ObjectPath& device,
-                                 const std::string& uuid) {
-                BluetoothDevice device_object(connection_, device);
-                PLOG(INFO) << "Device name: " << device_object.GetAlias();
-                PLOG(INFO) << "AuthorizeService: " << uuid;
+                                    const std::string& uuid) {
+                logger_->LogInfo("AuthorizeService: " + uuid);
+                const BluetoothDevice device_object(logger_, connection_,
+                                                    device);
+                if (const auto res = device_object.GetName()) {
+                  logger_->LogInfo("Device name: " + res.value());
+                }
               }),
           sdbus::registerMethod("Cancel").implementedAs(
-              [this] { PLOG(INFO) << "Agent Cancel"; }))
+              [this] { logger_->LogInfo("Agent Cancel"); }))
       .forInterface(sdbus::InterfaceName("org.bluez.Agent1"));
 }
-}  // namespace screen_controller::bluetooth::dbus
+
+}  // namespace screen_controller

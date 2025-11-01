@@ -4,6 +4,8 @@
 
 #include "decoder_factory.h"
 
+#include <logging/logger.h>
+
 #include <iostream>
 
 #include "../../common/file_type.h"
@@ -12,29 +14,30 @@
 #include "webp_decoder.h"
 
 namespace screen_controller::processing {
-std::unique_ptr<Decoder> DecoderFactory::create(
-    std::string_view name, const common::FileType type) {
+std::unique_ptr<Decoder> DecoderFactory::create(std::string_view name,
+                                                const common::FileType type,
+                                                std::shared_ptr<Logger> logger) {
   switch (type) {
     case common::FileType::kBmp: {
-      return std::make_unique<StbDecoder>(name);
+      return std::make_unique<StbDecoder>(name, logger);
     }
     case common::FileType::kJpg: {
-      return std::make_unique<VideoDecoder>(name);
+      return std::make_unique<VideoDecoder>(name, logger);
     }
     case common::FileType::kPng: {
-      return std::make_unique<StbDecoder>(name);
+      return std::make_unique<StbDecoder>(name, logger);
     }
     case common::FileType::kGif: {
-      return std::make_unique<VideoDecoder>(name);
+      return std::make_unique<VideoDecoder>(name, logger);
     }
     case common::FileType::kWebp: {
-      return std::make_unique<WebpDecoder>(name);
+      return std::make_unique<WebpDecoder>(name, logger);
     }
     case common::FileType::kWebm: {
-      return std::make_unique<VideoDecoder>(name);
+      return std::make_unique<VideoDecoder>(name, logger);
     }
     case common::FileType::kMp4: {
-      return std::make_unique<VideoDecoder>(name);
+      return std::make_unique<VideoDecoder>(name, logger);
     }
     case common::FileType::kNone: {
       std::cerr << "DecoderFactory::create: unknown file type" << std::endl;

@@ -8,20 +8,18 @@
 #include <string_view>
 
 #include "decoder.h"
-
-namespace screen_controller::common {
-enum class FileType;
-}
+#include "file_type.h"
+#include "logging/logger.h"
 
 namespace screen_controller::processing {
 
 class DecoderFactory {
-public:
-  static std::unique_ptr<processing::Decoder> create(std::string_view name,
-                                                    common::FileType type);
-
+ public:
+  static std::unique_ptr<Decoder> create(std::string_view name,
+                                         common::FileType type,
+                                         std::shared_ptr<Logger> logger);
 };
 
-} // screen_controller
+}  // namespace screen_controller::processing
 
-#endif //DECODER_FACTORY_H
+#endif  // DECODER_FACTORY_H

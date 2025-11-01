@@ -8,20 +8,18 @@
 
 #include <iomanip>
 
-#include "ng-log/logging.h"
 #include "zstd.h"
 
-namespace screen_controller::bluetooth {
-Unpacker::Unpacker() = default;
+namespace screen_controller {
+Unpacker::Unpacker(const std::shared_ptr<Logger>& logger) : logger_(logger) {}
 Unpacker::~Unpacker() = default;
 
-void Unpacker::init() {}
 
 void Unpacker::decompress(const std::span<std::byte> span,
-                          common::BluetoothPacket& packet) {
+                          common::BluetoothPacket& packet) const {
   std::vector<char> debug_string{};
 
-  const uint8_t type = static_cast<uint8_t>(span[static_cast<size_t>(0)]);
+  const auto type = static_cast<uint8_t>(span[static_cast<size_t>(0)]);
 
   debug_string.push_back(static_cast<char>(type));
   debug_string.push_back(' ');
@@ -41,13 +39,12 @@ void Unpacker::decompress(const std::span<std::byte> span,
   const auto name = std::string(name_vector.data(), name_vector.size());
 
   packet.name = name;
-
-  LOG(INFO) << name;
+  logger_->LogInfo(name);
   if (type == 1) {
-    LOG(INFO) << "Command";
+    logger_->LogInfo("command");
     return;
   }
-  LOG(INFO) << "File";
+  logger_->LogInfo("File");
 
   std::vector<std::byte> magic_number = {
       std::byte{0x28},
@@ -59,12 +56,14 @@ void Unpacker::decompress(const std::span<std::byte> span,
   const auto search_subrange = std::ranges::search(span, magic_number);
 
   if (search_subrange.empty()) {
-    LOG(INFO) << "Magic number not found in the span";
+    logger_->LogInfo("Magic number not found in the span");
+    return;
   }
 
   const auto index = std::distance(span.begin(), search_subrange.begin());
+
   if (index < 0 || index >= static_cast<int>(span.size())) {
-    LOG(ERROR) << "Invalid index for magic number: " << index;
+    logger_->LogError("Invalid index for magic number:" + index);
     return;
   }
 
@@ -75,12 +74,15 @@ void Unpacker::decompress(const std::span<std::byte> span,
 
   const size_t decompressed_size =
       ZSTD_getFrameContentSize(src.data(), src.size());
+  if (decompressed_size == ZSTD_CONTENTSIZE_ERROR) {
+    logger_->LogError("Not a valid compressed frame");
+    return;
+  }
 
-  CHECK(decompressed_size != ZSTD_CONTENTSIZE_ERROR)
-      << "Not a valid compressed frame";
-
-  CHECK(decompressed_size != ZSTD_CONTENTSIZE_UNKNOWN)
-      << "Compressed size is unknown";
+  if (decompressed_size == ZSTD_CONTENTSIZE_UNKNOWN) {
+    logger_->LogError("Compressed frame is unkown");
+    return;
+  }
 
   packet.data = std::vector<std::byte>(decompressed_size);
 
@@ -88,10 +90,10 @@ void Unpacker::decompress(const std::span<std::byte> span,
                                         src.data(), src.size());
 
   if (ZSTD_isError(result)) {
-    LOG(ERROR) << "Decompression failed: " << ZSTD_getErrorName(result);
+    logger_->LogError("Decompression failed" +
+                      std::string(ZSTD_getErrorName(result)));
     return;
   }
-
-  LOG(INFO) << "Decompressed successfully";
+  logger_->LogInfo("Decompressed successfully");
 }
-}  // namespace screen_controller::bluetooth
+}  // namespace screen_controller
