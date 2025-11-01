@@ -105,7 +105,7 @@ void GraphicsRenderer::set_texture(const common::FrameData* data) {
                GL_UNSIGNED_BYTE, data->data.data());
   glGenerateMipmap(GL_TEXTURE_2D);
 }
-void GraphicsRenderer::set_fallback_texture() {
+void GraphicsRenderer::set_fallback_texture() const {
   logger_->LogInfo("Setting fallback texture");
   constexpr int width = 1920;
   constexpr int height = 1080;

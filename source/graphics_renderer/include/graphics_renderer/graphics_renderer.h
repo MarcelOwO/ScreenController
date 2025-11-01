@@ -38,7 +38,7 @@ class GraphicsRenderer {
                                               int window_height);
 
   void set_texture(const common::FrameData *data);
-  void set_fallback_texture();
+  void set_fallback_texture() const;
   void update_ratio(int width, int height) const;
 
   void rotate() const;
