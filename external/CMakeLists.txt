@@ -9,14 +9,11 @@ set(ZSTD_BUILD_SHARED OFF)
 add_subdirectory(glfw)
 add_subdirectory(glad)
 add_subdirectory(sdbus-cpp)
-add_subdirectory(ng-log)
-add_subdirectory(protobuf)
 add_subdirectory(zstd/build/cmake)
 add_subdirectory(glm)
 
 
 add_library(stb STATIC stb.cpp)
-
 target_include_directories(stb
         PUBLIC
         ./stb/stb_image.h  # This line is crucial
