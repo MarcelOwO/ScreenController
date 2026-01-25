@@ -1,0 +1,250 @@
+{
+	"archive" : {},
+	"artifacts" : 
+	[
+		{
+			"path" : "src/file_processor/libFile.a"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"target_link_libraries",
+			"target_include_directories"
+		],
+		"files" : 
+		[
+			"src/file_processor/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 10,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 40,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 18,
+				"parent" : 0
+			}
+		]
+	},
+	"codemodelVersion" : 
+	{
+		"major" : 2,
+		"minor" : 9
+	},
+	"compileDependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "Logger::@48bfaf6ebac2073e8858"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "common::@af79f3804eddddbfa7f1"
+		}
+	],
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-O3 -DNDEBUG -std=gnu++23"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 3,
+					"path" : "/home/marcel/projects/Cpp/ScreenController/src/file_processor/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/home/marcel/projects/Cpp/ScreenController/src/file_processor/."
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/usr/include/webp"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/marcel/projects/Cpp/ScreenController/src/logging/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/marcel/projects/Cpp/ScreenController/src/common"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					1
+				],
+				"standard" : "23"
+			},
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "Logger::@48bfaf6ebac2073e8858"
+		}
+	],
+	"id" : "File::@92e7d4db56527c3fbe7d",
+	"interfaceCompileDependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "Logger::@48bfaf6ebac2073e8858"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "common::@af79f3804eddddbfa7f1"
+		}
+	],
+	"interfaceLinkLibraries" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "Logger::@48bfaf6ebac2073e8858"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "common::@af79f3804eddddbfa7f1"
+		},
+		{
+			"backtrace" : 2,
+			"fragment" : "avformat"
+		},
+		{
+			"backtrace" : 2,
+			"fragment" : "avcodec"
+		},
+		{
+			"backtrace" : 2,
+			"fragment" : "avutil"
+		},
+		{
+			"backtrace" : 2,
+			"fragment" : "swscale"
+		},
+		{
+			"backtrace" : 2,
+			"fragment" : "webp"
+		}
+	],
+	"linkLibraries" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "Logger::@48bfaf6ebac2073e8858"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "common::@af79f3804eddddbfa7f1"
+		},
+		{
+			"backtrace" : 2,
+			"fragment" : "avformat"
+		},
+		{
+			"backtrace" : 2,
+			"fragment" : "avcodec"
+		},
+		{
+			"backtrace" : 2,
+			"fragment" : "avutil"
+		},
+		{
+			"backtrace" : 2,
+			"fragment" : "swscale"
+		},
+		{
+			"backtrace" : 2,
+			"fragment" : "webp"
+		}
+	],
+	"name" : "File",
+	"nameOnDisk" : "libFile.a",
+	"paths" : 
+	{
+		"build" : "src/file_processor",
+		"source" : "src/file_processor"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/file_processor/file_processor.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/file_processor/decoders/video_decoder.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/file_processor/decoders/stb_decoder.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/file_processor/decoders/webp_decoder.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/file_processor/decoders/decoder_factory.cpp",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "STATIC_LIBRARY"
+}

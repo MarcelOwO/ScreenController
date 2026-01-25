@@ -1,0 +1,158 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"external/sdbus-cpp/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 292,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 298,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 302,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 306,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 309,
+				"parent" : 0
+			}
+		]
+	},
+	"codemodelVersion" : 
+	{
+		"major" : 2,
+		"minor" : 9
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "sdbus-c++-dev",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"external/sdbus-cpp/libsdbus-c++.a"
+			],
+			"targetId" : "sdbus-c++::@c82662931e8adbb010cf",
+			"targetIndex" : 13,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 1,
+			"component" : "sdbus-c++-dev",
+			"destination" : "include/sdbus-c++",
+			"paths" : 
+			[
+				"external/sdbus-cpp/include/sdbus-c++/ConvenienceApiClasses.h",
+				"external/sdbus-cpp/include/sdbus-c++/ConvenienceApiClasses.inl",
+				"external/sdbus-cpp/include/sdbus-c++/VTableItems.h",
+				"external/sdbus-cpp/include/sdbus-c++/VTableItems.inl",
+				"external/sdbus-cpp/include/sdbus-c++/Error.h",
+				"external/sdbus-cpp/include/sdbus-c++/IConnection.h",
+				"external/sdbus-cpp/include/sdbus-c++/AdaptorInterfaces.h",
+				"external/sdbus-cpp/include/sdbus-c++/ProxyInterfaces.h",
+				"external/sdbus-cpp/include/sdbus-c++/StandardInterfaces.h",
+				"external/sdbus-cpp/include/sdbus-c++/IObject.h",
+				"external/sdbus-cpp/include/sdbus-c++/IProxy.h",
+				"external/sdbus-cpp/include/sdbus-c++/Message.h",
+				"external/sdbus-cpp/include/sdbus-c++/MethodResult.h",
+				"external/sdbus-cpp/include/sdbus-c++/Types.h",
+				"external/sdbus-cpp/include/sdbus-c++/TypeTraits.h",
+				"external/sdbus-cpp/include/sdbus-c++/Flags.h",
+				"external/sdbus-cpp/include/sdbus-c++/sdbus-c++.h"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "sdbus-c++-dev",
+			"destination" : "lib/cmake/sdbus-c++",
+			"exportName" : "sdbus-c++-targets",
+			"exportTargets" : 
+			[
+				{
+					"id" : "sdbus-c++::@c82662931e8adbb010cf",
+					"index" : 13
+				},
+				{
+					"id" : "sdbus-c++-objlib::@c82662931e8adbb010cf",
+					"index" : 14
+				}
+			],
+			"paths" : 
+			[
+				"external/sdbus-cpp/CMakeFiles/Export/aae783ae287047a810449855b451586a/sdbus-c++-targets.cmake"
+			],
+			"type" : "export"
+		},
+		{
+			"backtrace" : 3,
+			"component" : "sdbus-c++-dev",
+			"destination" : "lib/cmake/sdbus-c++",
+			"paths" : 
+			[
+				"external/sdbus-cpp/cmake/sdbus-c++-config.cmake",
+				"external/sdbus-cpp/cmake/sdbus-c++-config-version.cmake"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 4,
+			"component" : "sdbus-c++-dev",
+			"destination" : "lib/pkgconfig",
+			"paths" : 
+			[
+				"external/sdbus-cpp/pkgconfig/sdbus-c++.pc"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 5,
+			"component" : "sdbus-c++-doc",
+			"destination" : "share/doc/sdbus-c++",
+			"paths" : 
+			[
+				"external/sdbus-cpp/README",
+				"external/sdbus-cpp/README.md",
+				"external/sdbus-cpp/NEWS",
+				"external/sdbus-cpp/COPYING",
+				"external/sdbus-cpp/ChangeLog",
+				"external/sdbus-cpp/AUTHORS"
+			],
+			"type" : "file"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "external/sdbus-cpp",
+		"source" : "external/sdbus-cpp"
+	}
+}

@@ -1,0 +1,51 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"external/sdbus-cpp/docs/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 24,
+				"parent" : 0
+			}
+		]
+	},
+	"codemodelVersion" : 
+	{
+		"major" : 2,
+		"minor" : 9
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "sdbus-c++-doc",
+			"destination" : "share/doc/sdbus-c++",
+			"paths" : 
+			[
+				"external/sdbus-cpp/docs/sdbus-c++-class-diagram.png",
+				"external/sdbus-cpp/docs/sdbus-c++-class-diagram.uml",
+				"external/sdbus-cpp/docs/systemd-dbus-config.md",
+				"external/sdbus-cpp/docs/using-sdbus-c++.md"
+			],
+			"type" : "file"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "external/sdbus-cpp/docs",
+		"source" : "external/sdbus-cpp/docs"
+	}
+}

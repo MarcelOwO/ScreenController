@@ -6,12 +6,12 @@ set(CMAKE_CXX_STANDARD 23)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
-add_executable(ScreenController source/main.cpp)
+add_executable(ScreenController src/main.cpp)
 
 add_subdirectory(external)
-add_subdirectory(source)
+add_subdirectory(src)
 
-set(RES_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/resources")
+set(RES_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/res")
 
 file(
   GLOB ALL_FILES
@@ -42,7 +42,7 @@ include(GNUInstallDirs)
 
 install(TARGETS ScreenController RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/resources/
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/res/
         DESTINATION ${CMAKE_INSTALL_DATADIR}/screencontroller/assets)
 
 if(UNIX AND NOT APPLE)

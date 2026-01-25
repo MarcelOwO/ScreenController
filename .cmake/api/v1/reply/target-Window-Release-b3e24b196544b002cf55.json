@@ -1,0 +1,202 @@
+{
+	"archive" : {},
+	"artifacts" : 
+	[
+		{
+			"path" : "src/window_manager/libWindow.a"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"target_link_libraries",
+			"target_include_directories"
+		],
+		"files" : 
+		[
+			"src/window_manager/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 1,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 8,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 3,
+				"parent" : 0
+			}
+		]
+	},
+	"codemodelVersion" : 
+	{
+		"major" : 2,
+		"minor" : 9
+	},
+	"compileDependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "Logger::@48bfaf6ebac2073e8858"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "common::@af79f3804eddddbfa7f1"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "glfw::@ca12bac854c2ac6b2230"
+		}
+	],
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-O3 -DNDEBUG -std=gnu++23"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 3,
+					"path" : "/home/marcel/projects/Cpp/ScreenController/src/window_manager/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/marcel/projects/Cpp/ScreenController/src/logging/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/marcel/projects/Cpp/ScreenController/src/common"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/marcel/projects/Cpp/ScreenController/external/glfw/include"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					1
+				],
+				"standard" : "23"
+			},
+			"sourceIndexes" : 
+			[
+				0,
+				1
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "glfw::@ca12bac854c2ac6b2230"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "Logger::@48bfaf6ebac2073e8858"
+		}
+	],
+	"id" : "Window::@039e6218f59ec56618be",
+	"interfaceCompileDependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "Logger::@48bfaf6ebac2073e8858"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "common::@af79f3804eddddbfa7f1"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "glfw::@ca12bac854c2ac6b2230"
+		}
+	],
+	"interfaceLinkLibraries" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "Logger::@48bfaf6ebac2073e8858"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "common::@af79f3804eddddbfa7f1"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "glfw::@ca12bac854c2ac6b2230"
+		}
+	],
+	"linkLibraries" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "Logger::@48bfaf6ebac2073e8858"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "common::@af79f3804eddddbfa7f1"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "glfw::@ca12bac854c2ac6b2230"
+		}
+	],
+	"name" : "Window",
+	"nameOnDisk" : "libWindow.a",
+	"paths" : 
+	{
+		"build" : "src/window_manager",
+		"source" : "src/window_manager"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				1
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/window_manager/src/window_factory.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/window_manager/src/glfw_window.cpp",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "STATIC_LIBRARY"
+}

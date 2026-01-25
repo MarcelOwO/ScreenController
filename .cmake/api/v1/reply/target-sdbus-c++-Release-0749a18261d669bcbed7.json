@@ -1,0 +1,185 @@
+{
+	"archive" : {},
+	"artifacts" : 
+	[
+		{
+			"path" : "external/sdbus-cpp/libsdbus-c++.a"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"install",
+			"target_link_libraries",
+			"target_include_directories"
+		],
+		"files" : 
+		[
+			"external/sdbus-cpp/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 218,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 292,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 226,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 219,
+				"parent" : 0
+			}
+		]
+	},
+	"codemodelVersion" : 
+	{
+		"major" : 2,
+		"minor" : 9
+	},
+	"compileDependencies" : 
+	[
+		{
+			"backtrace" : 3,
+			"id" : "sdbus-c++-objlib::@c82662931e8adbb010cf"
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 3,
+			"id" : "sdbus-c++-objlib::@c82662931e8adbb010cf"
+		}
+	],
+	"id" : "sdbus-c++::@c82662931e8adbb010cf",
+	"install" : 
+	{
+		"destinations" : 
+		[
+			{
+				"backtrace" : 2,
+				"path" : "lib"
+			}
+		],
+		"prefix" : 
+		{
+			"path" : "/usr/local"
+		}
+	},
+	"interfaceLinkLibraries" : 
+	[
+		{
+			"backtrace" : 3,
+			"id" : "sdbus-c++-objlib::@c82662931e8adbb010cf"
+		}
+	],
+	"linkLibraries" : 
+	[
+		{
+			"backtrace" : 3,
+			"id" : "sdbus-c++-objlib::@c82662931e8adbb010cf"
+		}
+	],
+	"name" : "sdbus-c++",
+	"nameOnDisk" : "libsdbus-c++.a",
+	"paths" : 
+	{
+		"build" : "external/sdbus-cpp",
+		"source" : "external/sdbus-cpp"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Object Libraries",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 3,
+			"isGenerated" : true,
+			"path" : "external/sdbus-cpp/CMakeFiles/sdbus-c++-objlib.dir/src/Connection.cpp.o",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"isGenerated" : true,
+			"path" : "external/sdbus-cpp/CMakeFiles/sdbus-c++-objlib.dir/src/Error.cpp.o",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"isGenerated" : true,
+			"path" : "external/sdbus-cpp/CMakeFiles/sdbus-c++-objlib.dir/src/Message.cpp.o",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"isGenerated" : true,
+			"path" : "external/sdbus-cpp/CMakeFiles/sdbus-c++-objlib.dir/src/Object.cpp.o",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"isGenerated" : true,
+			"path" : "external/sdbus-cpp/CMakeFiles/sdbus-c++-objlib.dir/src/Proxy.cpp.o",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"isGenerated" : true,
+			"path" : "external/sdbus-cpp/CMakeFiles/sdbus-c++-objlib.dir/src/Types.cpp.o",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"isGenerated" : true,
+			"path" : "external/sdbus-cpp/CMakeFiles/sdbus-c++-objlib.dir/src/Flags.cpp.o",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"isGenerated" : true,
+			"path" : "external/sdbus-cpp/CMakeFiles/sdbus-c++-objlib.dir/src/VTableUtils.c.o",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"isGenerated" : true,
+			"path" : "external/sdbus-cpp/CMakeFiles/sdbus-c++-objlib.dir/src/SdBus.cpp.o",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "STATIC_LIBRARY"
+}

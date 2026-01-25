@@ -1,0 +1,333 @@
+{
+	"archive" : {},
+	"artifacts" : 
+	[
+		{
+			"path" : "src/bluetooth_manager/libBluetooth.a"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"target_link_libraries",
+			"target_include_directories"
+		],
+		"files" : 
+		[
+			"src/bluetooth_manager/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 1,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 25,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 17,
+				"parent" : 0
+			}
+		]
+	},
+	"codemodelVersion" : 
+	{
+		"major" : 2,
+		"minor" : 9
+	},
+	"compileDependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "Logger::@48bfaf6ebac2073e8858"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "common::@af79f3804eddddbfa7f1"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "sdbus-c++::@c82662931e8adbb010cf"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "libzstd_static::@187f364bcf982e21dd9b"
+		}
+	],
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-O3 -DNDEBUG -std=gnu++23"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 2,
+					"define" : "ZSTD_MULTITHREAD"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 3,
+					"path" : "/home/marcel/projects/Cpp/ScreenController/src/bluetooth_manager/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "/home/marcel/projects/Cpp/ScreenController/src/bluetooth_manager/."
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/marcel/projects/Cpp/ScreenController/src/logging/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/marcel/projects/Cpp/ScreenController/src/common"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/marcel/projects/Cpp/ScreenController/external/sdbus-cpp/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/marcel/projects/Cpp/ScreenController/external/zstd/build/cmake/../../lib"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					1
+				],
+				"standard" : "23"
+			},
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "sdbus-c++-objlib::@c82662931e8adbb010cf"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "sdbus-c++::@c82662931e8adbb010cf"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "libzstd_static::@187f364bcf982e21dd9b"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "Logger::@48bfaf6ebac2073e8858"
+		}
+	],
+	"id" : "Bluetooth::@00fce8d7fdc0976b0345",
+	"interfaceCompileDependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "Logger::@48bfaf6ebac2073e8858"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "common::@af79f3804eddddbfa7f1"
+		}
+	],
+	"interfaceLinkLibraries" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "Logger::@48bfaf6ebac2073e8858"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "common::@af79f3804eddddbfa7f1"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "sdbus-c++::@c82662931e8adbb010cf"
+		},
+		{
+			"backtrace" : 2,
+			"fragment" : "bluetooth"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "libzstd_static::@187f364bcf982e21dd9b"
+		}
+	],
+	"linkLibraries" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "Logger::@48bfaf6ebac2073e8858"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "common::@af79f3804eddddbfa7f1"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "sdbus-c++::@c82662931e8adbb010cf"
+		},
+		{
+			"backtrace" : 2,
+			"fragment" : "bluetooth"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "libzstd_static::@187f364bcf982e21dd9b"
+		}
+	],
+	"name" : "Bluetooth",
+	"nameOnDisk" : "libBluetooth.a",
+	"paths" : 
+	{
+		"build" : "src/bluetooth_manager",
+		"source" : "src/bluetooth_manager"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11
+			]
+		},
+		{
+			"name" : "Header Files",
+			"sourceIndexes" : 
+			[
+				12
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/bluetooth_manager/bluetooth_manager.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/bluetooth_manager/dbus/dbus_manager.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/bluetooth_manager/dbus/dbus_implementations/bluetooth_device.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/bluetooth_manager/dbus/dbus_implementations/bluetooth_agent.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/bluetooth_manager/dbus/dbus_implementations/bluetooth_agent_manager.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/bluetooth_manager/dbus/dbus_implementations/bluetooth_le_advertisement.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/bluetooth_manager/dbus/dbus_implementations/bluetooth_le_advertising_manager.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/bluetooth_manager/dbus/dbus_implementations/bluetooth_adapter.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/bluetooth_manager/socket/l2cap_receiver.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/bluetooth_manager/unpacker/unpacker.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/bluetooth_manager/socket/socket_helper/socket_helper.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/bluetooth_manager/socket/socket_implementations/socket_options.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/bluetooth_manager/models/connection_state.h",
+			"sourceGroupIndex" : 1
+		}
+	],
+	"type" : "STATIC_LIBRARY"
+}
