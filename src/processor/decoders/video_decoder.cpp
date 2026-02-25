@@ -9,8 +9,7 @@
 #include <vector>
 
 namespace screen_controller::processing {
-VideoDecoder::VideoDecoder(const std::string_view path,
-                           const std::shared_ptr<Logger>& logger)
+VideoDecoder::VideoDecoder(const std::string_view path, ILogger& logger)
     : video_stream_index_(-1),
       logger_(logger),
       frame_data_{
@@ -25,19 +24,19 @@ VideoDecoder::VideoDecoder(const std::string_view path,
       frame_(nullptr),
       packet_(nullptr),
       sws_ctx_(nullptr) {
-  logger_->LogInfo("Creating VideoDecoder for path: " + std::string(path));
+  logger_.LogInfo("Creating VideoDecoder for path: " + std::string(path));
 }
 
 bool VideoDecoder::init() {
   if (avformat_open_input(&format_context_, path_.data(), nullptr, nullptr) <
       0) {
-    logger_->LogError("Failed to open video file: " + std::string(path_));
+    logger_.LogError("Failed to open video file: " + std::string(path_));
     return false;
   }
 
   if (avformat_find_stream_info(format_context_, nullptr) < 0) {
-    logger_->LogError("Failed to find stream info for file: " +
-                      std::string(path_));
+    logger_.LogError("Failed to find stream info for file: " +
+                     std::string(path_));
     return false;
   }
 
@@ -50,7 +49,7 @@ bool VideoDecoder::init() {
   }
 
   if (video_stream_index_ == -1) {
-    logger_->LogError("Could not find a video stream");
+    logger_.LogError("Could not find a video stream");
     return false;
   }
 
@@ -59,22 +58,22 @@ bool VideoDecoder::init() {
   const AVCodec* codec = avcodec_find_decoder(codec_id);
 
   if (codec == nullptr) {
-    logger_->LogError("Failed to find decoder for codec ID: {} " +
-                      std::to_string(codec_id));
+    logger_.LogError("Failed to find decoder for codec ID: {} " +
+                     std::to_string(codec_id));
     return false;
   }
 
   codec_context_ = avcodec_alloc_context3(codec);
 
   if (codec_context_ == nullptr) {
-    logger_->LogError( "Could not allocate codec context");
+    logger_.LogError("Could not allocate codec context");
     return false;
   }
 
   if (avcodec_parameters_to_context(
           codec_context_,
           format_context_->streams[video_stream_index_]->codecpar) < 0) {
-    logger_->LogError( "Could not copy codec parameters to context");
+    logger_.LogError("Could not copy codec parameters to context");
     return false;
   }
 
@@ -84,12 +83,12 @@ bool VideoDecoder::init() {
 
   if (av_hwdevice_ctx_create(&codec_context_->hw_device_ctx,
                              AV_HWDEVICE_TYPE_DRM, nullptr, nullptr, 0) < 0) {
-    logger_->LogError( "Could not create hardware device context");
+    logger_.LogError("Could not create hardware device context");
     return false;
   }
 
   if (avcodec_open2(codec_context_, codec, nullptr) < 0) {
-    logger_->LogError( "Could not open codec");
+    logger_.LogError("Could not open codec");
     return false;
   }
 
@@ -97,7 +96,7 @@ bool VideoDecoder::init() {
   packet_ = av_packet_alloc();
 
   if (frame_ == nullptr || packet_ == nullptr) {
-    logger_->LogError( "Could not allocate AVPacket");
+    logger_.LogError("Could not allocate AVPacket");
     return false;
   }
 
@@ -106,33 +105,33 @@ bool VideoDecoder::init() {
                      codec_context_->pix_fmt, 1920, 1080, AV_PIX_FMT_RGB24,
                      SWS_FAST_BILINEAR, nullptr, nullptr, nullptr);
   if (sws_ctx_ == nullptr) {
-    logger_->LogError( "Could not create sws context");
+    logger_.LogError("Could not create sws context");
     return false;
   }
 
   while (av_read_frame(format_context_, packet_) >= 0) {
     if (packet_->stream_index != video_stream_index_) {
       av_packet_unref(packet_);
-      logger_->LogError( "Could not read frame");
+      logger_.LogError("Could not read frame");
       return false;
     }
 
     if (const auto ret = avcodec_send_packet(codec_context_, packet_);
         ret < 0) {
-      logger_->LogError("avcodec_send_packet error");
+      logger_.LogError("avcodec_send_packet error");
       return false;
     }
 
     if (const auto ret = avcodec_receive_frame(codec_context_, frame_);
         ret != 0) {
-      logger_->LogError("avcodec_receive_frame error");
+      logger_.LogError("avcodec_receive_frame error");
       return false;
     }
 
     av_packet_unref(packet_);
 
     if (frame_->data == nullptr) {
-      logger_->LogError("Frame data is null");
+      logger_.LogError("Frame data is null");
       return false;
     }
 
@@ -141,7 +140,7 @@ bool VideoDecoder::init() {
 
     if (sws_scale(sws_ctx_, frame_->data, frame_->linesize, 0,
                   codec_context_->height, &dst_data, &dst_linesize) < 0) {
-      logger_->LogError("Could not scale frame");
+      logger_.LogError("Could not scale frame");
       std::cerr << "Error: Failed to scale frame" << std::endl;
       return false;
     }
@@ -151,7 +150,6 @@ bool VideoDecoder::init() {
   }
 
   (void)avcodec_send_packet(codec_context_, nullptr);
-
   while (avcodec_receive_frame(codec_context_, frame_) == 0) {
   }
 

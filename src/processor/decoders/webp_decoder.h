@@ -4,19 +4,20 @@
 
 #ifndef WEBP_PROCESSOR_H
 #define WEBP_PROCESSOR_H
+#include <models/frame_data.h>
+
 #include <optional>
 #include <string_view>
 
 #include "decoder.h"
 #include "logging/logger.h"
-#include <models/frame_data.h>
 
 namespace screen_controller::processing {
 
-class WebpDecoder final : public Decoder {
+class WebpDecoder final : public IDecoder {
  public:
-  explicit WebpDecoder(std::string_view path,const std::shared_ptr<Logger>& logger);
-  virtual ~WebpDecoder() override ;
+  explicit WebpDecoder(std::string_view path, ILogger& logger);
+  virtual ~WebpDecoder() override;
   WebpDecoder(const WebpDecoder&) = delete;
   WebpDecoder& operator=(const WebpDecoder&) = delete;
   WebpDecoder(WebpDecoder&&) = delete;
@@ -28,7 +29,7 @@ class WebpDecoder final : public Decoder {
       override;
 
  private:
-  std::shared_ptr<Logger> logger_;
+  ILogger& logger_;
   common::FrameData frame_data_;
   bool is_loaded_;
   std::string_view path_;

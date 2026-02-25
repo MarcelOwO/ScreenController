@@ -4,7 +4,6 @@
 
 #include "stb_decoder.h"
 
-#include <iostream>
 #include <optional>
 #include <vector>
 
@@ -15,10 +14,9 @@
 
 namespace screen_controller::processing {
 
-StbDecoder::StbDecoder(const std::string_view path,
-                       const std::shared_ptr<Logger> &logger)
+StbDecoder::StbDecoder(const std::string_view path, ILogger& logger)
     : logger_(logger), is_loaded_(false), path_(path) {
-  logger_->LogInfo("Creating StbDecoder for path: " + std::string(path));
+  logger_.LogInfo("Creating StbDecoder for path: " + std::string(path));
 }
 
 bool StbDecoder::has_data() { return is_loaded_; }
@@ -31,7 +29,7 @@ bool StbDecoder::init() {
                 &frame_data_.channels, 3);
 
   if (raw_data == nullptr) {
-    logger_->LogError("Failed to load image");
+    logger_.LogError("Failed to load image");
   }
 
   (void)stbir_resize_uint8_srgb(raw_data, frame_data_.width, frame_data_.height,
@@ -39,7 +37,7 @@ bool StbDecoder::init() {
                                 STBIR_RGB);
 
   if (!!frame_data_.data.empty()) {
-    logger_->LogError("Failed to resize image");
+    logger_.LogError("Failed to resize image");
   }
   is_loaded_ = true;
   stbi_image_free(raw_data);

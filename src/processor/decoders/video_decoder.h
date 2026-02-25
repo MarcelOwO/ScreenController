@@ -17,10 +17,9 @@ extern "C" {
 }
 
 namespace screen_controller::processing {
-class VideoDecoder final : public Decoder {
+class VideoDecoder final : public IDecoder {
  public:
-  explicit VideoDecoder(std::string_view path,
-                        const std::shared_ptr<Logger>& logger);
+  explicit VideoDecoder(std::string_view path, ILogger& logger);
   virtual bool init() override;
   virtual ~VideoDecoder() override;
   virtual bool has_data() override;
@@ -32,7 +31,7 @@ class VideoDecoder final : public Decoder {
   int current_frame_;
   double frame_rate_;
   int video_stream_index_;
-  std::shared_ptr<Logger> logger_;
+  ILogger& logger_;
 
   std::vector<common::FrameData> frames_;
   common::FrameData frame_data_;
