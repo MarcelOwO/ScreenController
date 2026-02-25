@@ -5,8 +5,7 @@ add_library(Logger STATIC
 
 target_include_directories(Logger
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-        include
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
 
-target_link_libraries(Logger )
+target_link_libraries(Logger)

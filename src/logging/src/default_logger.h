@@ -2,17 +2,14 @@
 #define DEFAULT_LOGGER_H
 
 #include "../include/logging/logger.h"
+
 namespace screen_controller {
 
 class DefaultLogger : public ILogger {
  public:
-  explicit DefaultLogger(std::string_view name);
+  explicit DefaultLogger();
   ~DefaultLogger();
-
   void Log(LogLevel level, std::string_view log);
-  void LogInfo(std::string_view log);
-
-  void LogError(std::string_view log);
 };
 
 }  // namespace screen_controller

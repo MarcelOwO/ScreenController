@@ -4,9 +4,9 @@
 
 namespace screen_controller {
 
-DefaultLogger::DefaultLogger(std::string_view name) {}
+DefaultLogger::DefaultLogger() {}
 
-DefaultLogger::~DefaultLogger() = default;
+DefaultLogger::~DefaultLogger() {};
 
 void DefaultLogger::Log(const LogLevel level, const std::string_view log) {
   switch (level) {
@@ -23,14 +23,6 @@ void DefaultLogger::Log(const LogLevel level, const std::string_view log) {
       break;
     }
   }
-}
-
-void DefaultLogger::LogInfo(const std::string_view log) {
-  Log(LogLevel::INFO, log);
-}
-
-void DefaultLogger::LogError(const std::string_view log) {
-  Log(LogLevel::ERROR, log);
 }
 
 }  // namespace screen_controller

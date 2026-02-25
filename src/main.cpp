@@ -1,5 +1,5 @@
 
-#include <app/app.h>
+#include "app/app.h"
 
 int main(int argc, char* argv[]) {
   screen_controller::App app;

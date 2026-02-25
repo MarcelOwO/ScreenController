@@ -6,9 +6,12 @@ set(CMAKE_CXX_STANDARD 23)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 add_executable(ScreenController src/main.cpp)
 
 add_subdirectory(external)
+add_subdirectory(include)
 add_subdirectory(src)
 
 set(RES_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/res")
