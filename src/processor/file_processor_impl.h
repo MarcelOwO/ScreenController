@@ -17,7 +17,7 @@
 
 namespace screen_controller {
 
-class FileProcessor : IFileProcessor {
+class FileProcessor : public IFileProcessor {
  public:
   explicit FileProcessor(ILogger& logger);
   ~FileProcessor();
@@ -34,7 +34,7 @@ class FileProcessor : IFileProcessor {
 
  private:
   ILogger& logger_;
-  std::unique_ptr<processing::Decoder> decoder_;
+  std::unique_ptr<processing::IDecoder> decoder_;
   static common::FileType get_type(std::string_view name);
 };
 }  // namespace screen_controller
