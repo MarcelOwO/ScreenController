@@ -6,25 +6,22 @@
 #define GRAPHICS_RENDERER_H
 
 #include <glad/glad.h>
+#include <graphics/renderer.h>
 #include <logging/logger.h>
 #include <models/frame_data.h>
 #include <pixel_data.h>
 
 #include <expected>
 #include <filesystem>
-#include <memory>
-#include <optional>
-#include <span>
-#include <string>
 
 #include "models/error_enum.h"
-#include "../../shader/shader.h"
+#include "shader/shader.h"
 
 namespace screen_controller {
 
-class GraphicsRenderer {
+class GraphicsRenderer : public IRenderer {
  public:
-  explicit GraphicsRenderer(const std::shared_ptr<Logger> &logger);
+  explicit GraphicsRenderer(ILogger& logger);
   ~GraphicsRenderer();
 
   struct Color {
@@ -37,7 +34,7 @@ class GraphicsRenderer {
                                               int window_width,
                                               int window_height);
 
-  void set_texture(const common::FrameData *data);
+  void set_texture(const common::FrameData* data);
   void set_fallback_texture() const;
   void update_ratio(int width, int height) const;
 
@@ -46,7 +43,7 @@ class GraphicsRenderer {
   void render() const;
 
  private:
-  std::shared_ptr<Logger> logger_;
+  ILogger& logger_;
   Shader shader_;
 
   GLuint texture_;

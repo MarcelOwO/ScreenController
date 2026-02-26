@@ -19,14 +19,14 @@
 #include "models/error_enum.h"
 
 namespace screen_controller {
-Shader::Shader(const std::shared_ptr<Logger>& logger) : logger_(logger) {
-  logger_->LogInfo("Creating shader");
+Shader::Shader(ILogger& logger) : logger_(logger) {
+  logger_.LogInfo("Creating shader");
 }
 
 std::expected<void, common::ErrorEnum> Shader::init(
     const std::filesystem::path& vertex_path,
     const std::filesystem::path& fragment_path) {
-  logger_->LogInfo("Initializing shaders");
+  logger_.LogInfo("Initializing shaders");
 
   std::string vertex_code{};
   std::string fragment_code{};
@@ -38,7 +38,7 @@ std::expected<void, common::ErrorEnum> Shader::init(
 
   ssize_t count = readlink("/proc/self/exe", result.data(), PATH_MAX);
   if (count < 0) {
-    logger_->LogError("Failed to read link " + std::string(strerror(errno)));
+    logger_.LogError("Failed to read link " + std::string(strerror(errno)));
     return std::unexpected(common::ErrorEnum::ERROR);
   }
 
@@ -51,21 +51,20 @@ std::expected<void, common::ErrorEnum> Shader::init(
   std::filesystem::path f_path(project_dir / fragment_path);
 
   if (!std::filesystem::exists(v_path)) {
-    logger_->LogError("Vertex shader path does not exist: " + f_path.string());
+    logger_.LogError("Vertex shader path does not exist: " + f_path.string());
     return std::unexpected(common::ErrorEnum::ERROR);
   }
 
   if (!std::filesystem::exists(f_path)) {
-    logger_->LogError("Fragment shader path does not exist: " +
-                      f_path.string());
+    logger_.LogError("Fragment shader path does not exist: " + f_path.string());
     return std::unexpected(common::ErrorEnum::ERROR);
   }
 
   v_shader_file.open(v_path);
   f_shader_file.open(f_path);
   if (!v_shader_file.is_open() || !f_shader_file.is_open()) {
-    logger_->LogError("Failed to open shader files" + v_path.string() + " " +
-                      f_path.string());
+    logger_.LogError("Failed to open shader files" + v_path.string() + " " +
+                     f_path.string());
     return std::unexpected(common::ErrorEnum::ERROR);
   }
 
@@ -82,8 +81,8 @@ std::expected<void, common::ErrorEnum> Shader::init(
   fragment_code = f_shader_stream.str();
 
   if (GLenum err = glGetError(); err != GL_NO_ERROR) {
-    logger_->LogError("OpenGL error before shader compilation: " +
-                      std::to_string(err));
+    logger_.LogError("OpenGL error before shader compilation: " +
+                     std::to_string(err));
     return std::unexpected(common::ErrorEnum::ERROR);
   }
 
@@ -146,14 +145,15 @@ void Shader::check_compile_errors(const unsigned int shader,
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (success == 0) {
       glGetShaderInfoLog(shader, 1024, nullptr, info_log.data());
-      logger_->LogError("Shader compilation error: " + std::string(info_log.data()));
-
+      logger_.LogError("Shader compilation error: " +
+                       std::string(info_log.data()));
     }
   } else {
     glGetProgramiv(shader, GL_LINK_STATUS, &success);
     if (success == 0) {
       glGetProgramInfoLog(shader, 1024, nullptr, info_log.data());
-      logger_->LogError("Program linking error: " + std::string(info_log.data()));
+      logger_.LogError("Program linking error: " +
+                       std::string(info_log.data()));
     }
   }
 }

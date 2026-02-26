@@ -20,7 +20,7 @@ class Shader {
  public:
   unsigned int id_;
 
-  explicit Shader(const std::shared_ptr<Logger>& logger);
+  explicit Shader(ILogger& logger);
 
   [[nodiscard]] std::expected<void, common::ErrorEnum> init(
       const std::filesystem::path& vertex_path,
@@ -35,8 +35,7 @@ class Shader {
   [[nodiscard]] GLint get_uniform_location(const std::string& name) const;
 
  private:
-  std::shared_ptr<Logger> logger_;
-
+  ILogger& logger_;
   void check_compile_errors(unsigned int shader, const std::string& type);
 };
 }  // namespace screen_controller
