@@ -1,6 +1,7 @@
 /.idea/
 /cmake-build-release/
 build/
+.cache/
 
 CMakeLists.txt.user
 CMakeCache.txt
