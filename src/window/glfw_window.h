@@ -1,7 +1,7 @@
 
 #include <logging/logger.h>
+#include <window_manager/window_manager.h>
 
-#include "../include/window_manager/window_manager.h"
 #include "GLFW/glfw3.h"
 
 namespace screen_controller {

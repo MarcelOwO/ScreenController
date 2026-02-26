@@ -2,10 +2,11 @@
 // Created by marce on 4/23/2025.
 //
 
-#ifndef STORAGE_MANAGER_H
-#define STORAGE_MANAGER_H
+#ifndef STORAGE_MANAGER_IMPL_H
+#define STORAGE_MANAGER_IMPL_H
 
 #include <logging/logger.h>
+#include <storage/storage_manager.h>
 
 #include <expected>
 #include <filesystem>
@@ -14,10 +15,11 @@
 #include <vector>
 
 namespace screen_controller {
-class StorageManager {
+class StorageManager : public IStorageManager {
  public:
   StorageManager(ILogger& logger);
   ~StorageManager();
+
   StorageManager(const StorageManager&) = delete;
   StorageManager& operator=(const StorageManager&) = delete;
   StorageManager(StorageManager&&) = delete;

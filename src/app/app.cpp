@@ -2,7 +2,8 @@
 // Created by marce on 4/2/2025.
 //
 
-#include <app/app.h>
+#include "app.h"
+
 #include <logging/logger.h>
 
 #include <chrono>

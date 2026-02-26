@@ -8,7 +8,7 @@
 #include <graphics_renderer/graphics_renderer.h>
 #include <logging/logger.h>
 #include <processor/file_processor.h>
-#include <storage_manager/storage_manager.h>
+#include <storage/storage_manager.h>
 #include <window_manager/window_manager.h>
 
 #include <condition_variable>
