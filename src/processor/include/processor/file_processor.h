@@ -1,6 +1,7 @@
 #ifndef I_FILE_PROCESSOR_H
 #define I_FILE_PROCESSOR_H
 
+#include <logging/logger.h>
 #include <models/frame_data.h>
 
 #include <memory>
@@ -10,7 +11,7 @@ namespace screen_controller {
 
 class IFileProcessor {
  public:
-  virtual ~IFileProcessor() = 0;
+  virtual ~IFileProcessor() = default;
 
   virtual bool process_file(std::string_view path) = 0;
 
@@ -19,7 +20,8 @@ class IFileProcessor {
 };
 
 class ProcessorFactory {
-  static std::unique_ptr<IFileProcessor> Create();
+ public:
+  static std::unique_ptr<IFileProcessor> Create(ILogger& logger);
 };
 
 }  // namespace screen_controller

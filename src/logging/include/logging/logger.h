@@ -23,8 +23,8 @@ class ILogger {
 
 class LoggerFactory {
  public:
-  virtual ILogger& GetInstance();
-  virtual std::shared_ptr<ILogger> Create();
+  static ILogger& GetInstance();
+  static std::shared_ptr<ILogger> Create();
 };
 
 };  // namespace screen_controller

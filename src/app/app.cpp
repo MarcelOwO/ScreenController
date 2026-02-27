@@ -6,39 +6,40 @@
 
 #include <logging/logger.h>
 
-#include <chrono>
 #include <thread>
+
+#include "graphics/renderer.h"
 
 namespace screen_controller {
 
 App::App()
     : running_(false),
-      logger_(std::make_shared<Logger>(settings.app_name)),
+      logger_(LoggerFactory::Create()),
       settings_{std::make_shared<AppSettings>(settings)},
-      window_manager_(logger_),
-      renderer_(logger_),
-      bluetooth_manager_(logger_, settings_),
-      storage_manager_(logger_),
-      file_processor_(logger_) {
+      window_manager_(WindowFactory::Create(*logger_)),
+      renderer_(RendererFactory::Create(*logger_)),
+      bluetooth_manager_(BluetoothFactory::Create(*logger_, this->settings)),
+      storage_manager_(StorageFactory::Create(*logger_)),
+      file_processor_(ProcessorFactory::Create(*logger_)) {
   logger_->LogInfo("Creating app");
 
   // hack for launchin this from ssh
   (void)setenv("DISPLAY", ":0", 1);
 
-  if (const auto res = storage_manager_.Init(); !res.has_value()) {
+  if (const auto res = storage_manager_->Init(); !res.has_value()) {
     logger_->LogError("Failed to initialize storage manager");
     return;
   }
 
-  bluetooth_manager_.on_packet_received(
+  bluetooth_manager_->on_packet_received(
       [this](const common::BluetoothPacket& packet) {
         logger_->LogInfo("Received Bluetooth packet: " + packet.name);
         (void)command_queue_.emplace(packet);
       });
 
-  const auto res = renderer_.init(
-      std::bit_cast<GLADloadproc>(WindowManager::address_pointer()),
-      WindowManager::get_width(), WindowManager::get_height());
+  const auto res = renderer_->init(window_manager_->get_proc_address(),
+                                   window_manager_->get_width(),
+                                   window_manager_->get_height());
 
   if (!res) {
     logger_->LogError("Failed to initialize renderer");
@@ -86,21 +87,21 @@ bool App::process_command(const common::BluetoothPacket& packet) {
       }
       if (type == "Delete") {
         logger_->LogInfo("Delete command received: " + name);
-        if (!storage_manager_.DeleteFile(name)) {
+        if (!storage_manager_->DeleteFile(name)) {
           logger_->LogError("Failed to delete file: " + name);
         }
         return true;
       }
       if (type == "Rotate") {
         logger_->LogInfo("Rotate command received:");
-        renderer_.rotate();
+        renderer_->rotate();
         return true;
       }
       logger_->LogError("Unknown command type: " + type);
       return false;
     }
     case 0: {  // file packet
-      if (!storage_manager_.SaveFile(packet.name, packet.data)) {
+      if (!storage_manager_->SaveFile(packet.name, packet.data)) {
         logger_->LogError("Failed to save file: " + packet.name);
       }
       return true;
@@ -113,15 +114,15 @@ bool App::process_command(const common::BluetoothPacket& packet) {
 }
 
 bool App::load_image(const std::string_view name, const bool is_asset) {
-  const auto path = is_asset ? storage_manager_.GetResourcePath(name)
-                             : storage_manager_.GetUserFilePath(name);
+  const auto path = is_asset ? storage_manager_->GetResourcePath(name)
+                             : storage_manager_->GetUserFilePath(name);
 
   if (!std::filesystem::exists(path)) {
     logger_->LogError("File does not exist: " + path.string());
     return false;
   }
 
-  if (!file_processor_.process_file(path.c_str())) {
+  if (!file_processor_->process_file(path.c_str())) {
     logger_->LogError("Failed to process file: " + path.string());
     return false;
   }
@@ -132,30 +133,30 @@ bool App::load_image(const std::string_view name, const bool is_asset) {
 }
 
 void App::process_frame() {
-  const auto frame = file_processor_.get_processed_data();
+  const auto frame = file_processor_->get_processed_data();
 
   if (!frame.has_value()) {
-    renderer_.set_fallback_texture();
+    renderer_->set_fallback_texture();
   }
 
-  renderer_.update_ratio(frame.value()->width, frame.value()->height);
+  renderer_->update_ratio(frame.value()->width, frame.value()->height);
 
-  renderer_.set_texture(frame.value().get());
+  renderer_->set_texture(frame.value().get());
 }
 
 void App::render_loop() {
-  while (!window_manager_.should_close()) {
-    bluetooth_manager_.run();
+  while (!window_manager_->should_close()) {
+    bluetooth_manager_->run();
     process_frame();
-    window_manager_.update([this] { renderer_.render(); });
-    window_manager_.poll_events();
+    window_manager_->update([this] { renderer_->render(); });
+    window_manager_->poll_events();
     std::this_thread::sleep_for(std::chrono::milliseconds{16});
   }
 }
 
 void App::handle_commands(const std::stop_token& stop_token) {
   while (!stop_token.stop_requested()) {
-    bluetooth_manager_.run();
+    bluetooth_manager_->run();
     std::unique_lock lock(queue_mutex_);
     queue_condition_.wait(lock, [this] { return !command_queue_.empty(); });
     if (auto packet = command_queue_.front(); !process_command(packet)) {

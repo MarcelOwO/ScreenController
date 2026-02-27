@@ -1,9 +1,16 @@
-add_library(Renderer STATIC graphics_renderer.cpp shader/shader.cpp)
+add_library(Renderer STATIC
+  src/graphics_renderer.cpp
+  src/renderer_factory.cpp
+  src/shader/shader.cpp
+)
 
 target_include_directories(
   Renderer
-  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-         $<INSTALL_INTERFACE:include>
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/.)
+  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-target_link_libraries(Renderer PUBLIC common Logger glad glm::glm)
+target_link_libraries(Renderer
+  PUBLIC
+  common Logger
+  PRIVATE
+  glad glm::glm
+)

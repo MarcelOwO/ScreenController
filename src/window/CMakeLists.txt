@@ -1,4 +1,6 @@
-add_library(Window STATIC window_factory.cpp glfw_window.cpp)
+add_library(Window STATIC
+ src/window_factory.cpp
+ src/glfw_window.cpp)
 
 target_include_directories(Window
         PUBLIC

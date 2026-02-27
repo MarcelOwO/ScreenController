@@ -9,18 +9,18 @@ pkg_check_modules(WEBP REQUIRED libwebp
 )
 
 add_library(File STATIC
-        file_processor.cpp
-        decoders/video_decoder.cpp
-        decoders/stb_decoder.cpp
-        decoders/webp_decoder.cpp
-        decoders/decoder_factory.cpp
+  src/file_processor_impl.cpp
+  src/file_processor_factory.cpp
+  src/decoders/video_decoder.cpp
+  src/decoders/stb_decoder.cpp
+  src/decoders/webp_decoder.cpp
+  src/decoders/decoder_factory.cpp
 )
 
 target_include_directories(File
         PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/.
         ${AVFORMAT_INCLUDE_DIRS}
         ${AVCODEC_INCLUDE_DIRS}
         ${AVUTIL_INCLUDE_DIRS}

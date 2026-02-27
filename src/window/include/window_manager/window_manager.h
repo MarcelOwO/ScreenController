@@ -24,8 +24,8 @@ class IWindowManager {
   virtual int get_width() const = 0;
   virtual bool should_close() const = 0;
 
- protected:
-  IWindowManager() = default;
+  using ProcLoader = void* (*)(const char*);
+  virtual ProcLoader get_proc_address() const = 0;
 };
 
 class WindowFactory {

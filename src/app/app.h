@@ -5,7 +5,9 @@
 #ifndef APP_H
 #define APP_H
 
-#include <graphics_renderer/graphics_renderer.h>
+#include <bluetooth_packet.h>
+#include <bt/manager.h>
+#include <graphics/renderer.h>
 #include <logging/logger.h>
 #include <processor/file_processor.h>
 #include <storage/storage_manager.h>
@@ -32,13 +34,15 @@ class App {
   bool running_;
   std::jthread command_thread_;
 
-  std::shared_ptr<Logger> logger_;
+  std::shared_ptr<ILogger> logger_;
+
   std::shared_ptr<AppSettings> settings_;
 
-  WindowManager window_manager_;
-  GraphicsRenderer renderer_;
-  StorageManager storage_manager_;
-  FileProcessor file_processor_;
+  std::unique_ptr<IWindowManager> window_manager_;
+  std::unique_ptr<IRenderer> renderer_;
+  std::unique_ptr<IStorageManager> storage_manager_;
+  std::unique_ptr<IFileProcessor> file_processor_;
+  std::unique_ptr<IBluetoothManager> bluetooth_manager_;
 
   std::queue<common::BluetoothPacket> command_queue_;
   std::mutex queue_mutex_;

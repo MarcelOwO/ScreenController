@@ -1,6 +1,7 @@
 add_subdirectory(app)
-add_subdirectory(processor)
+add_subdirectory(bluetooth)
 add_subdirectory(graphics)
 add_subdirectory(logging)
+add_subdirectory(processor)
 add_subdirectory(storage)
 add_subdirectory(window)
