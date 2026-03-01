@@ -17,6 +17,7 @@ class IWindowManager {
   virtual ~IWindowManager() = default;
 
   virtual void update(const std::function<void()>& render) = 0;
+
   virtual void poll_events() = 0;
   virtual void swap_buffers() = 0;
 
@@ -30,7 +31,8 @@ class IWindowManager {
 
 class WindowFactory {
  public:
-  static std::unique_ptr<IWindowManager> Create(ILogger& logger);
+  static std::unique_ptr<IWindowManager> Create(
+      ILogger& logger, const std::function<void()>& onShutdownRequested);
 };
 
 }  // namespace screen_controller

@@ -13,10 +13,11 @@
 namespace screen_controller {
 
 App::App()
-    : running_(false),
+    : is_running_(true),
       logger_(LoggerFactory::Create()),
       settings_{std::make_shared<AppSettings>(settings)},
-      window_manager_(WindowFactory::Create(*logger_)),
+      window_manager_(WindowFactory::Create(
+          *logger_, [this]() { this->is_running_ = false; })),
       renderer_(RendererFactory::Create(*logger_)),
       bluetooth_manager_(BluetoothFactory::Create(*logger_, this->settings)),
       storage_manager_(StorageFactory::Create(*logger_)),
@@ -45,20 +46,11 @@ App::App()
     logger_->LogError("Failed to initialize renderer");
   }
 
-  if (!load_image("startup_files/sona.png", true)) {
+  if (!load_image("startup_files/eevee.gif", true)) {
     logger_->LogError("Failed to load startup image");
   }
 
-  running_ = true;
-}
-
-App::~App() {
-  logger_->LogInfo("Cleaning up App class");
-  running_ = false;
-  queue_condition_.notify_all();
-  if (command_thread_.joinable()) {
-    command_thread_.join();
-  }
+  is_running_ = true;
 }
 
 bool App::process_command(const common::BluetoothPacket& packet) {
@@ -144,16 +136,6 @@ void App::process_frame() {
   renderer_->set_texture(frame.value().get());
 }
 
-void App::render_loop() {
-  while (!window_manager_->should_close()) {
-    bluetooth_manager_->run();
-    process_frame();
-    window_manager_->update([this] { renderer_->render(); });
-    window_manager_->poll_events();
-    std::this_thread::sleep_for(std::chrono::milliseconds{16});
-  }
-}
-
 void App::handle_commands(const std::stop_token& stop_token) {
   while (!stop_token.stop_requested()) {
     bluetooth_manager_->run();
@@ -171,6 +153,27 @@ void App::run() {
   std::jthread command_thread(&App::handle_commands, this);
   command_thread_ = std::move(command_thread);
   render_loop();
+  if (command_thread_.joinable()) {
+    command_thread_.join();
+  }
 }
 
+void App::render_loop() {
+  while (is_running_) {
+    bluetooth_manager_->run();
+    process_frame();
+    window_manager_->update([this] { renderer_->render(); });
+    window_manager_->poll_events();
+    std::this_thread::sleep_for(std::chrono::milliseconds{16});
+
+    if (window_manager_->should_close()) {
+      is_running_ = false;
+    }
+  }
+}
+
+App::~App() {
+  logger_->LogInfo("Cleaning up App class");
+  queue_condition_.notify_all();
+}
 }  // namespace screen_controller

@@ -8,7 +8,8 @@ namespace screen_controller {
 
 class GlfwWindow : public IWindowManager {
  public:
-  explicit GlfwWindow(ILogger& logger);
+  explicit GlfwWindow(ILogger& logger,
+                      const std::function<void()>& onShutdownRequested);
   ~GlfwWindow();
 
   GlfwWindow(const GlfwWindow&) = delete;
@@ -28,7 +29,10 @@ class GlfwWindow : public IWindowManager {
 
   [[nodiscard]] bool should_close() const;
 
+  inline static GlfwWindow* instance = nullptr;
+
  private:
+  const std::function<void()>& onShutdownRequested_;
   GLFWwindow* window_;
   ILogger& _logger;
 };

@@ -31,7 +31,7 @@ class App {
   AppSettings settings;
 
  private:
-  bool running_;
+  bool is_running_;
   std::jthread command_thread_;
 
   std::shared_ptr<ILogger> logger_;

@@ -8,9 +8,10 @@
 
 namespace screen_controller {
 
-std::unique_ptr<IWindowManager> WindowFactory::Create(ILogger& logger) {
+std::unique_ptr<IWindowManager> WindowFactory::Create(
+    ILogger& logger, const std::function<void()>& onShutdownRequested) {
   try {
-    auto window = std::make_unique<GlfwWindow>(logger);
+    auto window = std::make_unique<GlfwWindow>(logger, onShutdownRequested);
     return window;
 
   } catch (const std::exception& e) {

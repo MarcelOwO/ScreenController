@@ -4,7 +4,13 @@
 
 namespace screen_controller {
 
-GlfwWindow::GlfwWindow(ILogger& logger) : window_(), _logger(logger) {
+GlfwWindow::GlfwWindow(ILogger& logger,
+                       const std::function<void()>& onShutdownRequested)
+    : window_(), _logger(logger), onShutdownRequested_(onShutdownRequested) {
+  if (instance == nullptr) {
+    instance = this;
+  }
+
   _logger.LogInfo("Creating WindowManager");
 
   glfwSetErrorCallback([](int, const char* description) {});
@@ -23,6 +29,19 @@ GlfwWindow::GlfwWindow(ILogger& logger) : window_(), _logger(logger) {
   }
 
   glfwMakeContextCurrent(window_);
+
+  glfwSetKeyCallback(window_, [](GLFWwindow* window, int key, int scancode,
+                                 int action, int mods) {
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+      const auto ref = GlfwWindow::instance;
+
+      if (ref == nullptr) {
+        return;
+      }
+
+      ref->onShutdownRequested_();
+    }
+  });
 };
 
 bool GlfwWindow::should_close() const {
@@ -59,6 +78,10 @@ void GlfwWindow::update(const std::function<void()>& render) {
 }
 
 GlfwWindow::~GlfwWindow() {
+  if (instance != nullptr && instance == this) {
+    instance = nullptr;
+  }
+
   if (window_ != nullptr) {
     glfwDestroyWindow(window_);
   }

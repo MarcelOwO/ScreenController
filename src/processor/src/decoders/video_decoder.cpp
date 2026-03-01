@@ -79,14 +79,20 @@ bool VideoDecoder::init() {
 
   const auto [num, den] =
       format_context_->streams[video_stream_index_]->avg_frame_rate;
-  frame_rate_ = static_cast<double>(num / den);
+
+  frame_rate_ =
+      av_q2d(format_context_->streams[video_stream_index_]->avg_frame_rate);
+
+  const char* drm_device = "/dev/dri/renderD128";  // Try explicit render node
 
   if (av_hwdevice_ctx_create(&codec_context_->hw_device_ctx,
-                             AV_HWDEVICE_TYPE_DRM, nullptr, nullptr, 0) < 0) {
-    logger_.LogError("Could not create hardware device context");
+                             AV_HWDEVICE_TYPE_DRM,
+                             drm_device,  // Pass the device path here
+                             nullptr, 0) < 0) {
+    logger_.LogError("Could not create DRM hardware device context at " +
+                     std::string(drm_device));
     return false;
   }
-
   if (avcodec_open2(codec_context_, codec, nullptr) < 0) {
     logger_.LogError("Could not open codec");
     return false;
