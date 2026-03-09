@@ -19,24 +19,20 @@ App::App()
       window_manager_(WindowFactory::Create(
           *logger_, [this]() { this->is_running_ = false; })),
       renderer_(RendererFactory::Create(*logger_)),
-      bluetooth_manager_(BluetoothFactory::Create(*logger_, this->settings)),
+      bluetooth_manager_(BluetoothFactory::Create(
+          *logger_, this->settings,
+          [this](const common::BluetoothPacket& packet) {
+            logger_->LogInfo("Received Bluetooth packet: " + packet.name);
+            (void)command_queue_.emplace(packet);
+          })),
       storage_manager_(StorageFactory::Create(*logger_)),
       file_processor_(ProcessorFactory::Create(*logger_)) {
   logger_->LogInfo("Creating app");
-
-  // hack for launchin this from ssh
-  (void)setenv("DISPLAY", ":0", 1);
 
   if (const auto res = storage_manager_->Init(); !res.has_value()) {
     logger_->LogError("Failed to initialize storage manager");
     return;
   }
-
-  bluetooth_manager_->on_packet_received(
-      [this](const common::BluetoothPacket& packet) {
-        logger_->LogInfo("Received Bluetooth packet: " + packet.name);
-        (void)command_queue_.emplace(packet);
-      });
 
   const auto res = renderer_->init(window_manager_->get_proc_address(),
                                    window_manager_->get_width(),
@@ -57,8 +53,7 @@ bool App::process_command(const common::BluetoothPacket& packet) {
   logger_->LogInfo("Received packet: " + packet.name);
 
   switch (packet.type) {
-    case 1: {  // command packet
-
+    case 1: {
       const auto& command = packet.name;
       const auto it = command.find(':');
 
@@ -138,7 +133,6 @@ void App::process_frame() {
 
 void App::handle_commands(const std::stop_token& stop_token) {
   while (!stop_token.stop_requested()) {
-    bluetooth_manager_->run();
     std::unique_lock lock(queue_mutex_);
     queue_condition_.wait(lock, [this] { return !command_queue_.empty(); });
     if (auto packet = command_queue_.front(); !process_command(packet)) {
@@ -160,7 +154,6 @@ void App::run() {
 
 void App::render_loop() {
   while (is_running_) {
-    bluetooth_manager_->run();
     process_frame();
     window_manager_->update([this] { renderer_->render(); });
     window_manager_->poll_events();

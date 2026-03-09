@@ -12,15 +12,17 @@ namespace screen_controller {
 class IBluetoothManager {
  public:
   virtual ~IBluetoothManager() = default;
-  virtual void run() = 0;
-  virtual void on_packet_received(
-      std::function<void(const common::BluetoothPacket& packet)> callback) = 0;
 };
 
 class BluetoothFactory {
  public:
-  static std::unique_ptr<IBluetoothManager> Create(ILogger& logger,
-                                                   const AppSettings& settings);
+  static std::unique_ptr<IBluetoothManager> Create(
+      ILogger& logger, const AppSettings& settings,
+      const std::function<void(const common::BluetoothPacket& packet)>& callback
+
+  );
+
+  virtual void poll() = 0;
 };
 
 }  // namespace screen_controller

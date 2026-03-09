@@ -8,12 +8,15 @@
 
 namespace screen_controller {
 
-BluetoothManager::BluetoothManager(ILogger& logger, const AppSettings& settings)
+BluetoothManager::BluetoothManager(
+    ILogger& logger, const AppSettings& settings,
+    const std::function<void(const common::BluetoothPacket& packet)>& callback)
     : settings_(settings),
       logger_(logger),
       l2_cap_receiver_(logger),
-      dbus_manager_(logger, settings.app_name),
-      connection_state_(ConnectionState::STARTING) {
+      dbus_manager_(logger),
+      connection_state_(ConnectionState::STARTING),
+      bluetooth_callback_(callback) {
   logger_.LogInfo("Creating BluetoothManager");
 
   if (!l2_cap_receiver_.init()) {
@@ -31,13 +34,5 @@ BluetoothManager::BluetoothManager(ILogger& logger, const AppSettings& settings)
 
 BluetoothManager::~BluetoothManager() = default;
 
-void BluetoothManager::on_packet_received(
-    std::function<void(const common::BluetoothPacket& packet)> callback) {
-  bluetooth_callback_ = std::move(callback);
-}
-
-void BluetoothManager::run() {
-  l2_cap_receiver_.poll_socket();
-  dbus_manager_.poll_adapters();
-}
+void BluetoothManager::poll() { l2_cap_receiver_.poll_socket(); }
 }  // namespace screen_controller

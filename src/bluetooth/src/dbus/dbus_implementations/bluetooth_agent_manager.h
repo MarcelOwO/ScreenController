@@ -16,8 +16,7 @@
 namespace screen_controller {
 class BluetoothAgentManager {
  public:
-  explicit BluetoothAgentManager(
-      ILogger& logger, const std::shared_ptr<sdbus::IProxy>& adapter_proxy);
+  explicit BluetoothAgentManager(ILogger& logger, sdbus::IProxy& adapter_proxy);
   ~BluetoothAgentManager() = default;
 
   BluetoothAgentManager(const BluetoothAgentManager&) = delete;
@@ -26,15 +25,15 @@ class BluetoothAgentManager {
   BluetoothAgentManager& operator=(BluetoothAgentManager&&) = delete;
 
   [[nodiscard]] std::expected<void, std::error_code> RegisterAgent(
-      const sdbus::ObjectPath& agent, std::string_view capability) const;
+      const sdbus::ObjectPath& agent, std::string_view capability);
   [[nodiscard]] std::expected<void, std::error_code> UnregisterAgent(
-      const sdbus::ObjectPath& agent) const;
+      const sdbus::ObjectPath& agent);
   [[nodiscard]] std::expected<void, std::error_code> RequestDefaultAgent(
-      const sdbus::ObjectPath& agent) const;
+      const sdbus::ObjectPath& agent);
 
  private:
   ILogger& logger_;
-  std::shared_ptr<sdbus::IProxy> bluez_proxy_;
+  sdbus::IProxy& bluez_proxy_;
   sdbus::InterfaceName agent_manager_interface_name_;
 };
 }  // namespace screen_controller

@@ -43,7 +43,7 @@ BluetoothAgent::BluetoothAgent(
                 }
               }),
           sdbus::registerMethod("RequestPasskey")
-              .implementedAs([=](const sdbus::ObjectPath& device) {
+              .implementedAs([this](const sdbus::ObjectPath& device) {
                 logger_.LogInfo("RequestPasskey");
                 const BluetoothDevice device_object(logger_, connection_,
                                                     device);
@@ -54,9 +54,9 @@ BluetoothAgent::BluetoothAgent(
                 return 1234;
               }),
           sdbus::registerMethod("DisplayPasskey")
-              .implementedAs([=](const sdbus::ObjectPath& device,
-                                 const uint32_t passkey,
-                                 const uint16_t entered) {
+              .implementedAs([this](const sdbus::ObjectPath& device,
+                                    const uint32_t passkey,
+                                    const uint16_t entered) {
                 logger_.LogInfo("DisplayPasskey: " + std::to_string(passkey) +
                                 " Entered: " + std::to_string(entered));
                 const BluetoothDevice device_object(logger_, connection_,
@@ -65,15 +65,17 @@ BluetoothAgent::BluetoothAgent(
                 logger_.LogInfo("Device name: " + res.value());
               }),
           sdbus::registerMethod("RequestConfirmation")
-              .implementedAs(
-                  [=](const sdbus::ObjectPath& device, const uint32_t passkey) {
-                    logger_.LogInfo("RequestConfirmation: " + passkey);
-                    const BluetoothDevice device_object(logger_, connection_,
-                                                        device);
-                    if (const auto res = device_object.GetName()) {
-                      logger_.LogInfo("Device name: " + res.value());
-                    }
-                  }),
+              .implementedAs([this](const sdbus::ObjectPath& device,
+                                    const uint32_t passkey) {
+                logger_.LogInfo("RequestConfirmation: " +
+                                std::to_string(passkey));
+
+                const BluetoothDevice device_object(logger_, connection_,
+                                                    device);
+                if (const auto res = device_object.GetName()) {
+                  logger_.LogInfo("Device name: " + res.value());
+                }
+              }),
           sdbus::registerMethod("RequestAuthorization")
               .implementedAs([this](const sdbus::ObjectPath& device) {
                 logger_.LogInfo("RequestAuthorization");

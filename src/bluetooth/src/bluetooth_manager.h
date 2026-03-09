@@ -20,7 +20,10 @@ namespace screen_controller {
 
 class BluetoothManager : public IBluetoothManager {
  public:
-  explicit BluetoothManager(ILogger& logger, const AppSettings& settings);
+  explicit BluetoothManager(
+      ILogger& logger, const AppSettings& settings,
+      const std::function<void(const common::BluetoothPacket& packet)>&
+          callback);
   ~BluetoothManager();
 
   BluetoothManager(const BluetoothManager&) = delete;
@@ -28,10 +31,7 @@ class BluetoothManager : public IBluetoothManager {
   BluetoothManager(BluetoothManager&&) = delete;
   BluetoothManager& operator=(BluetoothManager&&) = delete;
 
-  void run();
-
-  void on_packet_received(
-      std::function<void(const common::BluetoothPacket& packet)> callback);
+  void poll();
 
  private:
   const AppSettings& settings_;

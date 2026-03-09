@@ -9,7 +9,9 @@
 #include <cstdint>
 #include <span>
 #include <string>
+
 namespace screen_controller {
+
 struct packet {
   uint8_t type{};
   std::string name;
@@ -17,5 +19,6 @@ struct packet {
   uint32_t crc32{};
   bool has_payload{false};
 };
+
 }  // namespace screen_controller
 #endif  // BLUETOOTHPACKET_H

@@ -4,7 +4,13 @@
 namespace screen_controller {
 
 std::shared_ptr<ILogger> LoggerFactory::Create() {
-  return std::make_shared<DefaultLogger>();
+  auto logger = DefaultLogger::create();
+
+  if (!logger) {
+    return nullptr;
+  }
+
+  return std::move(logger.value());
 };
 
 }  // namespace screen_controller

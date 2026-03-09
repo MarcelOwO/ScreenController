@@ -38,6 +38,7 @@ class L2CapReceiver {
 
   void OnError(
       const std::function<void(int code, std::string_view message)>& callback);
+
   bool SendPacket(uint8_t type, std::string_view name,
                   std::span<const std::byte> payload = {});
 
