@@ -13,6 +13,18 @@
 
 namespace screen_controller {
 
+std::expected<std::unique_ptr<FileProcessor>, std::error_code>
+FileProcessor::create(ILogger& logger) {
+  auto file_processor =
+      std::unique_ptr<FileProcessor>(new FileProcessor(logger));
+
+  if (!file_processor) {
+    return std::unexpected(std::make_error_code(std::errc::invalid_argument));
+  }
+
+  return file_processor;
+}
+
 FileProcessor::FileProcessor(ILogger& logger) : logger_(logger) {
   logger.LogInfo("Creating FileProcessor");
 };

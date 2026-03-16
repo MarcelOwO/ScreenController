@@ -7,7 +7,11 @@
 namespace screen_controller {
 
 std::unique_ptr<IFileProcessor> ProcessorFactory::Create(ILogger& logger) {
-  return std::make_unique<FileProcessor>(logger);
+  auto file_processor = FileProcessor::create(logger);
+  if (!file_processor) {
+    throw std::runtime_error("failed to create file processor");
+  }
+  return std::move(file_processor.value());
 }
 
 }  // namespace screen_controller

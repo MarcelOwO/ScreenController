@@ -32,7 +32,7 @@ class IWindowManager {
 class WindowFactory {
  public:
   static std::unique_ptr<IWindowManager> Create(
-      ILogger& logger, const std::function<void()>& onShutdownRequested);
+      ILogger& logger, const std::function<void()> onShutdownRequested);
 };
 
 }  // namespace screen_controller

@@ -12,49 +12,42 @@
 #include <pixel_data.h>
 
 #include <expected>
-#include <filesystem>
 
-#include "models/error_enum.h"
 #include "shader/shader.h"
 
 namespace screen_controller {
 
 class GraphicsRenderer : public IRenderer {
- public:
-  explicit GraphicsRenderer(ILogger& logger);
-  ~GraphicsRenderer();
+public:
+  static auto Create(ILogger& logger, ProcLoader dloadproc, int window_width, int window_height)
+      -> std::expected<std::unique_ptr<GraphicsRenderer>, std::error_code>;
 
-  struct Color {
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
-  };
+  void Stop();
 
-  std::expected<void, common::ErrorEnum> init(ProcLoader dloadproc,
-                                              int window_width,
-                                              int window_height);
+  ~GraphicsRenderer() override;
 
-  void set_texture(const common::FrameData* data);
-  void set_fallback_texture() const;
-  void update_ratio(int width, int height) const;
+  void SetTexture(const common::FrameData* data) override;
+  void SetFallbackTexture() const override;
+  void UpdateRatio(int width, int height) const override;
 
-  void rotate() const;
+  void Rotate() const override;
 
-  void render() const;
+  void Render() const override;
 
- private:
+private:
+  explicit GraphicsRenderer(ILogger& logger, Shader shader, GLuint texture, GLuint vao, GLuint vbo,
+                            int width, int height);
+
   ILogger& logger_;
+
   Shader shader_;
 
-  GLuint texture_;
+  int height_;
+  int width_;
 
+  GLuint texture_;
   GLuint vao_;
   GLuint vbo_;
-
-  const std::filesystem::path vertex_shader_source_path_{
-      "assets/shader_files/vertex_shader.vs"};
-  const std::filesystem::path fragment_shader_source_path_{
-      "assets/shader_files/fragment_shader.fs"};
 };
 }  // namespace screen_controller
 #endif  // GRAPHICS_RENDERER_H

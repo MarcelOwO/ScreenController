@@ -12,31 +12,32 @@
 namespace screen_controller {
 
 class DefaultLogger final : public ILogger {
- public:
+public:
   ~DefaultLogger();
 
-  static std::expected<std::unique_ptr<DefaultLogger>, std::error_code>
-  create();
+  static std::expected<std::unique_ptr<DefaultLogger>, std::error_code> Create();
 
-  void Log(LogLevel level, std::string_view log);
+  void Log(LogLevel level, std::string_view log) override;
 
   DefaultLogger(const DefaultLogger&) = delete;
   DefaultLogger& operator=(const DefaultLogger&) = delete;
   DefaultLogger(DefaultLogger&&) = delete;
   DefaultLogger& operator=(DefaultLogger&&) = delete;
 
- private:
+private:
   DefaultLogger() = default;
 
-  std::expected<void, std::error_code> setup_file();
-  std::expected<std::string, std::error_code> get_file_name();
+  std::expected<void, std::error_code> SetupFile();
+  std::expected<std::string, std::error_code> GetFileName();
 
-  std::string format_log(LogLevel level, std::string_view log);
+  std::string FormatLog(LogLevel level, std::string_view log);
 
-  void run_thread(std::stop_token token);
-  static std::string enum_to_string(const LogLevel level);
+  void RunThread(std::stop_token token);
+  static std::string EnumToString(LogLevel level);
 
-  static void log_internal(std::string_view msg);
+  static void LogInternal(std::string_view msg);
+
+  void StartBackgroundThread();
 
   std::mutex log_queue_mutex_;
   std::condition_variable log_queue_cv_;

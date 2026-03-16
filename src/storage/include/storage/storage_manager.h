@@ -4,12 +4,10 @@
 
 #include <logging/logger.h>
 
-#include <expected>
 #include <filesystem>
 #include <optional>
 #include <span>
 #include <string_view>
-#include <system_error>
 #include <vector>
 namespace screen_controller {
 
@@ -17,7 +15,6 @@ class IStorageManager {
  public:
   virtual ~IStorageManager() = default;
 
-  virtual std::expected<void, std::error_code> Init() const = 0;
   virtual std::optional<std::vector<std::byte>> LoadResource(
       std::string_view name) const = 0;
   virtual std::optional<std::vector<std::byte>> LoadFile(

@@ -21,22 +21,20 @@
 
 namespace screen_controller {
 class App {
- public:
+public:
   App();
   ~App();
 
-  bool process_command(const common::BluetoothPacket& packet);
-  void run();
+  bool ProcessCommand(const common::BluetoothPacket& packet);
 
-  AppSettings settings;
+  void Run();
 
- private:
+private:
   bool is_running_;
   std::jthread command_thread_;
 
-  std::shared_ptr<ILogger> logger_;
-
-  std::shared_ptr<AppSettings> settings_;
+  std::unique_ptr<ILogger> logger_;
+  std::unique_ptr<AppSettings> settings_;
 
   std::unique_ptr<IWindowManager> window_manager_;
   std::unique_ptr<IRenderer> renderer_;
@@ -48,10 +46,10 @@ class App {
   std::mutex queue_mutex_;
   std::condition_variable queue_condition_;
 
-  bool load_image(std::string_view name, bool is_asset);
-  void process_frame();
-  void render_loop();
-  void handle_commands(const std::stop_token& stop_token);
+  bool LoadImage(std::string_view k_name, bool k_is_asset);
+  void ProcessFrame();
+  void RenderLoop();
+  void HandleCommands(const std::stop_token& stop_token);
 };
 }  // namespace screen_controller
 #endif  // APP_H

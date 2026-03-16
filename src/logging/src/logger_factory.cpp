@@ -3,11 +3,11 @@
 
 namespace screen_controller {
 
-std::shared_ptr<ILogger> LoggerFactory::Create() {
-  auto logger = DefaultLogger::create();
+std::unique_ptr<ILogger> LoggerFactory::Create() {
+  auto logger = DefaultLogger::Create();
 
   if (!logger) {
-    return nullptr;
+    throw std::runtime_error("failed to create logger");
   }
 
   return std::move(logger.value());

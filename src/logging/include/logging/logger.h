@@ -12,19 +12,23 @@ enum class LogLevel {
 };
 
 class ILogger {
- public:
+public:
   virtual ~ILogger() = default;
 
   virtual void Log(LogLevel level, std::string_view log) = 0;
 
-  void LogInfo(std::string_view log) { Log(LogLevel::INFO, log); }
-  void LogError(std::string_view log) { Log(LogLevel::ERROR, log); }
+  void LogInfo(std::string_view log) {
+    Log(LogLevel::INFO, log);
+  }
+  void LogError(std::string_view log) {
+    Log(LogLevel::ERROR, log);
+  }
 };
 
 class LoggerFactory {
- public:
+public:
   static ILogger& GetInstance();
-  static std::shared_ptr<ILogger> Create();
+  static std::unique_ptr<ILogger> Create();
 };
 
 };  // namespace screen_controller

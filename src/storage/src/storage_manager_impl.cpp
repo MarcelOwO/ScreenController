@@ -10,9 +10,22 @@
 #include <optional>
 
 namespace screen_controller {
+
 StorageManager::StorageManager(ILogger& logger)
-    : logger_(logger), asset_path_("assets"), user_files_path_("files") {
-  logger_.LogInfo("Creating StorageManager");
+    : logger_(logger), asset_path_("assets"), user_files_path_("files") {}
+
+std::expected<std::unique_ptr<StorageManager>, std::error_code>
+StorageManager::create(ILogger& logger) {
+  logger.LogInfo("Creating StorageManager");
+
+  auto storage_manager =
+      std::unique_ptr<StorageManager>(new StorageManager(logger));
+
+  if (auto res = storage_manager->Init(); !res) {
+    return std::unexpected(std::make_error_code(std::errc::invalid_argument));
+  }
+
+  return storage_manager;
 }
 
 StorageManager::~StorageManager() = default;

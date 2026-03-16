@@ -13,30 +13,31 @@
 #include <string>
 
 #include "glm/fwd.hpp"
-#include "models/error_enum.h"
 
 namespace screen_controller {
 class Shader {
- public:
-  unsigned int id_;
+public:
+  static std::expected<Shader, std::error_code> Create(ILogger& logger,
+                                                       const std::filesystem::path& vertex_path,
+                                                       const std::filesystem::path& fragment_path);
 
-  explicit Shader(ILogger& logger);
+  void Run() const;
 
-  [[nodiscard]] std::expected<void, common::ErrorEnum> init(
-      const std::filesystem::path& vertex_path,
-      const std::filesystem::path& fragment_path);
+  unsigned int program_id_;
 
-  void use() const;
-  void set_float(const std::string& name, float value) const;
-  void set_bool(const std::string& name, bool value) const;
-  void set_int(const std::string& name, int value) const;
-  void set_mat4(const std::string& name, glm::mat4 value) const;
+  void SetFloat(const std::string& name, float value) const;
+  void SetBool(const std::string& name, bool value) const;
+  void SetInt(const std::string& name, int value) const;
+  void SetMat4(const std::string& name, glm::mat4 value) const;
 
-  [[nodiscard]] GLint get_uniform_location(const std::string& name) const;
+  [[nodiscard]] GLint GetUniformLocation(const std::string& name) const;
 
- private:
+private:
+  explicit Shader(ILogger& logger, int program_id);
+
   ILogger& logger_;
-  void check_compile_errors(unsigned int shader, const std::string& type);
+
+  static void CheckCompileErrors(unsigned int shader, const std::string& type, ILogger& logger);
 };
 }  // namespace screen_controller
 #endif  // SHADER_H

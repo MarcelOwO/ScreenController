@@ -2,14 +2,19 @@
 #include <logging/logger.h>
 #include <window_manager/window_manager.h>
 
+#include <expected>
+
 #include "GLFW/glfw3.h"
 
 namespace screen_controller {
 
 class GlfwWindow : public IWindowManager {
  public:
-  explicit GlfwWindow(ILogger& logger,
-                      const std::function<void()>& onShutdownRequested);
+  inline static GlfwWindow* instance = nullptr;
+
+  static std::expected<std::unique_ptr<GlfwWindow>, std::error_code> create(
+      ILogger& logger, const std::function<void()> onShutdownRequested);
+
   ~GlfwWindow();
 
   GlfwWindow(const GlfwWindow&) = delete;
@@ -29,11 +34,22 @@ class GlfwWindow : public IWindowManager {
 
   [[nodiscard]] bool should_close() const;
 
-  inline static GlfwWindow* instance = nullptr;
-
  private:
-  const std::function<void()>& onShutdownRequested_;
-  GLFWwindow* window_;
+  GlfwWindow(ILogger& logger, const std::function<void()>& onShutdownRequested);
+
+  const std::function<void()> onShutdownRequested_;
+
   ILogger& _logger;
+
+  struct GlfwWindowDeleter {
+    void operator()(GLFWwindow* window) const {
+      if (window) {
+        glfwDestroyWindow(window);
+      }
+    }
+  };
+
+  std::unique_ptr<GLFWwindow, GlfwWindowDeleter> window_;
 };
+
 }  // namespace screen_controller

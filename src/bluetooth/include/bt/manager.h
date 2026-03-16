@@ -9,6 +9,7 @@
 #include "app_settings.h"
 
 namespace screen_controller {
+
 class IBluetoothManager {
  public:
   virtual ~IBluetoothManager() = default;

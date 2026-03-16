@@ -5,30 +5,27 @@
 #include <models/error_enum.h>
 #include <models/frame_data.h>
 
-#include <expected>
-
 namespace screen_controller {
 
 class IRenderer {
- public:
+public:
   virtual ~IRenderer() = default;
 
-  using ProcLoader = void* (*)(const char*);
+  using ProcLoader = void* (*) (const char*);
 
-  virtual std::expected<void, common::ErrorEnum> init(ProcLoader dloadproc,
-                                                      int window_width,
-                                                      int window_height) = 0;
-
-  virtual void set_texture(const common::FrameData* data) = 0;
-  virtual void set_fallback_texture() const = 0;
-  virtual void update_ratio(int width, int height) const = 0;
-  virtual void rotate() const = 0;
-  virtual void render() const = 0;
+  virtual void SetTexture(const common::FrameData* data) = 0;
+  virtual void SetFallbackTexture() const = 0;
+  virtual void UpdateRatio(int width, int height) const = 0;
+  virtual void Rotate() const = 0;
+  virtual void Render() const = 0;
 };
 
 class RendererFactory {
- public:
-  static std::unique_ptr<IRenderer> Create(ILogger& logger);
+public:
+  using ProcLoader = void* (*) (const char*);
+
+  static std::unique_ptr<IRenderer> Create(ILogger& logger, ProcLoader dloadproc, int window_width,
+                                           int window_height);
 };
 
 }  // namespace screen_controller

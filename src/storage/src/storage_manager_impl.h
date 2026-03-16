@@ -17,15 +17,15 @@
 namespace screen_controller {
 class StorageManager : public IStorageManager {
  public:
-  StorageManager(ILogger& logger);
   ~StorageManager();
+
+  static std::expected<std::unique_ptr<StorageManager>, std::error_code> create(
+      ILogger& logger);
 
   StorageManager(const StorageManager&) = delete;
   StorageManager& operator=(const StorageManager&) = delete;
   StorageManager(StorageManager&&) = delete;
   StorageManager& operator=(StorageManager&&) = delete;
-
-  [[nodiscard]] std::expected<void, std::error_code> Init() const;
 
   std::optional<std::vector<std::byte>> LoadResource(
       std::string_view name) const;
@@ -41,6 +41,9 @@ class StorageManager : public IStorageManager {
   std::filesystem::path GetResourcePath(std::string_view name) const;
 
  private:
+  StorageManager(ILogger& logger);
+  [[nodiscard]] std::expected<void, std::error_code> Init() const;
+
   ILogger& logger_;
   std::filesystem::path asset_path_;
   std::filesystem::path user_files_path_;

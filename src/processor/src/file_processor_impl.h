@@ -9,6 +9,7 @@
 #include <logging/logger.h>
 #include <processor/file_processor.h>
 
+#include <expected>
 #include <memory>
 #include <optional>
 
@@ -19,8 +20,10 @@ namespace screen_controller {
 
 class FileProcessor : public IFileProcessor {
  public:
-  explicit FileProcessor(ILogger& logger);
   ~FileProcessor();
+
+  static std::expected<std::unique_ptr<FileProcessor>, std::error_code> create(
+      ILogger& logger);
 
   FileProcessor(const FileProcessor&) = delete;
   FileProcessor& operator=(const FileProcessor&) = delete;
@@ -33,6 +36,8 @@ class FileProcessor : public IFileProcessor {
   get_processed_data() const;
 
  private:
+  FileProcessor(ILogger& logger);
+
   ILogger& logger_;
   std::unique_ptr<processing::IDecoder> decoder_;
   static common::FileType get_type(std::string_view name);

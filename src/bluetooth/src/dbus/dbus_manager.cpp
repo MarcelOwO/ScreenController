@@ -18,11 +18,9 @@ DbusManager::DbusManager(ILogger& logger) try
       agent_path_(sdbus::ObjectPath("/owo/agent1")),
       connection_(sdbus::createSystemBusConnection(service_name_)),
 
-      adapter_proxy_(sdbus::createProxy(*connection_,
-                                        sdbus::ServiceName("org.bluez"),
+      adapter_proxy_(sdbus::createProxy(*connection_, sdbus::ServiceName("org.bluez"),
                                         sdbus::ObjectPath("/org/bluez/hci0"))),
-      bluez_proxy_(sdbus::createProxy(*connection_,
-                                      sdbus::ServiceName("org.bluez"),
+      bluez_proxy_(sdbus::createProxy(*connection_, sdbus::ServiceName("org.bluez"),
                                       sdbus::ObjectPath("/org/bluez"))),
       agent_(logger_, connection_, agent_path_),
       agent_manager_(logger_, *bluez_proxy_),
@@ -44,10 +42,12 @@ DbusManager::DbusManager(ILogger& logger) try
 
   connection_->enterEventLoopAsync();
 } catch (std::exception& e) {
-  logger.LogError("Failed to create DBusManager");
+  logger.LogError("Failed to create DBusManager: {}", e);
 }
 
-DbusManager::~DbusManager() { connection_->leaveEventLoop(); }
+DbusManager::~DbusManager() {
+  connection_->leaveEventLoop();
+}
 
 void DbusManager::setup_name() {
   if (const auto res = adapter_.get_alias(); !res) {

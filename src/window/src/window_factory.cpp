@@ -9,15 +9,13 @@
 namespace screen_controller {
 
 std::unique_ptr<IWindowManager> WindowFactory::Create(
-    ILogger& logger, const std::function<void()>& onShutdownRequested) {
-  try {
-    auto window = std::make_unique<GlfwWindow>(logger, onShutdownRequested);
-    return window;
+    ILogger& logger, const std::function<void()> kOnShutdownRequested) {
+  auto window = GlfwWindow::create(logger, kOnShutdownRequested);
 
-  } catch (const std::exception& e) {
-    logger.LogError("Failed to create window");
-    return nullptr;
+  if (!window) {
+    throw std::runtime_error("Failed to create Window manager");
   }
-}
 
+  return std::move(window.value());
+}
 }  // namespace screen_controller

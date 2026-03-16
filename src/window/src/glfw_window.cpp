@@ -1,37 +1,51 @@
 #include "glfw_window.h"
 
+#include <format>
+
 #include "GLFW/glfw3.h"
 
 namespace screen_controller {
 
-GlfwWindow::GlfwWindow(ILogger& logger,
-                       const std::function<void()>& onShutdownRequested)
-    : window_(), _logger(logger), onShutdownRequested_(onShutdownRequested) {
-  if (instance == nullptr) {
-    instance = this;
+std::expected<std::unique_ptr<GlfwWindow>, std::error_code> GlfwWindow::create(
+    ILogger& logger, const std::function<void()> onShutdownRequested) {
+  logger.LogInfo("Creating WindowManager");
+
+  if (!onShutdownRequested) {
+    return std::unexpected(std::make_error_code(std::errc::invalid_argument));
   }
 
-  _logger.LogInfo("Creating WindowManager");
+  if (instance != nullptr) {
+    logger.LogError("Tried to create a second window");
+    return std::unexpected(std::make_error_code(std::errc::invalid_argument));
+  }
 
-  glfwSetErrorCallback([](int, const char* description) {});
+  glfwSetErrorCallback([](int, const char* description) {
+    auto window = GlfwWindow::instance;
+    if (window == nullptr) {
+      return;
+    }
+    const auto formatted =
+        std::format("Error in glfw callback: {}", description);
+    window->_logger.LogError(formatted);
+  });
 
   if (glfwInit() != GLFW_TRUE) {
-    _logger.LogError("Failed to initialize GLFW");
-    throw std::runtime_error("Failed to initialize GLFW");
+    logger.LogError("Failed to initialize GLFW");
+    return std::unexpected(std::make_error_code(std::errc::connection_refused));
   }
 
-  window_ = glfwCreateWindow(1920, 1080, "My Title", glfwGetPrimaryMonitor(),
-                             nullptr);
+  auto raw_window = glfwCreateWindow(1920, 1080, "My Title",
+                                     glfwGetPrimaryMonitor(), nullptr);
 
-  if (window_ == nullptr) {
-    _logger.LogError("Failed to create GLFW window");
-    throw std::runtime_error("Failed to create GLFW window");
+  if (raw_window == nullptr) {
+    logger.LogError("Failed to create GLFW window");
+    return std::unexpected(std::make_error_code(std::errc::invalid_argument));
   }
 
-  glfwMakeContextCurrent(window_);
+  glfwMakeContextCurrent(raw_window);
 
-  glfwSetKeyCallback(window_, [](GLFWwindow* window, int key, int scancode,
-                                 int action, int mods) {
+  glfwSetKeyCallback(raw_window, [](GLFWwindow* window, int key, int scancode,
+                                    int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
       const auto ref = GlfwWindow::instance;
 
@@ -42,15 +56,30 @@ GlfwWindow::GlfwWindow(ILogger& logger,
       ref->onShutdownRequested_();
     }
   });
-};
+
+  glfwSwapInterval(1);
+
+  auto window =
+      std::unique_ptr<GlfwWindow>(new GlfwWindow(logger, onShutdownRequested));
+
+  window->window_ = std::unique_ptr<GLFWwindow, GlfwWindowDeleter>(raw_window);
+
+  instance = window.get();
+
+  return window;
+}
+
+GlfwWindow::GlfwWindow(ILogger& logger,
+                       const std::function<void()>& onShutdownRequested)
+    : window_(), _logger(logger), onShutdownRequested_(onShutdownRequested) {}
 
 bool GlfwWindow::should_close() const {
-  return glfwWindowShouldClose(window_) != 0;
+  return glfwWindowShouldClose(window_.get()) != 0;
 }
 
 void GlfwWindow::poll_events() { return glfwPollEvents(); }
 
-void GlfwWindow::swap_buffers() { glfwSwapBuffers(window_); }
+void GlfwWindow::swap_buffers() { glfwSwapBuffers(window_.get()); }
 
 int GlfwWindow::get_height() const {
   const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
@@ -73,18 +102,13 @@ void GlfwWindow::update(const std::function<void()>& render) {
 
   render();
 
-  glfwSwapBuffers(window_);
-  glfwSwapInterval(1);
+  glfwSwapBuffers(window_.get());
 }
 
 GlfwWindow::~GlfwWindow() {
-  if (instance != nullptr && instance == this) {
-    instance = nullptr;
-  }
+  instance = nullptr;
 
-  if (window_ != nullptr) {
-    glfwDestroyWindow(window_);
-  }
   glfwTerminate();
 }
+
 }  // namespace screen_controller
