@@ -6,27 +6,26 @@
 
 namespace screen_controller {
 
-std::expected<std::unique_ptr<GlfwWindow>, std::error_code> GlfwWindow::create(
-    ILogger& logger, const std::function<void()> onShutdownRequested) {
+std::expected<std::unique_ptr<GlfwWindow>, std::error_code> GlfwWindow::Create(
+    ILogger& logger, const std::function<void()> kOnShutdownRequested) {
   logger.LogInfo("Creating WindowManager");
 
-  if (!onShutdownRequested) {
+  if (!kOnShutdownRequested) {
     return std::unexpected(std::make_error_code(std::errc::invalid_argument));
   }
 
-  if (instance != nullptr) {
+  if (instance_ != nullptr) {
     logger.LogError("Tried to create a second window");
     return std::unexpected(std::make_error_code(std::errc::invalid_argument));
   }
 
   glfwSetErrorCallback([](int, const char* description) {
-    auto window = GlfwWindow::instance;
+    auto* window = GlfwWindow::instance_;
     if (window == nullptr) {
       return;
     }
-    const auto formatted =
-        std::format("Error in glfw callback: {}", description);
-    window->_logger.LogError(formatted);
+    const auto kFormatted = std::format("Error in glfw callback: {}", description);
+    window->logger_.LogError(kFormatted);
   });
 
   if (glfwInit() != GLFW_TRUE) {
@@ -34,8 +33,7 @@ std::expected<std::unique_ptr<GlfwWindow>, std::error_code> GlfwWindow::create(
     return std::unexpected(std::make_error_code(std::errc::connection_refused));
   }
 
-  auto raw_window = glfwCreateWindow(1920, 1080, "My Title",
-                                     glfwGetPrimaryMonitor(), nullptr);
+  auto* raw_window = glfwCreateWindow(1920, 1080, "My Title", glfwGetPrimaryMonitor(), nullptr);
 
   if (raw_window == nullptr) {
     logger.LogError("Failed to create GLFW window");
@@ -44,42 +42,44 @@ std::expected<std::unique_ptr<GlfwWindow>, std::error_code> GlfwWindow::create(
 
   glfwMakeContextCurrent(raw_window);
 
-  glfwSetKeyCallback(raw_window, [](GLFWwindow* window, int key, int scancode,
-                                    int action, int mods) {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-      const auto ref = GlfwWindow::instance;
+  glfwSetKeyCallback(raw_window,
+                     [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+                       if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+                         auto* const kRef = GlfwWindow::instance_;
 
-      if (ref == nullptr) {
-        return;
-      }
+                         if (kRef == nullptr) {
+                           return;
+                         }
 
-      ref->onShutdownRequested_();
-    }
-  });
+                         kRef->kOnShutdownRequested();
+                       }
+                     });
 
   glfwSwapInterval(1);
 
-  auto window =
-      std::unique_ptr<GlfwWindow>(new GlfwWindow(logger, onShutdownRequested));
+  auto window = std::unique_ptr<GlfwWindow>(new GlfwWindow(logger, kOnShutdownRequested));
 
   window->window_ = std::unique_ptr<GLFWwindow, GlfwWindowDeleter>(raw_window);
 
-  instance = window.get();
+  instance_ = window.get();
 
   return window;
 }
 
-GlfwWindow::GlfwWindow(ILogger& logger,
-                       const std::function<void()>& onShutdownRequested)
-    : window_(), _logger(logger), onShutdownRequested_(onShutdownRequested) {}
+GlfwWindow::GlfwWindow(ILogger& logger, const std::function<void()>& on_shutdown_requested)
+    : logger_(logger), kOnShutdownRequested(on_shutdown_requested) {}
 
 bool GlfwWindow::should_close() const {
   return glfwWindowShouldClose(window_.get()) != 0;
 }
 
-void GlfwWindow::poll_events() { return glfwPollEvents(); }
+void GlfwWindow::poll_events() {
+  return glfwPollEvents();
+}
 
-void GlfwWindow::swap_buffers() { glfwSwapBuffers(window_.get()); }
+void GlfwWindow::swap_buffers() {
+  glfwSwapBuffers(window_.get());
+}
 
 int GlfwWindow::get_height() const {
   const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
@@ -106,7 +106,7 @@ void GlfwWindow::update(const std::function<void()>& render) {
 }
 
 GlfwWindow::~GlfwWindow() {
-  instance = nullptr;
+  instance_ = nullptr;
 
   glfwTerminate();
 }

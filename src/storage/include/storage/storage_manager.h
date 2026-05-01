@@ -12,26 +12,23 @@
 namespace screen_controller {
 
 class IStorageManager {
- public:
+public:
   virtual ~IStorageManager() = default;
 
-  virtual std::optional<std::vector<std::byte>> LoadResource(
+  [[nodiscard]] virtual std::optional<std::vector<std::byte>> LoadResource(
       std::string_view name) const = 0;
-  virtual std::optional<std::vector<std::byte>> LoadFile(
+  [[nodiscard]] virtual std::optional<std::vector<std::byte>> LoadFile(
       std::string_view name) const = 0;
-  virtual bool SaveFile(std::string_view name,
-                        std::span<std::byte> data) const = 0;
-  virtual bool SaveFile(std::string_view name,
-                        const std::vector<std::byte>& data) const = 0;
-  virtual bool DeleteFile(std::string_view path) const = 0;
-  virtual std::filesystem::path GetUserFilePath(
-      std::string_view name) const = 0;
-  virtual std::filesystem::path GetResourcePath(
-      std::string_view name) const = 0;
+  [[nodiscard]] virtual bool SaveFile(std::string_view name, std::span<std::byte> data) const = 0;
+  [[nodiscard]] virtual bool SaveFile(std::string_view name,
+                                      const std::vector<std::byte>& data) const = 0;
+  [[nodiscard]] virtual bool DeleteFile(std::string_view path) const = 0;
+  [[nodiscard]] virtual std::filesystem::path GetUserFilePath(std::string_view name) const = 0;
+  [[nodiscard]] virtual std::filesystem::path GetResourcePath(std::string_view name) const = 0;
 };
 
 class StorageFactory {
- public:
+public:
   static std::unique_ptr<IStorageManager> Create(ILogger& logger);
 };
 

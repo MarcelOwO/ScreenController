@@ -10,7 +10,7 @@ namespace screen_controller {
 
 std::unique_ptr<IWindowManager> WindowFactory::Create(
     ILogger& logger, const std::function<void()> kOnShutdownRequested) {
-  auto window = GlfwWindow::create(logger, kOnShutdownRequested);
+  auto window = GlfwWindow::Create(logger, kOnShutdownRequested);
 
   if (!window) {
     throw std::runtime_error("Failed to create Window manager");
