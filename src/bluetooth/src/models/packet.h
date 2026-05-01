@@ -12,12 +12,12 @@
 
 namespace screen_controller {
 
-struct packet {
-  uint8_t type{};
-  std::string name;
-  std::span<const std::byte> payload;
-  uint32_t crc32{};
-  bool has_payload{false};
+struct Packet {
+  uint8_t type_{};
+  std::string name_;
+  std::span<const std::byte> payload_;
+  uint32_t crc32_{};
+  bool has_payload_{false};
 };
 
 }  // namespace screen_controller

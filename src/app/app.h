@@ -7,6 +7,7 @@
 
 #include <bluetooth_packet.h>
 #include <bt/manager.h>
+#include <events/events.h>
 #include <graphics/renderer.h>
 #include <logging/logger.h>
 #include <processor/file_processor.h>
@@ -25,6 +26,8 @@ public:
   App();
   ~App();
 
+  void AdjustSettings(const std::function<void(AppSettings&)>& update_settings);
+
   bool ProcessCommand(const common::BluetoothPacket& packet);
 
   void Run();
@@ -41,6 +44,7 @@ private:
   std::unique_ptr<IStorageManager> storage_manager_;
   std::unique_ptr<IFileProcessor> file_processor_;
   std::unique_ptr<IBluetoothManager> bluetooth_manager_;
+  std::unique_ptr<IMediatorManager> mediator_manager_;
 
   std::queue<common::BluetoothPacket> command_queue_;
   std::mutex queue_mutex_;

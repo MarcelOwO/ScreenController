@@ -26,7 +26,8 @@ DbusManager::DbusManager(ILogger& logger) try
       agent_manager_(logger_, *bluez_proxy_),
       adapter_(logger_, adapter_proxy_) {
   logger_.LogInfo("Creating DBusManager");
-  return;
+
+  // test
 
   connection_->requestName(service_name_);
 
@@ -38,32 +39,45 @@ DbusManager::DbusManager(ILogger& logger) try
     logger_.LogError("Failed to request default agent");
   }
 
-  setup_adapter();
+  SetupAdapter();
 
   connection_->enterEventLoopAsync();
 } catch (std::exception& e) {
-  logger.LogError("Failed to create DBusManager: {}", e);
+  auto format = std::format("Failed to create DBusManager: {}", e.what());
+
+  logger.LogError(format);
+
+  throw;
 }
 
 DbusManager::~DbusManager() {
   connection_->leaveEventLoop();
 }
 
-void DbusManager::setup_name() {
-  if (const auto res = adapter_.get_alias(); !res) {
+void DbusManager::SetupName() {
+  const auto kAdapterAlias = adapter_.get_alias();
+
+  if (!kAdapterAlias) {
     logger_.LogError("Failed to get alias name");
     return;
-  } else {
-    if (const auto current_alias = res.value(); current_alias != alias_) {
-      if (const auto res = adapter_.set_alias(alias_); !res) {
-        logger_.LogError("Failed to set alias");
-        return;
-      }
-    }
+  }
+
+  const auto kCurrentAlias = kAdapterAlias.value();
+
+  if (kCurrentAlias == alias_) {
+    logger_.LogError("Alias is already set");
+    return;
+  }
+
+  const auto kRes = adapter_.set_alias(alias_);
+
+  if (!kRes) {
+    logger_.LogError("Failed to set alias");
+    return;
   }
 }
 
-void DbusManager::make_connectable() {
+void DbusManager::MakeConnectable() {
   if (!adapter_.set_discoverable(true)) {
     logger_.LogError("Failed to set discoverable");
   }
@@ -72,7 +86,7 @@ void DbusManager::make_connectable() {
   }
 }
 
-void DbusManager::disable_new_connection() {
+void DbusManager::DisableNewConnection() {
   if (!adapter_.set_discoverable(false)) {
     logger_.LogError("Failed to set discoverable");
   }
@@ -81,7 +95,7 @@ void DbusManager::disable_new_connection() {
   }
 }
 
-void DbusManager::setup_adapter() {
+void DbusManager::SetupAdapter() {
   if (!adapter_.get_powered()) {
     if (!adapter_.set_powered(true)) {
       logger_.LogError("Failed to set powered");

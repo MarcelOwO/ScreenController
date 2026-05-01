@@ -19,22 +19,27 @@
 namespace screen_controller {
 
 class BluetoothManager : public IBluetoothManager {
- public:
-  explicit BluetoothManager(
+public:
+  ~BluetoothManager() override;
+
+  static std::expected<std::unique_ptr<BluetoothManager>, std::error_code> Create(
       ILogger& logger, const AppSettings& settings,
-      const std::function<void(const common::BluetoothPacket& packet)>&
-          callback);
-  ~BluetoothManager();
+      const std::function<void(const common::BluetoothPacket& packet)>& callback);
 
   BluetoothManager(const BluetoothManager&) = delete;
   BluetoothManager& operator=(const BluetoothManager&) = delete;
   BluetoothManager(BluetoothManager&&) = delete;
   BluetoothManager& operator=(BluetoothManager&&) = delete;
 
-  void poll();
+  void Poll() override;
 
- private:
+private:
+  explicit BluetoothManager(
+      ILogger& logger, const AppSettings& settings,
+      const std::function<void(const common::BluetoothPacket& packet)>& callback);
+
   const AppSettings& settings_;
+
   ILogger& logger_;
 
   L2CapReceiver l2_cap_receiver_;
@@ -42,8 +47,7 @@ class BluetoothManager : public IBluetoothManager {
 
   ConnectionState connection_state_;
 
-  std::function<void(const common::BluetoothPacket& packet)>
-      bluetooth_callback_;
+  std::function<void(const common::BluetoothPacket& packet)> bluetooth_callback_;
 };
 }  // namespace screen_controller
 

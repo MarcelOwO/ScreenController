@@ -10,6 +10,8 @@ struct AppSettings {
   int window_width_;
   int window_height_;
   float rotation_amount_;
+  int omtu_;
+  int imtu_;
 };
 
 }  // namespace screen_controller

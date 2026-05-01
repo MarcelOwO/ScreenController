@@ -7,7 +7,6 @@
 #include <logging/logger.h>
 
 #include <iostream>
-#include <stdexcept>
 #include <thread>
 
 #include "graphics/renderer.h"
@@ -29,6 +28,7 @@ App::App() try
                                                     queue_condition_.notify_one();
                                                   })),
       storage_manager_(StorageFactory::Create(*logger_)),
+      mediator_manager_(*logger_, *settings_),
       file_processor_(ProcessorFactory::Create(*logger_)) {
   logger_->LogInfo("Initializing App Subsystems...");
 
@@ -39,6 +39,10 @@ App::App() try
   is_running_ = true;
 } catch (std::exception& e) {
   std::cerr << "Failed to create submodules" << e.what() << '\n';
+}
+
+void App::AdjustSettings(const std::function<void(AppSettings&)>& update_settings) {
+  update_settings(*settings_);
 }
 
 bool App::ProcessCommand(const common::BluetoothPacket& packet) {
@@ -92,17 +96,17 @@ bool App::ProcessCommand(const common::BluetoothPacket& packet) {
   }
 }
 
-bool App::LoadImage(const std::string_view kName, const bool kIsAsset) {
-  const auto path = kIsAsset ? storage_manager_->GetResourcePath(kName)
-                             : storage_manager_->GetUserFilePath(kName);
+bool App::LoadImage(std::string_view k_name, bool k_is_asset) {
+  const auto kPath = k_is_asset ? storage_manager_->GetResourcePath(k_name)
+                                : storage_manager_->GetUserFilePath(k_name);
 
-  if (!std::filesystem::exists(path)) {
-    logger_->LogError("File does not exist: " + path.string());
+  if (!std::filesystem::exists(kPath)) {
+    logger_->LogError("File does not exist: " + kPath.string());
     return false;
   }
 
-  if (!file_processor_->process_file(path.c_str())) {
-    logger_->LogError("Failed to process file: " + path.string());
+  if (!file_processor_->process_file(kPath.c_str())) {
+    logger_->LogError("Failed to process file: " + kPath.string());
     return false;
   }
 

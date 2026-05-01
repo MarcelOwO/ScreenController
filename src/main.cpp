@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <iostream>
 #include "app/app.h"
 
@@ -7,10 +8,20 @@ int main(int argc, char* argv[]) {
 
   try {
     screen_controller::App app;
+
+    app.AdjustSettings([](screen_controller::AppSettings& settings) {
+      settings.app_name_ = "ScreenController";
+      settings.imtu_ = 672;
+      settings.omtu_ = 672;
+      settings.rotation_amount_ = 90;
+      settings.window_height_ = 1080;
+      settings.window_width_ = 1920;
+    });
+
     app.Run();
   } catch (std::exception& e) {
     std::cerr << "Application failed:" << e.what() << '\n';
-    return -1;
+    return EXIT_FAILURE;
   }
-  return 0;
+  return EXIT_SUCCESS;
 }

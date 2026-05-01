@@ -5,6 +5,7 @@ add_subdirectory(logging)
 add_subdirectory(processor)
 add_subdirectory(storage)
 add_subdirectory(window)
+add_subdirectory(events)
 
 add_executable(ScreenController main.cpp)
 

@@ -12,8 +12,7 @@ namespace screen_controller {
 Unpacker::Unpacker(ILogger& logger) : logger_(logger) {}
 Unpacker::~Unpacker() = default;
 
-void Unpacker::decompress(const std::span<std::byte> span,
-                          common::BluetoothPacket& packet) const {
+void Unpacker::Decompress(const std::span<std::byte> span, common::BluetoothPacket& packet) const {
   std::vector<char> debug_string{};
 
   const auto type = static_cast<uint8_t>(span[static_cast<size_t>(0)]);
@@ -69,8 +68,7 @@ void Unpacker::decompress(const std::span<std::byte> span,
   const int size = static_cast<int>(span.size()) - start_file;
   const std::span<const std::byte> src(span.data() + start_file, size);
 
-  const size_t decompressed_size =
-      ZSTD_getFrameContentSize(src.data(), src.size());
+  const size_t decompressed_size = ZSTD_getFrameContentSize(src.data(), src.size());
   if (decompressed_size == ZSTD_CONTENTSIZE_ERROR) {
     logger_.LogError("Not a valid compressed frame");
     return;
@@ -83,12 +81,11 @@ void Unpacker::decompress(const std::span<std::byte> span,
 
   packet.data = std::vector<std::byte>(decompressed_size);
 
-  const size_t result = ZSTD_decompress(packet.data.data(), decompressed_size,
-                                        src.data(), src.size());
+  const size_t result =
+      ZSTD_decompress(packet.data.data(), decompressed_size, src.data(), src.size());
 
   if (ZSTD_isError(result)) {
-    logger_.LogError("Decompression failed" +
-                     std::string(ZSTD_getErrorName(result)));
+    logger_.LogError("Decompression failed" + std::string(ZSTD_getErrorName(result)));
     return;
   }
   logger_.LogInfo("Decompressed successfully");

@@ -8,7 +8,6 @@
 #include <logging/logger.h>
 
 #include <memory>
-#include <string_view>
 
 #include "dbus_implementations/bluetooth_adapter.h"
 #include "dbus_implementations/bluetooth_agent.h"
@@ -20,8 +19,9 @@
 namespace screen_controller {
 
 class DbusManager {
- public:
+public:
   explicit DbusManager(ILogger& logger);
+
   ~DbusManager();
 
   DbusManager(const DbusManager&) = delete;
@@ -29,10 +29,10 @@ class DbusManager {
   DbusManager(DbusManager&&) = delete;
   DbusManager& operator=(DbusManager&&) = delete;
 
-  void make_connectable();
-  void disable_new_connection();
+  void MakeConnectable();
+  void DisableNewConnection();
 
- private:
+private:
   sdbus::ServiceName service_name_;
   std::string alias_;
   ILogger& logger_;
@@ -48,9 +48,9 @@ class DbusManager {
   BluetoothAgent agent_;
   BluetoothAdapter adapter_;
 
-  void setup_agents();
-  void setup_name();
-  void setup_adapter();
+  void SetupAgents();
+  void SetupName();
+  void SetupAdapter();
 };
 }  // namespace screen_controller
 

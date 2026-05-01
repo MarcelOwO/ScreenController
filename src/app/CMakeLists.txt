@@ -8,4 +8,5 @@ target_link_libraries(
          Renderer
          Storage
          File
-         Bluetooth)
+         Bluetooth
+         Events)
