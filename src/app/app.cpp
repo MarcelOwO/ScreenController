@@ -28,7 +28,7 @@ App::App() try
                                                     queue_condition_.notify_one();
                                                   })),
       storage_manager_(StorageFactory::Create(*logger_)),
-      mediator_manager_(*logger_, *settings_),
+      event_manager_(EventFactory::Create(*logger_, *settings_)),
       file_processor_(ProcessorFactory::Create(*logger_)) {
   logger_->LogInfo("Initializing App Subsystems...");
 

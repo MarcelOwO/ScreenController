@@ -16,7 +16,7 @@
 #include "models/connection_state.h"
 #include "socket/l2cap_receiver.h"
 
-namespace screen_controller {
+namespace screen_controller::bluetooth {
 
 class BluetoothManager : public IBluetoothManager {
 public:
@@ -42,13 +42,13 @@ private:
 
   ILogger& logger_;
 
-  L2CapReceiver l2_cap_receiver_;
-  DbusManager dbus_manager_;
+  socket::L2CapReceiver l2_cap_receiver_;
+  dbus::DbusManager dbus_manager_;
 
   ConnectionState connection_state_;
 
   std::function<void(const common::BluetoothPacket& packet)> bluetooth_callback_;
 };
-}  // namespace screen_controller
+}  // namespace screen_controller::bluetooth
 
 #endif  // BLUETOOTH_MANAGER_H

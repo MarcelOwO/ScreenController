@@ -14,12 +14,11 @@ namespace screen_controller {
 StorageManager::StorageManager(ILogger& logger)
     : logger_(logger), asset_path_("assets"), user_files_path_("files") {}
 
-std::expected<std::unique_ptr<StorageManager>, std::error_code>
-StorageManager::create(ILogger& logger) {
+std::expected<std::unique_ptr<StorageManager>, std::error_code> StorageManager::create(
+    ILogger& logger) {
   logger.LogInfo("Creating StorageManager");
 
-  auto storage_manager =
-      std::unique_ptr<StorageManager>(new StorageManager(logger));
+  auto storage_manager = std::unique_ptr<StorageManager>(new StorageManager(logger));
 
   if (auto res = storage_manager->Init(); !res) {
     return std::unexpected(std::make_error_code(std::errc::invalid_argument));
@@ -28,7 +27,9 @@ StorageManager::create(ILogger& logger) {
   return storage_manager;
 }
 
-StorageManager::~StorageManager() = default;
+StorageManager::~StorageManager() {
+  logger_.LogInfo("Cleaning up Storage Mangager");
+}
 
 std::expected<void, std::error_code> StorageManager::Init() const {
   if (!std::filesystem::exists(user_files_path_)) {
@@ -48,8 +49,7 @@ std::expected<void, std::error_code> StorageManager::Init() const {
   return {};
 }
 
-std::optional<std::vector<std::byte>> StorageManager::LoadResource(
-    std::string_view name) const {
+std::optional<std::vector<std::byte>> StorageManager::LoadResource(std::string_view name) const {
   auto path = GetResourcePath(name);
 
   if (!std::filesystem::exists(path)) {
@@ -74,7 +74,7 @@ std::optional<std::vector<std::byte>> StorageManager::LoadResource(
     return std::nullopt;
   }
 
-  (void)file.seekg(0, std::ios::beg);
+  (void) file.seekg(0, std::ios::beg);
 
   std::vector<std::byte> buffer(static_cast<size_t>(size));
   if (!file.read(reinterpret_cast<char*>(buffer.data()), size)) {
@@ -84,8 +84,7 @@ std::optional<std::vector<std::byte>> StorageManager::LoadResource(
   return buffer;
 }
 
-std::optional<std::vector<std::byte>> StorageManager::LoadFile(
-    std::string_view name) const {
+std::optional<std::vector<std::byte>> StorageManager::LoadFile(std::string_view name) const {
   const auto path = GetUserFilePath(name);
 
   if (!std::filesystem::exists(path)) {
@@ -109,7 +108,7 @@ std::optional<std::vector<std::byte>> StorageManager::LoadFile(
     return std::nullopt;
   }
 
-  (void)file.seekg(std::ios::beg);
+  (void) file.seekg(std::ios::beg);
 
   std::vector<std::byte> buffer(static_cast<size_t>(size));
   if (!file.read(reinterpret_cast<char*>(buffer.data()), size)) {
@@ -118,8 +117,7 @@ std::optional<std::vector<std::byte>> StorageManager::LoadFile(
   }
   return buffer;
 }
-bool StorageManager::SaveFile(std::string_view name,
-                              std::span<std::byte> data) const {
+bool StorageManager::SaveFile(std::string_view name, std::span<std::byte> data) const {
   const auto path = GetUserFilePath(name);
   std::ofstream file(path, std::ios::binary | std::ios::ate);
   if (!file.is_open()) {
@@ -139,8 +137,7 @@ bool StorageManager::SaveFile(std::string_view name,
   return true;
 }
 
-bool StorageManager::SaveFile(std::string_view name,
-                              const std::vector<std::byte>& data) const {
+bool StorageManager::SaveFile(std::string_view name, const std::vector<std::byte>& data) const {
   const auto path = GetUserFilePath(name);
   std::ofstream file(path, std::ios::binary | std::ios::ate);
   if (!file.is_open()) {
@@ -171,12 +168,10 @@ bool StorageManager::DeleteFile(std::string_view name) const {
   }
   return true;
 }
-std::filesystem::path StorageManager::GetUserFilePath(
-    const std::string_view name) const {
+std::filesystem::path StorageManager::GetUserFilePath(const std::string_view name) const {
   return user_files_path_ / name;
 }
-std::filesystem::path StorageManager::GetResourcePath(
-    const std::string_view name) const {
+std::filesystem::path StorageManager::GetResourcePath(const std::string_view name) const {
   return asset_path_ / name;
 }
 }  // namespace screen_controller

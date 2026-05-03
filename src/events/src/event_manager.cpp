@@ -9,6 +9,10 @@ std::expected<std::unique_ptr<EventManager>, std::error_code> EventManager::Crea
   return event_manager;
 }
 
+EventManager::~EventManager() {
+  logger_.LogInfo("Cleaning up Event Manager");
+}
+
 EventManager::EventManager(ILogger& logger, const AppSettings& settings)
     : settings_(settings), logger_(logger), registry_({}) {}
 

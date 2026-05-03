@@ -3,11 +3,7 @@
 //
 
 #include "socket_helper.h"
-#include <algorithm>
-#include <numeric>
 #include <ranges>
-
-#include "socket_variables.h"
 
 namespace screen_controller::socket {
 
@@ -36,23 +32,13 @@ void BuildPacketBytes(uint8_t type, uint16_t magic, std::string_view name,
     auto uint8_view =
         payload | std::views::transform([](std::byte byte) { return static_cast<uint8_t>(byte); });
 
-    const uint32_t kCrcVal = crc(uint8_view);
+    const uint32_t kCrcVal = Crc(uint8_view);
 
     Push32(out, kLen);
     Push32(out, kCrcVal);
 
     out.insert(out.end(), payload.begin(), payload.end());
   }
-}
-
-[[nodiscard]] constexpr std::uint32_t crc(const std::ranges::input_range auto& rng) noexcept
-  requires std::convertible_to<std::ranges::range_value_t<decltype(rng)>, std::uint8_t>
-{
-  return ~std::accumulate(std::ranges::begin(rng), std::ranges::end(rng),
-                          ~std::uint32_t{0} & std::uint32_t{0xff'ff'ff'ffu},
-                          [](std::uint32_t checksum, std::uint8_t value) {
-                            return crc_table[(checksum ^ value) & 0xff] ^ (checksum >> 8);
-                          });
 }
 
 uint16_t Le16(const std::array<std::byte, 2>& data) {

@@ -6,7 +6,7 @@
 #include "app_settings.h"
 #include "unpacker/unpacker.h"
 
-namespace screen_controller {
+namespace screen_controller::bluetooth {
 
 BluetoothManager::BluetoothManager(
     ILogger& logger, const AppSettings& settings,
@@ -14,14 +14,9 @@ BluetoothManager::BluetoothManager(
     : settings_(settings),
       logger_(logger),
       l2_cap_receiver_(logger, settings),
-      dbus_manager_(DbusManager(logger)),
+      dbus_manager_(dbus::DbusManager(logger)),
       connection_state_(ConnectionState::kStarting),
       bluetooth_callback_(callback) {
-  if (!l2_cap_receiver_.Init()) {
-    logger.LogError("Failed to init L2CAP receiver");
-    return;
-  }
-
   l2_cap_receiver_.OnReceived([&](const std::span<std::byte> kData) {
     common::BluetoothPacket packet{};
     const Unpacker kUnpacker(logger);
@@ -51,4 +46,4 @@ BluetoothManager::~BluetoothManager() = default;
 void BluetoothManager::Poll() {
   l2_cap_receiver_.PollSocket();
 }
-}  // namespace screen_controller
+}  // namespace screen_controller::bluetooth

@@ -16,12 +16,11 @@
 #include "sdbus-c++/IProxy.h"
 #include "sdbus-c++/Types.h"
 
-namespace screen_controller {
+namespace screen_controller::dbus {
 
 class BluetoothAdapter {
- public:
-  explicit BluetoothAdapter(
-      ILogger& logger, const std::shared_ptr<sdbus::IProxy>& adapter_proxy);
+public:
+  explicit BluetoothAdapter(ILogger& logger, const std::shared_ptr<sdbus::IProxy>& adapter_proxy);
 
   ~BluetoothAdapter() = default;
 
@@ -35,8 +34,7 @@ class BluetoothAdapter {
   [[nodiscard]] Result<void> start_discovery() const;
   [[nodiscard]] Result<void> stop_discovery() const;
 
-  [[nodiscard]] Result<void> remove_device(
-      const sdbus::ObjectPath& device) const;
+  [[nodiscard]] Result<void> remove_device(const sdbus::ObjectPath& device) const;
 
   [[nodiscard]] Result<void> set_discovery_filter(
       const std::unordered_map<std::string, sdbus::Variant>& filter) const;
@@ -113,14 +111,13 @@ class BluetoothAdapter {
 
   [[nodiscard]] Result<std::vector<std::string>> get_roles() const;
 
-  [[nodiscard]] Result<std::vector<std::string>> get_experimental_features()
-      const;
+  [[nodiscard]] Result<std::vector<std::string>> get_experimental_features() const;
 
   [[nodiscard]] Result<uint32_t> get_manufacturer() const;
 
   [[nodiscard]] Result<std::byte> get_version() const;
 
- private:
+private:
   ILogger& logger_;
   std::shared_ptr<sdbus::IProxy> adapter_proxy_;
   sdbus::InterfaceName adapter_interface_name_;
@@ -128,23 +125,19 @@ class BluetoothAdapter {
   template <typename T>
   Result<T> get(std::string_view name) const {
     return run_dbus_op([&]() -> Result<T> {
-      return adapter_proxy_->getProperty(name)
-          .onInterface(adapter_interface_name_)
-          .get<T>();
+      return adapter_proxy_->getProperty(name).onInterface(adapter_interface_name_).get<T>();
     });
   }
 
   template <typename T>
   Result<void> set(std::string_view name, const T val) {
     return run_dbus_op([&]() -> Result<void> {
-      adapter_proxy_->setProperty(name)
-          .onInterface(adapter_interface_name_)
-          .toValue(val);
+      adapter_proxy_->setProperty(name).onInterface(adapter_interface_name_).toValue(val);
       return {};
     });
   }
 };
 
-}  // namespace screen_controller
+}  // namespace screen_controller::dbus
 
 #endif  // BLUETOOTH_ADAPTER_H

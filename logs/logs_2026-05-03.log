@@ -1,0 +1,114 @@
+20:19:12 | INFO | 
+==========================================
+=                                        =
+=       Starting ScreenController        =
+=                                        =
+=                  OwO                   =
+=                                        =
+==========================================
+
+20:19:12 | INFO | Creating WindowManager
+20:19:12 | INFO | Initializing shaders
+20:19:12 | INFO | Creating shader
+20:19:12 | INFO | Creating GraphicsRenderer
+20:19:12 | INFO | Creating StorageManager
+20:19:12 | INFO | Creating FileProcessor
+20:19:12 | INFO | Creating L2CapReceiver
+20:19:12 | INFO | LE Set Default PHY (2M) not enabled (ret=-1, status=0x0)
+20:19:12 | Error | Failed to create DBusManager: [org.freedesktop.DBus.Error.AccessDenied] Failed to request bus name (Permission denied)
+20:19:12 | INFO | Cleaning up L2CapReceiver
+20:19:12 | INFO | Cleaning up GraphicsRenderer
+20:19:12 | INFO | Cleaning up GraphicsRenderer
+20:19:12 | INFO | Cleaning up GraphicsRenderer
+20:19:12 | INFO | Cleaning up GraphicsRenderer
+20:20:45 | INFO | 
+==========================================
+=                                        =
+=       Starting ScreenController        =
+=                                        =
+=                  OwO                   =
+=                                        =
+==========================================
+
+20:20:45 | INFO | Creating WindowManager
+20:20:45 | INFO | Initializing shaders
+20:20:45 | INFO | Creating shader
+20:20:45 | INFO | Creating GraphicsRenderer
+20:20:45 | INFO | Creating StorageManager
+20:20:45 | INFO | Creating FileProcessor
+20:20:45 | INFO | Creating L2CapReceiver
+20:20:45 | INFO | LE Set Default PHY (2M) not enabled (ret=-1, status=0x0)
+20:20:45 | Error | Failed to create DBusManager: [org.freedesktop.DBus.Error.AccessDenied] Failed to request bus name (Permission denied)
+20:20:45 | INFO | Cleaning up L2CapReceiver
+20:20:45 | INFO | Cleaning up GraphicsRenderer
+20:22:49 | INFO | 
+==========================================
+=                                        =
+=       Starting ScreenController        =
+=                                        =
+=                  OwO                   =
+=                                        =
+==========================================
+
+20:22:49 | INFO | Creating WindowManager
+20:22:49 | INFO | Initializing shaders
+20:22:49 | INFO | Creating shader
+20:22:49 | INFO | Creating GraphicsRenderer
+20:22:49 | INFO | Creating StorageManager
+20:22:49 | INFO | Creating FileProcessor
+20:22:49 | INFO | Creating L2CapReceiver
+20:22:49 | INFO | LE Set Default PHY (2M) not enabled (ret=-1, status=0x0)
+20:22:49 | Error | Failed to create DBusManager: [org.freedesktop.DBus.Error.AccessDenied] Failed to request bus name (Permission denied)
+20:22:49 | INFO | Cleaning up L2CapReceiver
+20:22:49 | INFO | Cleaning up File Processor
+20:22:49 | INFO | Cleaning up Storage Mangager
+20:22:49 | INFO | Cleaning up GraphicsRenderer
+20:22:49 | INFO | Cleaning up Window
+20:23:42 | INFO | 
+==========================================
+=                                        =
+=       Starting ScreenController        =
+=                                        =
+=                  OwO                   =
+=                                        =
+==========================================
+
+20:23:42 | INFO | Creating WindowManager
+20:23:43 | INFO | Initializing shaders
+20:23:43 | INFO | Creating shader
+20:23:43 | INFO | Creating GraphicsRenderer
+20:23:43 | INFO | Creating StorageManager
+20:23:43 | INFO | Creating FileProcessor
+20:23:43 | INFO | Creating L2CapReceiver
+20:23:43 | INFO | LE Set Default PHY (2M) not enabled (ret=-1, status=0x0)
+20:23:43 | Error | Failed to create DBusManager: [org.freedesktop.DBus.Error.AccessDenied] Failed to request bus name (Permission denied)
+20:23:43 | INFO | Cleaning up L2CapReceiver
+20:23:43 | INFO | Cleaning up File Processor
+20:23:43 | INFO | Cleaning up Storage Mangager
+20:23:43 | INFO | Cleaning up GraphicsRenderer
+20:23:43 | INFO | Cleaning up Window
+20:23:43 | INFO | Cleaned up window
+20:24:18 | INFO | 
+==========================================
+=                                        =
+=       Starting ScreenController        =
+=                                        =
+=                  OwO                   =
+=                                        =
+==========================================
+
+20:24:18 | INFO | Creating WindowManager
+20:24:18 | INFO | Initializing shaders
+20:24:18 | INFO | Creating shader
+20:24:18 | INFO | Creating GraphicsRenderer
+20:24:18 | INFO | Creating StorageManager
+20:24:18 | INFO | Creating FileProcessor
+20:24:18 | INFO | Creating L2CapReceiver
+20:24:18 | INFO | Default LE PHY set to prefer 2M.
+20:24:18 | Error | Failed to create DBusManager: [org.freedesktop.DBus.Error.AccessDenied] Failed to request bus name (Permission denied)
+20:24:18 | INFO | Cleaning up L2CapReceiver
+20:24:18 | INFO | Cleaning up File Processor
+20:24:18 | INFO | Cleaning up Storage Mangager
+20:24:18 | INFO | Cleaning up GraphicsRenderer
+20:24:18 | INFO | Cleaning up Window
+20:24:18 | INFO | Cleaned up window

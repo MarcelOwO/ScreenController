@@ -10,7 +10,7 @@
 
 #include <span>
 
-namespace screen_controller {
+namespace screen_controller::bluetooth {
 class Unpacker final {
 public:
   explicit Unpacker(ILogger& logger);
@@ -26,6 +26,6 @@ public:
 private:
   ILogger& logger_;
 };
-}  // namespace screen_controller
+}  // namespace screen_controller::bluetooth
 
 #endif  // UNPACKER_H

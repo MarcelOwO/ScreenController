@@ -9,11 +9,11 @@ add_library(
   src/dbus/dbus_implementations/bluetooth_le_advertisement.cpp
   src/dbus/dbus_implementations/bluetooth_le_advertising_manager.cpp
   src/dbus/dbus_implementations/bluetooth_adapter.cpp
-  src/socket/l2cap_receiver.cpp
   src/unpacker/unpacker.cpp
+  src/socket/l2cap_receiver.cpp
   src/socket/socket_helper.cpp
   src/socket/socket_options.cpp
-  src/models/connection_state.h)
+  )
 
 target_include_directories(Bluetooth PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 

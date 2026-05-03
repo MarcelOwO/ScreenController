@@ -7,7 +7,7 @@ namespace screen_controller {
 std::unique_ptr<IBluetoothManager> BluetoothFactory::Create(
     ILogger& logger, const AppSettings& settings,
     const std::function<void(const common::BluetoothPacket& packet)>& callback) {
-  auto manager = BluetoothManager::Create(logger, settings, callback);
+  auto manager = bluetooth::BluetoothManager::Create(logger, settings, callback);
   if (!manager) {
     throw std::runtime_error("Failed to create BluetoothManager");
   }

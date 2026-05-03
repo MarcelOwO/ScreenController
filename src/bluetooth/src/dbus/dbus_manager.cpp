@@ -10,7 +10,7 @@
 #include "logging/logger.h"
 #include "sdbus-c++/sdbus-c++.h"
 
-namespace screen_controller {
+namespace screen_controller::dbus {
 DbusManager::DbusManager(ILogger& logger) try
     : logger_(logger),
 
@@ -111,4 +111,4 @@ void DbusManager::SetupAdapter() {
   }
 }
 
-}  // namespace screen_controller
+}  // namespace screen_controller::dbus

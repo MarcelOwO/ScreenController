@@ -106,9 +106,11 @@ void GlfwWindow::update(const std::function<void()>& render) {
 }
 
 GlfwWindow::~GlfwWindow() {
+  logger_.LogInfo("Cleaning up Window");
   instance_ = nullptr;
 
   glfwTerminate();
+  logger_.LogInfo("Cleaned up window");
 }
 
 }  // namespace screen_controller

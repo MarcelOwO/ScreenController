@@ -11,59 +11,60 @@
 #include <fcntl.h>
 #include <logging/logger.h>
 #include <sys/poll.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #include <algorithm>
 #include <cerrno>
 #include <cstring>
+#include <format>
 #include <functional>
 #include <vector>
 
-#include "socket_helper/socket_helper.h"
-#include "socket_implementations/socket_options.h"
+#include "socket_helper.h"
+#include "socket_options.h"
+#include "socket_variables.h"
 
-namespace screen_controller {
+namespace screen_controller::socket {
 
 L2CapReceiver::L2CapReceiver(ILogger& logger, const AppSettings& settings)
-    : socket_options_(logger),
-      logger_(logger),
-      settings_(settings),
-      imtu_(settings.imtu_),
-      omtu_(settings.omtu_) {
+    : logger_(logger), settings_(settings), imtu_(settings.imtu_), omtu_(settings.omtu_) {
   logger_.LogInfo("Creating L2CapReceiver");
 
-  l2_cap_socket_ = socket(PF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP);
+  l2_cap_socket_ = ::socket(PF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP);
 
   if (l2_cap_socket_ < 0) {
-    logger_.LogError("Failed to create l2cap socket: {}", std::string(strerror(errno)));
-    throw std::runtime_error("Failed to create l2cap socket: {}", std::string(strerror(errno)));
+    const std::string kErrorMsg =
+        std::format("Failed to create l2cap socket: {}", std::string(strerror(errno)));
+    logger_.LogError(kErrorMsg);
+    throw std::runtime_error(kErrorMsg);
   }
 
-  auto res = socket_options_.SetReceiveBufferSize(l2_cap_socket_, 256 * 1024);
+  auto res = socket::SetReceiveBufferSize(l2_cap_socket_, 256 * 1024);
   if (!res) {
     logger_.LogError("Failed to set receive buffer size");
     throw std::runtime_error("Failed to set receive buffer size");
   }
 
-  res = socket_options_.SetSendBufferSize(l2_cap_socket_, 256 * 1024);
+  res = socket::SetSendBufferSize(l2_cap_socket_, 256 * 1024);
   if (!res) {
     logger_.LogError("Failed to set send buffer size");
     throw std::runtime_error("Failed to set send buffer size");
   }
 
-  res = socket_options_.SetReuseAddress(l2_cap_socket_, 1);
+  res = socket::SetReuseAddress(l2_cap_socket_, 1);
   if (!res) {
     logger_.LogError("Failed to set reuse address");
     throw std::runtime_error("Failed to set reuse address");
   }
 
-  res = socket_options_.SetFlushable(l2_cap_socket_, 1);
+  res = socket::SetFlushable(l2_cap_socket_, 1);
   if (!res) {
     logger_.LogError("Failed to set flushable");
     throw std::runtime_error("Failed to set flushable");
   }
 
-  res = socket_options_.SetNonBlocking(l2_cap_socket_);
+  res = socket::SetNonBlocking(l2_cap_socket_);
   if (!res) {
     logger_.LogError("Failed to set none blocking");
     throw std::runtime_error("Failed to set none blocking");
@@ -78,8 +79,10 @@ L2CapReceiver::L2CapReceiver(ILogger& logger, const AppSettings& settings)
     options.omtu = std::max<int>(options.omtu, 2048);
 
     if (setsockopt(l2_cap_socket_, SOL_L2CAP, L2CAP_OPTIONS, &options, sizeof(options)) != 0) {
-      logger_.LogError("Failed to set L2cap options: {}", std::string(strerror(errno)));
-      throw std::runtime_error("Failed to set L2cap options: {}", std::string(strerror(errno)));
+      const std::string kErrorMsg =
+          std::format("Failed to set L2cap options: {}", std::string(strerror(errno)));
+      logger_.LogError(kErrorMsg);
+      throw std::runtime_error(kErrorMsg);
     }
 
   } else {
@@ -93,14 +96,18 @@ L2CapReceiver::L2CapReceiver(ILogger& logger, const AppSettings& settings)
   };
 
   if (bind(l2_cap_socket_, reinterpret_cast<sockaddr*>(&loc_addr), sizeof(loc_addr)) < 0) {
-    logger_.LogError("Failed to bind l2cap socket with error: {}", std::string(strerror(errno)));
-    throw std::runtime_error("Failed to bind l2cap socket with error: {}",
-                             std::string(strerror(errno)));
+    const std::string kErrorMsg =
+        std::format("Failed to bind l2cap socket with error: {}", std::string(strerror(errno)));
+    logger_.LogError(kErrorMsg);
+    throw std::runtime_error(kErrorMsg);
   }
 
   if (listen(l2_cap_socket_, 1) < 0) {
-    logger_.LogError("Failed to listen on l2cap socket" + std::string(strerror(errno)));
-    throw std::runtime_error("Failed to listen on l2cap socket: {}", std::string(strerror(errno)));
+    const std::string kErrorMsg =
+        std::format("Failed to listen on l2cap socket {}", std::string(strerror(errno)));
+
+    logger_.LogError(kErrorMsg);
+    throw std::runtime_error(kErrorMsg);
   }
 
   TryEnable2MDefaultPhy();
@@ -238,82 +245,97 @@ void L2CapReceiver::ReadAllAvailable() {
 }
 
 bool L2CapReceiver::ExtractOnePacket() {
-  auto& buf = received_buffer_;
+  std::vector<uint8_t>& buf = received_buffer_;
 
   if (buf.size() < kHeaderMin) {
+    logger_.LogError("Packet size is too small");
     return false;
   }
 
   size_t off = 0;
 
+  // find magic byte else i gues nothing?
   while (off + 1 < buf.size()) {
-    if (socket::Le16(&buf[off]) == kMagic) {
+    auto packet_magic_byte = socket::FromVector<uint16_t>(buf, off);
+    if (packet_magic_byte == kMagic) {
       break;
     }
+
     off++;
   }
 
+  // remove parts before offset
   if (off > 0) {
     (void) buf.erase(buf.begin(), buf.begin() + off);
   }
 
   if (buf.size() < kHeaderMin) {
+    logger_.LogError("Packet is too small");
     return false;
   }
 
-  if (socket::Le16(&buf) != kMagic) {
-    return false;
-  }
+  // if (socket::FromVector<uint16_t>(buf, off) != kMagic) {
+  //   return false;
+  // }
 
   const uint8_t kType = buf[2];
-  const uint32_t kNameLen = socket::Le32(&buf[3]);
+  auto name_len = socket::FromVector<uint32_t>(buf, 3);
 
-  if (kNameLen > kMaxNameLen) {
-    logger_.LogError("Name too large: " + std::to_string(kNameLen));
+  if (name_len > kMaxNameLen) {
+    logger_.LogError("Name too large: " + std::to_string(name_len));
+
     if (on_error_) {
       on_error_(-1, "name too long");
     }
+
     (void) buf.erase(buf.begin());
+    logger_.LogError("Something wrong ");
     return false;
   }
 
-  const size_t kAfterName = 7 + static_cast<size_t>(kNameLen);
+  const size_t kAfterName = 7 + static_cast<size_t>(name_len);
 
   if (buf.size() < kAfterName) {
+    logger_.LogError("Something else wrong");
     return false;
   }
 
-  const auto* const kNamePtr = reinterpret_cast<const char*>(&buf[7]);
+  const char* const kNamePtr = reinterpret_cast<const char*>(&buf[7]);
 
-  std::string name(kNamePtr, kNameLen);
+  std::string name(kNamePtr, name_len);
 
-  if (buf.size(), kAfterName + 4) {
+  if (buf.size() < kAfterName + 4) {
     return false;
   }
 
-  const uint32_t payload_len = (buf.size() >= kAfterName + 4) ? socket::Le32(&buf[kAfterName]) : 0;
+  const uint32_t kPayloadLen =
+      (buf.size() >= kAfterName + 4) ? socket::FromVector<uint32_t>(buf, kAfterName) : 0;
+
   if (buf.size() >= kAfterName && buf.size() < kAfterName + 8) {
     return false;
   }
   if (auto header_only = [&](const uint8_t t) -> bool { return (t < 0x80); }; header_only(kType)) {
     (void) buf.erase(buf.begin(), buf.begin() + kAfterName);
-    Packet packet{
-        .type = kType, .name = std::move(name), .payload = {}, .crc32 = 0, .has_payload = false};
+    Packet packet{.type_ = kType,
+                  .name_ = std::move(name),
+                  .payload_ = {},
+                  .crc32_ = 0,
+                  .has_payload_ = false};
 
     if (on_packet_) {
       on_packet_(packet);
     }
     if (on_received_) {
-      current_payload_.assign(packet.name.begin(), packet.name.end());
-      const std::span s(reinterpret_cast<std::byte*>(current_payload_.data()),
-                        current_payload_.size());
-      on_received_(s);
+      current_payload_.assign(packet.name_.begin(), packet.name_.end());
+      const std::span kSpan(reinterpret_cast<std::byte*>(current_payload_.data()),
+                            current_payload_.size());
+      on_received_(kSpan);
     }
     return true;
   }
-  const size_t need = kAfterName + 8 + static_cast<size_t>(payload_len);
-  if (payload_len > kMaxPayload) {
-    logger_.LogError("Payload too large: " + payload_len);
+  const size_t kNeed = kAfterName + 8 + static_cast<size_t>(kPayloadLen);
+  if (kPayloadLen > kMaxPayload) {
+    logger_.LogError(&"Payload too large: "[kPayloadLen]);
     if (on_error_) {
       on_error_(-2, "payload too large");
     }
@@ -321,26 +343,31 @@ bool L2CapReceiver::ExtractOnePacket() {
     (void) buf.erase(buf.begin());
     return false;
   }
-  if (buf.size() < need) {
+  if (buf.size() < kNeed) {
     return false;
   }
 
-  const uint32_t kCrc32 = socket::Le32(&buf[kAfterName + 4]);
+  uint32_t kCrc32 = socket::FromVector<uint32_t>(buf, kAfterName + 4);
 
   const uint8_t* payload_ptr = &buf[kAfterName + 8];
 
-  if (const uint32_t kCalc = socket::Crc32(payload_ptr, payload_len); kCalc != kCrc32) {
-    logger_.LogError("CRC mismatch: calc=" + std::to_string(kCalc) +
-                     " pkt=" + std::to_string(kCrc32));
+  const auto kPayload = std::span(payload_ptr, kPayloadLen);
+
+  const uint32_t kCalc = Crc(kPayload);
+
+  if (kCalc != kCrc32) {
+    logger_.LogError(
+        std::format("CRC mismatch: calc={} ptk={}", std::to_string(kCalc), std::to_string(kCrc32)));
+
     if (on_error_) {
       on_error_(-3, "crc mismatch");
     }
-    (void) buf.erase(buf.begin(), buf.begin() + need);
+    (void) buf.erase(buf.begin(), buf.begin() + kNeed);
     return true;
   }
 
-  current_payload_.assign(payload_ptr, payload_ptr + payload_len);
-  (void) buf.erase(buf.begin(), buf.begin() + need);
+  current_payload_.assign(payload_ptr, payload_ptr + kPayloadLen);
+  (void) buf.erase(buf.begin(), buf.begin() + kNeed);
 
   Packet view{
       .type_ = kType,
@@ -369,7 +396,7 @@ bool L2CapReceiver::SendPacket(const uint8_t kType, const std::string_view kName
     return false;
   }
 
-  std::vector<uint8_t> bytes{};
+  std::vector<std::byte> bytes{};
 
   socket::BuildPacketBytes(kType, kMagic, kName, payload, bytes);
 
@@ -436,4 +463,4 @@ void L2CapReceiver::TryEnable2MDefaultPhy() {
   hci_close_dev(dd);
 }
 
-}  // namespace screen_controller
+}  // namespace screen_controller::socket

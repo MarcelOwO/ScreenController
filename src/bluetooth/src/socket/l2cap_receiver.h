@@ -15,9 +15,8 @@
 #include "../models/packet.h"
 #include "app_settings.h"
 #include "logging/logger.h"
-#include "socket_options.h"
 
-namespace screen_controller {
+namespace screen_controller::socket {
 class L2CapReceiver {
 public:
   explicit L2CapReceiver(ILogger& logger, const AppSettings& settings);
@@ -50,8 +49,6 @@ private:
   int l2_cap_socket_{-1};
   int client_socket_{-1};
 
-  SocketOptions socket_options_;
-
   const AppSettings& settings_;
 
   int imtu_;
@@ -68,6 +65,6 @@ private:
   std::function<void(int, std::string_view)> on_error_;
 };
 
-}  // namespace screen_controller
+}  // namespace screen_controller::socket
 
 #endif  // L_2_CAP_RECEIVER_H

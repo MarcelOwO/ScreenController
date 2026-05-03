@@ -10,12 +10,12 @@
 #include "sdbus-c++/Message.h"
 #include "sdbus-c++/Types.h"
 
-namespace screen_controller {
+namespace screen_controller::dbus {
 
 // finish reworking all of this ... someday xD
 
-BluetoothAdapter::BluetoothAdapter(
-    ILogger& logger, const std::shared_ptr<sdbus::IProxy>& adapter_proxy)
+BluetoothAdapter::BluetoothAdapter(ILogger& logger,
+                                   const std::shared_ptr<sdbus::IProxy>& adapter_proxy)
     : logger_(logger),
       adapter_proxy_(adapter_proxy),
       adapter_interface_name_(sdbus::InterfaceName("org.bluez.Adapter1")) {
@@ -24,24 +24,21 @@ BluetoothAdapter::BluetoothAdapter(
 
 Result<void> BluetoothAdapter::start_discovery() const {
   return run_dbus_op([&]() -> Result<void> {
-    adapter_proxy_->callMethodAsync("StartDiscovery")
-        .onInterface(adapter_interface_name_);
+    adapter_proxy_->callMethodAsync("StartDiscovery").onInterface(adapter_interface_name_);
     return {};
   });
 }
 
 Result<void> BluetoothAdapter::stop_discovery() const {
   return run_dbus_op([&]() -> Result<void> {
-    adapter_proxy_->callMethod("StopDiscovery")
-        .onInterface(adapter_interface_name_);
+    adapter_proxy_->callMethod("StopDiscovery").onInterface(adapter_interface_name_);
     return {};
   });
 }
 
-Result<void> BluetoothAdapter::remove_device(
-    const sdbus::ObjectPath& device) const {
+Result<void> BluetoothAdapter::remove_device(const sdbus::ObjectPath& device) const {
   return run_dbus_op([&]() -> Result<void> {
-    (void)adapter_proxy_->callMethod("RemoveDevice")
+    (void) adapter_proxy_->callMethod("RemoveDevice")
         .onInterface(adapter_interface_name_)
         .withArguments(device);
     return {};
@@ -51,15 +48,14 @@ Result<void> BluetoothAdapter::remove_device(
 Result<void> BluetoothAdapter::set_discovery_filter(
     const std::unordered_map<std::string, sdbus::Variant>& filter) const {
   return run_dbus_op([&]() -> Result<void> {
-    (void)adapter_proxy_->callMethod("SetDiscovery")
+    (void) adapter_proxy_->callMethod("SetDiscovery")
         .onInterface(adapter_interface_name_)
         .withArguments(filter);
     return {};
   });
 }
 
-Result<std::vector<std::string>> BluetoothAdapter::get_discovery_filters()
-    const {
+Result<std::vector<std::string>> BluetoothAdapter::get_discovery_filters() const {
   return run_dbus_op([&] -> Result<std::vector<std::string>> {
     std::vector<std::string> filters{};
 
@@ -91,8 +87,7 @@ Result<std::string_view> BluetoothAdapter::get_address() const {
 }
 
 Result<std::string_view> BluetoothAdapter::get_address_type() const {
-  logger_.LogError(
-      "BluetoothAdapter::get_address_type has not been implemented");
+  logger_.LogError("BluetoothAdapter::get_address_type has not been implemented");
   return std::string_view();
 }
 
@@ -128,9 +123,7 @@ Result<void> BluetoothAdapter::set_connectable(bool connectable) {}
 
 Result<bool> BluetoothAdapter::get_powered() const {
   try {
-    return adapter_proxy_->getProperty("Powered")
-        .onInterface(adapter_interface_name_)
-        .get<bool>();
+    return adapter_proxy_->getProperty("Powered").onInterface(adapter_interface_name_).get<bool>();
   } catch (const sdbus::Error& e) {
     return false;
   }
@@ -138,9 +131,7 @@ Result<bool> BluetoothAdapter::get_powered() const {
 
 Result<void> BluetoothAdapter::set_powered(const bool powered) {
   return run_dbus_op([&]() -> Result<void> {
-    adapter_proxy_->setProperty("Powered")
-        .onInterface(adapter_interface_name_)
-        .toValue(powered);
+    adapter_proxy_->setProperty("Powered").onInterface(adapter_interface_name_).toValue(powered);
     return {};
   });
 }
@@ -190,11 +181,10 @@ Optional<std::string> BluetoothAdapter::get_modalias() const {}
 
 Result<std::vector<std::string>> BluetoothAdapter::get_roles() const {}
 
-Result<std::vector<std::string>> BluetoothAdapter::get_experimental_features()
-    const {}
+Result<std::vector<std::string>> BluetoothAdapter::get_experimental_features() const {}
 
 Result<uint32_t> BluetoothAdapter::get_manufacturer() const {}
 
 Result<std::byte> BluetoothAdapter::get_version() const {}
 
-}  // namespace screen_controller
+}  // namespace screen_controller::dbus

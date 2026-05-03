@@ -7,12 +7,12 @@
 #include "logging/logger.h"
 #include "sdbus-c++/IObject.h"
 
-namespace screen_controller {
+namespace screen_controller::dbus {
 class BluetoothLEAdvertisement {
- public:
-  explicit BluetoothLEAdvertisement(
-      ILogger& logger, const std::shared_ptr<sdbus::IConnection>& connection,
-      const sdbus::ObjectPath& path);
+public:
+  explicit BluetoothLEAdvertisement(ILogger& logger,
+                                    const std::shared_ptr<sdbus::IConnection>& connection,
+                                    const sdbus::ObjectPath& path);
 
   ~BluetoothLEAdvertisement() = default;
 
@@ -23,12 +23,12 @@ class BluetoothLEAdvertisement {
   BluetoothLEAdvertisement& operator=(const BluetoothLEAdvertisement&) = delete;
   BluetoothLEAdvertisement& operator=(BluetoothLEAdvertisement&&) = delete;
 
- private:
+private:
   ILogger& logger_;
 
   sdbus::InterfaceName le_advertisement_interface_name_;
   std::unique_ptr<sdbus::IObject> le_advertisement_;
 };
-}  // namespace screen_controller
+}  // namespace screen_controller::dbus
 
 #endif  // BLUETOOTH_LE_ADVERTISEMENT_H

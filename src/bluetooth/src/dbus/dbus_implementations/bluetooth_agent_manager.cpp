@@ -7,13 +7,11 @@
 #include <logging/logger.h>
 
 #include "sdbus-c++/IProxy.h"
-namespace screen_controller {
-BluetoothAgentManager::BluetoothAgentManager(ILogger& logger,
-                                             sdbus::IProxy& bluez_proxy)
+namespace screen_controller::dbus {
+BluetoothAgentManager::BluetoothAgentManager(ILogger& logger, sdbus::IProxy& bluez_proxy)
     : logger_(logger),
       bluez_proxy_(bluez_proxy),
-      agent_manager_interface_name_(
-          sdbus::InterfaceName("org.bluez.AgentManager1")) {
+      agent_manager_interface_name_(sdbus::InterfaceName("org.bluez.AgentManager1")) {
   logger_.LogInfo("Creating BluetoothAgentManager");
 }
 
@@ -26,36 +24,33 @@ std::expected<void, std::error_code> BluetoothAgentManager::RegisterAgent(
     return {};
   } catch (const sdbus::Error& e) {
     logger_.LogError(e.getMessage());
-    return std::unexpected(
-        std::make_error_code(std::errc::operation_not_permitted));
+    return std::unexpected(std::make_error_code(std::errc::operation_not_permitted));
   }
 }
 
 std::expected<void, std::error_code> BluetoothAgentManager::UnregisterAgent(
     const sdbus::ObjectPath& agent) {
   try {
-    (void)bluez_proxy_.callMethod(sdbus::MethodName("UnregisterAgent"))
+    (void) bluez_proxy_.callMethod(sdbus::MethodName("UnregisterAgent"))
         .onInterface(agent_manager_interface_name_)
         .withArguments(agent);
     return {};
   } catch (const sdbus::Error& e) {
     logger_.LogError(e.getMessage());
-    return std::unexpected(
-        std::make_error_code(std::errc::operation_not_permitted));
+    return std::unexpected(std::make_error_code(std::errc::operation_not_permitted));
   }
 }
 
 std::expected<void, std::error_code> BluetoothAgentManager::RequestDefaultAgent(
     const sdbus::ObjectPath& agent) {
   try {
-    (void)bluez_proxy_.callMethod(sdbus::MethodName("RequestDefaultAgent"))
+    (void) bluez_proxy_.callMethod(sdbus::MethodName("RequestDefaultAgent"))
         .onInterface(agent_manager_interface_name_)
         .withArguments(agent);
     return {};
   } catch (const sdbus::Error& e) {
     logger_.LogError(e.getMessage());
-    return std::unexpected(
-        std::make_error_code(std::errc::operation_not_permitted));
+    return std::unexpected(std::make_error_code(std::errc::operation_not_permitted));
   }
 }
-}  // namespace screen_controller
+}  // namespace screen_controller::dbus

@@ -10,12 +10,11 @@
 
 #include <expected>
 
-namespace screen_controller {
+namespace screen_controller::dbus {
 class BluetoothDevice {
- public:
-  explicit BluetoothDevice(
-      ILogger& logger, const std::shared_ptr<sdbus::IConnection>& connection,
-      const sdbus::ObjectPath& device);
+public:
+  explicit BluetoothDevice(ILogger& logger, const std::shared_ptr<sdbus::IConnection>& connection,
+                           const sdbus::ObjectPath& device);
 
   ~BluetoothDevice() = default;
 
@@ -26,14 +25,11 @@ class BluetoothDevice {
 
   [[nodiscard]] std::expected<void, std::error_code> Connect() const;
   [[nodiscard]] std::expected<void, std::error_code> Disconnect() const;
-  [[nodiscard]] std::expected<void, std::error_code> ConnectProfile(
-      std::string_view uuid) const;
-  [[nodiscard]] std::expected<void, std::error_code> DisconnectProfile(
-      std::string_view uuid) const;
+  [[nodiscard]] std::expected<void, std::error_code> ConnectProfile(std::string_view uuid) const;
+  [[nodiscard]] std::expected<void, std::error_code> DisconnectProfile(std::string_view uuid) const;
   [[nodiscard]] std::expected<void, std::error_code> Pair() const;
   [[nodiscard]] std::expected<void, std::error_code> CancelPairing() const;
-  [[nodiscard]] std::optional<std::vector<std::vector<uint8_t>>>
-  GetServiceRecords() const;
+  [[nodiscard]] std::optional<std::vector<std::vector<uint8_t>>> GetServiceRecords() const;
 
   [[nodiscard]] std::optional<std::string_view> GetAddress() const;
   [[nodiscard]] std::optional<std::string_view> GetAddressType() const;
@@ -44,10 +40,10 @@ class BluetoothDevice {
   [[nodiscard]] uint16_t GetAppearance() const;
 
   // sdbus::ObjectPath GetAdapter;
- private:
+private:
   ILogger& logger_;
   std::unique_ptr<sdbus::IProxy> device_proxy_;
   sdbus::InterfaceName device_interface_;
 };
-}  // namespace screen_controller
+}  // namespace screen_controller::dbus
 #endif  // BLUETOOTH_DEVICE_H

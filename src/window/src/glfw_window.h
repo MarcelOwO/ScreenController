@@ -15,7 +15,7 @@ public:
   static std::expected<std::unique_ptr<GlfwWindow>, std::error_code> Create(
       ILogger& logger, std::function<void()> on_shutdown_requested);
 
-  ~GlfwWindow();
+  ~GlfwWindow() override;
 
   GlfwWindow(const GlfwWindow&) = delete;
   GlfwWindow& operator=(const GlfwWindow&) = delete;

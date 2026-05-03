@@ -16,7 +16,7 @@
 #include "sdbus-c++/IProxy.h"
 #include "sdbus-c++/Types.h"
 
-namespace screen_controller {
+namespace screen_controller::dbus {
 
 class DbusManager {
 public:
@@ -52,6 +52,6 @@ private:
   void SetupName();
   void SetupAdapter();
 };
-}  // namespace screen_controller
+}  // namespace screen_controller::dbus
 
 #endif  // DBUSMANAGER_H

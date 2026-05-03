@@ -6,10 +6,10 @@
 #include "sdbus-c++/AdaptorInterfaces.h"
 #include "sdbus-c++/IConnection.h"
 
-namespace screen_controller {
+namespace screen_controller::dbus {
 
 class GattService {
- public:
+public:
   explicit GattService(ILogger& logger, sdbus::IConnection& connection);
   ~GattService() = default;
 
@@ -18,13 +18,13 @@ class GattService {
   GattService(GattService&&) = delete;
   GattService& operator=(GattService&&) = delete;
 
- private:
+private:
   ILogger& logger_;
   sdbus::IConnection& connection_;
 
   std::unique_ptr<sdbus::IObject> gatt_service_object_;
 };
 
-};  // namespace screen_controller
+};  // namespace screen_controller::dbus
 
 #endif

@@ -13,9 +13,9 @@
 #include "sdbus-c++/IProxy.h"
 #include "sdbus-c++/Types.h"
 
-namespace screen_controller {
+namespace screen_controller::dbus {
 class BluetoothAgentManager {
- public:
+public:
   explicit BluetoothAgentManager(ILogger& logger, sdbus::IProxy& adapter_proxy);
   ~BluetoothAgentManager() = default;
 
@@ -24,18 +24,18 @@ class BluetoothAgentManager {
   BluetoothAgentManager(BluetoothAgentManager&&) = delete;
   BluetoothAgentManager& operator=(BluetoothAgentManager&&) = delete;
 
-  [[nodiscard]] std::expected<void, std::error_code> RegisterAgent(
-      const sdbus::ObjectPath& agent, std::string_view capability);
+  [[nodiscard]] std::expected<void, std::error_code> RegisterAgent(const sdbus::ObjectPath& agent,
+                                                                   std::string_view capability);
   [[nodiscard]] std::expected<void, std::error_code> UnregisterAgent(
       const sdbus::ObjectPath& agent);
   [[nodiscard]] std::expected<void, std::error_code> RequestDefaultAgent(
       const sdbus::ObjectPath& agent);
 
- private:
+private:
   ILogger& logger_;
   sdbus::IProxy& bluez_proxy_;
   sdbus::InterfaceName agent_manager_interface_name_;
 };
-}  // namespace screen_controller
+}  // namespace screen_controller::dbus
 
 #endif  // BLUETOOTH_AGENT_MANAGER_H
