@@ -13,11 +13,11 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-# 1. Detect and Target the active user running the sudo command
+# Target the active user running the sudo command
 TARGET_USER="${SUDO_USER:-pi}"
 TARGET_HOME=$(eval echo "~$TARGET_USER")
 
-echo "[1/5] Installing core system dependencies..."
+echo "[1/5] Installing system packages and development headers..."
 apt-get update
 apt-get install -y \
     build-essential \
@@ -39,26 +39,27 @@ apt-get install -y \
     xorg \
     x11-xserver-utils
 
-echo "[2/5] Configuring unrestricted Root/Global Bluetooth D-Bus permissions..."
-# Grant full, unrestricted administrative permissions to the BlueZ interface
+# Check if ng-log is available via apt; if not, we build it quickly
+if ! apt-cache show libglog-dev > /dev/null 2>&1; then
+    echo "Installing glog/ng-log fallbacks..."
+    apt-get install -y libgoogle-glog-dev
+fi
+
+echo "[2/5] Configuring BlueZ Bluetooth pipeline D-Bus permissions..."
 cat <<EOF > /etc/dbus-1/system.d/mylinuxapp-bluetooth.conf
 <!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN"
  "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
 <busconfig>
-  <!-- Allow the root user and the active kiosk user absolute control -->
   <policy user="$TARGET_USER">
     <allow send_destination="org.bluez"/>
     <allow receive_sender="org.bluez"/>
     <allow send_interface="*"/>
   </policy>
-
   <policy user="root">
     <allow send_destination="org.bluez"/>
     <allow receive_sender="org.bluez"/>
     <allow send_interface="*"/>
   </policy>
-
-  <!-- Fallback blanket permission for the system bus regarding BlueZ -->
   <policy context="default">
     <allow send_destination="org.bluez"/>
     <allow receive_sender="org.bluez"/>
@@ -66,18 +67,18 @@ cat <<EOF > /etc/dbus-1/system.d/mylinuxapp-bluetooth.conf
 </busconfig>
 EOF
 
-# Reload the D-Bus daemon configuration
-systemctl reload dbus
 systemctl reload dbus
 
-echo "[3/5] Natively compiling your CMake application..."
+echo "[3/5] Natively compiling ScreenController..."
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="$SCRIPT_DIR/build"
 
+# Clear any stale submodule cache builds if they exist
+rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
 
-# Configure and compile using all available CPU cores
+# Configure and compile using your crisp, new find_package setup
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
 make -j$(nproc)
 
@@ -88,23 +89,20 @@ if [ -f compile_commands.json ]; then
 fi
 
 echo "[4/5] Setting up X11 startup profile..."
-# Configure X11 to skip desktop elements and jump directly to your app in fullscreen
 cat <<EOF > "$TARGET_HOME/.xinitrc"
 #!/bin/sh
-# Disable screen sleep, blanking, and power-saving management
 xset s off
 xset s noblank
 xset -dpms
 
-# Run the compiled application binary
-exec $BUILD_DIR/MyLinuxApp
+# Run the compiled system-linked binary
+exec $BUILD_DIR/ScreenController
 EOF
 
 chown "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.xinitrc"
 chmod +x "$TARGET_HOME/.xinitrc"
 
 echo "[5/5] Creating systemd kiosk service for automated boot execution..."
-# Define a system service that launches an X server running your application configuration
 cat <<EOF > /etc/systemd/system/kiosk.service
 [Unit]
 Description=Bluetooth Media Kiosk Application
@@ -118,7 +116,6 @@ Environment=DISPLAY=:0
 PAMName=login
 TTYPath=/dev/tty1
 StandardInput=tty
-# ExecStart triggers startx which implicitly runs the ~/.xinitrc script written above
 ExecStart=/usr/bin/startx
 Restart=always
 RestartSec=3
@@ -127,7 +124,6 @@ RestartSec=3
 WantedBy=multi-user.target
 EOF
 
-# Reload changes, enable the service to hook into the boot cycle, and clear standard display managers
 systemctl daemon-reload
 systemctl enable kiosk.service
 
