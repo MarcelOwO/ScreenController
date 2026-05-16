@@ -5,11 +5,13 @@
 #ifndef APP_H
 #define APP_H
 
-#include <bluetooth_manager/bluetooth_manager.h>
-#include <file_processor/file_processor.h>
-#include <graphics_renderer/graphics_renderer.h>
+#include <bluetooth_packet.h>
+#include <bt/manager.h>
+#include <events/events.h>
+#include <graphics/renderer.h>
 #include <logging/logger.h>
-#include <storage_manager/storage_manager.h>
+#include <processor/file_processor.h>
+#include <storage/storage_manager.h>
 #include <window_manager/window_manager.h>
 
 #include <condition_variable>
@@ -20,35 +22,38 @@
 
 namespace screen_controller {
 class App {
- public:
+public:
   App();
   ~App();
-  bool process_command(const common::BluetoothPacket& packet);
-  void run();
 
-  AppSettings settings;
+  void AdjustSettings(const std::function<void(AppSettings&)>& update_settings);
 
- private:
-  bool running_;
+  bool ProcessCommand(const common::BluetoothPacket& packet);
+
+  void Run();
+
+private:
+  bool is_running_;
   std::jthread command_thread_;
 
-  std::shared_ptr<Logger> logger_;
-  std::shared_ptr<AppSettings> settings_;
+  std::unique_ptr<ILogger> logger_;
+  std::unique_ptr<AppSettings> settings_;
 
-  WindowManager window_manager_;
-  GraphicsRenderer renderer_;
-  BluetoothManager bluetooth_manager_;
-  StorageManager storage_manager_;
-  FileProcessor file_processor_;
+  std::unique_ptr<IWindowManager> window_manager_;
+  std::unique_ptr<IRenderer> renderer_;
+  std::unique_ptr<IStorageManager> storage_manager_;
+  std::unique_ptr<IFileProcessor> file_processor_;
+  std::unique_ptr<IBluetoothManager> bluetooth_manager_;
+  std::unique_ptr<IEventManager> event_manager_;
 
   std::queue<common::BluetoothPacket> command_queue_;
   std::mutex queue_mutex_;
   std::condition_variable queue_condition_;
 
-  bool load_image(std::string_view name, bool is_asset);
-  void process_frame();
-  void render_loop();
-  void handle_commands(const std::stop_token& stop_token);
+  bool LoadImage(std::string_view k_name, bool k_is_asset);
+  void ProcessFrame();
+  void RenderLoop();
+  void HandleCommands(const std::stop_token& stop_token);
 };
 }  // namespace screen_controller
 #endif  // APP_H

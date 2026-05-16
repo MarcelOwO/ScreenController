@@ -1,11 +1,11 @@
 add_library(Logger STATIC
-  logger.cpp
+  src/default_logger.cpp
+  src/logger_factory.cpp
 )
 
 target_include_directories(Logger
     PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
 
-target_link_libraries(Logger PRIVATE  ng-log)
+target_link_libraries(Logger)

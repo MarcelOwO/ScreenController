@@ -1,0 +1,14 @@
+[Unit]
+Description=OwO Screen Controller Service
+Requires=dbus.socket
+After=dbus.socket
+
+[Service]
+Type=dbus
+BusName=com.owo.screen_controller
+ExecStart=/usr/bin/screen_controller
+Restart=on-failure
+User=Root
+
+[Install]
+WantedBy=multi-user.target

@@ -11,11 +11,18 @@
 #include "sdbus-c++/IConnection.h"
 #include "sdbus-c++/IObject.h"
 #include "sdbus-c++/Types.h"
+<<<<<<<< HEAD:source/bluetooth_manager/dbus/dbus_implementations/bluetooth_agent.h
 namespace screen_controller {
 class BluetoothAgent {
  public:
   explicit BluetoothAgent(const std::shared_ptr<Logger>& logger,
                           const std::shared_ptr<sdbus::IConnection>& connection,
+========
+namespace screen_controller::dbus {
+class BluetoothAgent {
+public:
+  explicit BluetoothAgent(ILogger& logger, const std::shared_ptr<sdbus::IConnection>& connection,
+>>>>>>>> origin/dev:source/bluetooth/src/dbus/dbus_implementations/bluetooth_agent.h
                           const sdbus::ObjectPath& device);
   ~BluetoothAgent() = default;
 
@@ -26,8 +33,13 @@ class BluetoothAgent {
 
   // void init() const;
 
+<<<<<<<< HEAD:source/bluetooth_manager/dbus/dbus_implementations/bluetooth_agent.h
  private:
   std::shared_ptr<Logger> logger_;
+========
+private:
+  ILogger& logger_;
+>>>>>>>> origin/dev:source/bluetooth/src/dbus/dbus_implementations/bluetooth_agent.h
   sdbus::ObjectPath agent_path_;
   std::unique_ptr<sdbus::IObject> agent_object_;
   std::shared_ptr<sdbus::IConnection> connection_;

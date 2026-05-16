@@ -1,7 +1,7 @@
-
 #ifndef LOGGER_H
 #define LOGGER_H
 
+#include <memory>
 #include <string_view>
 
 namespace screen_controller {
@@ -11,15 +11,24 @@ enum class LogLevel {
   ERROR,
 };
 
-class Logger {
- public:
-  explicit Logger(std::string_view name);
-  ~Logger();
+class ILogger {
+public:
+  virtual ~ILogger() = default;
 
-   void Log(LogLevel level, std::string_view log);
-   void LogInfo(std::string_view log);
+  virtual void Log(LogLevel level, std::string_view log) = 0;
 
-   void LogError(std::string_view log);
+  void LogInfo(std::string_view log) {
+    Log(LogLevel::INFO, log);
+  }
+  void LogError(std::string_view log) {
+    Log(LogLevel::ERROR, log);
+  }
+};
+
+class LoggerFactory {
+public:
+  static ILogger& GetInstance();
+  static std::unique_ptr<ILogger> Create();
 };
 
 };  // namespace screen_controller
