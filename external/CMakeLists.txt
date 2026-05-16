@@ -1,19 +1,11 @@
-option(GLFW_INSTALL_EXAMPLES OFF)
-option(GLFW_INSTALL_TESTS OFF)
-option(GLFW_INSTALL_DOCS OFF)
-option(GLFW_INSTALL OFF)
+find_package(glfw3 3.3 REQUIRED)
+find_package(glm CONFIG REQUIRED)
+find_package(sdbus-c++ REQUIRED)
+find_package(zstd CONFIG REQUIRED)
+find_package(ng-log CONFIG REQUIRED)
 
-set(ZSTD_BUILD_STATIC ON)
-set(ZSTD_BUILD_SHARED OFF)
-
-add_subdirectory(glfw)
-add_subdirectory(glad)
-add_subdirectory(sdbus-cpp)
-add_subdirectory(ng-log)
-add_subdirectory(protobuf)
-add_subdirectory(zstd/build/cmake)
-add_subdirectory(glm)
-
+find_package(PkgConfig Required)
+pkg_check_modules(AVFORMAT REQUIRED IMPORTED_TARGET libavformat)
 
 add_library(stb STATIC stb.cpp)
 
