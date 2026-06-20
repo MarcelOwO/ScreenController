@@ -1,10 +1,10 @@
 
-#include <events/events.h>
+#include <events/events.hpp>
 #include <memory>
 
-#include "app_settings.h"
-#include "event_manager.h"
-#include "logging/logger.h"
+#include <logging/logger.hpp>
+#include <models/app_settings.hpp>
+#include "event_manager.hpp"
 
 namespace screen_controller {
 

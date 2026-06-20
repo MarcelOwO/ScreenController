@@ -2,14 +2,13 @@
 // Created by marce on 4/2/2025.
 //
 
-#include "app.h"
-
-#include <logging/logger.h>
+#include "app.hpp"
 
 #include <iostream>
 #include <thread>
 
-#include "graphics/renderer.h"
+#include <graphics/renderer.hpp>
+#include <logging/logger.hpp>
 
 namespace screen_controller {
 
@@ -23,9 +22,9 @@ App::App() try
       window_manager_(WindowFactory::Create(*logger_, [this] { is_running_ = false; })),
       bluetooth_manager_(BluetoothFactory::Create(*logger_, *settings_,
                                                   [this](const auto& packet) {
-                                                    std::lock_guard lock(queue_mutex_);
-                                                    command_queue_.push(packet);
-                                                    queue_condition_.notify_one();
+                                                    // std::lock_guard lock(queue_mutex_);
+                                                    // command_queue_.push(packet);
+                                                    // queue_condition_.notify_one();
                                                   })),
       storage_manager_(StorageFactory::Create(*logger_)),
       event_manager_(EventFactory::Create(*logger_, *settings_)),
@@ -45,7 +44,7 @@ void App::AdjustSettings(const std::function<void(AppSettings&)>& update_setting
   update_settings(*settings_);
 }
 
-bool App::ProcessCommand(const common::BluetoothPacket& packet) {
+bool App::ProcessCommand(const BluetoothPacket& packet) {
   logger_->LogInfo("Received packet: " + packet.name);
 
   switch (packet.type) {
@@ -129,23 +128,23 @@ void App::ProcessFrame() {
 
 void App::HandleCommands(const std::stop_token& stop_token) {
   while (!stop_token.stop_requested()) {
-    std::unique_lock lock(queue_mutex_);
-    queue_condition_.wait(lock, [this] { return !command_queue_.empty(); });
-    if (auto packet = command_queue_.front(); !ProcessCommand(packet)) {
-      logger_->LogError("Failed to process command: " + packet.name);
-    }
-    command_queue_.pop();
-    lock.unlock();
+    // std::unique_lock lock(queue_mutex_);
+    // queue_condition_.wait(lock, [this] { return !command_queue_.empty(); });
+    // if (auto packet = command_queue_.front(); !ProcessCommand(packet)) {
+    //   logger_->LogError("Failed to process command: " + packet.name);
+    // }
+    // command_queue_.pop();
+    // lock.unlock();
   }
 }
 
 void App::Run() {
-  std::jthread command_thread(&App::HandleCommands, this);
-  command_thread_ = std::move(command_thread);
+  // std::jthread command_thread(&App::HandleCommands, this);
+  // command_thread_ = std::move(command_thread);
   RenderLoop();
-  if (command_thread_.joinable()) {
-    command_thread_.join();
-  }
+  // if (command_thread_.joinable()) {
+  //   command_thread_.join();
+  // }
 }
 
 void App::RenderLoop() {
@@ -163,6 +162,6 @@ void App::RenderLoop() {
 
 App::~App() {
   logger_->LogInfo("Cleaning up App class");
-  queue_condition_.notify_all();
+  //queue_condition_.notify_all();
 }
 }  // namespace screen_controller

@@ -10,4 +10,8 @@ target_include_directories(Window
 target_link_libraries(Window
   PUBLIC Logger common
   PRIVATE glfw
+"-framework Cocoa"
+        "-framework OpenGL"
+        "-framework IOKit"
+        "-framework CoreVideo"
 )

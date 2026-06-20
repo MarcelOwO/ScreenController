@@ -1,0 +1,36 @@
+[22:19:51 +02:00] [-I-] [thread 35129] 
+==========================================
+=                                        =
+=       Starting ScreenController        =
+=                                        =
+=                  OwO                   =
+=                                        =
+==========================================
+
+[22:19:51 +02:00] [-I-] [thread 35129] Creating WindowManager
+[22:19:51 +02:00] [-I-] [thread 35129] Initializing shaders
+[22:19:51 +02:00] [-E-] [thread 35129] Shader compilation error: ERROR: 0:3: Invalid use of layout 'location'
+ERROR: 0:4: Invalid use of layout 'location'
+ERROR: 0:12: Use of undeclared identifier 'aPosition'
+ERROR: 0:14: Use of undeclared identifier 'aTexCoord'
+
+[22:19:51 +02:00] [-E-] [thread 35129] Shader compilation error: ERROR: 0:4: Invalid use of layout 'location'
+ERROR: 0:7: Use of undeclared identifier 'fragColor'
+
+[22:19:51 +02:00] [-E-] [thread 35129] Program linking error: ERROR: One or more attached shaders not successfully compiled
+
+[22:19:51 +02:00] [-I-] [thread 35129] Creating shader
+[22:19:51 +02:00] [-I-] [thread 35129] Creating GraphicsRenderer
+[22:19:51 +02:00] [-I-] [thread 35129] Creating StorageManager
+[22:19:51 +02:00] [-I-] [thread 35129] Creating FileProcessor
+[22:19:51 +02:00] [-I-] [thread 35129] Initializing App Subsystems...
+[22:19:51 +02:00] [-E-] [thread 35129] File does not exist: assets/startup_files/eevee.gif
+[22:19:51 +02:00] [-E-] [thread 35129] Decoder not initialized
+[22:19:51 +02:00] [-I-] [thread 35129] Setting fallback texture
+[22:19:51 +02:00] [-I-] [thread 35129] Cleaning up App class
+[22:19:51 +02:00] [-I-] [thread 35129] Cleaning up Event Manager
+[22:19:51 +02:00] [-I-] [thread 35129] Cleaning up File Processor
+[22:19:51 +02:00] [-I-] [thread 35129] Cleaning up Storage Mangager
+[22:19:51 +02:00] [-I-] [thread 35129] Cleaning up GraphicsRenderer
+[22:19:51 +02:00] [-I-] [thread 35129] Cleaning up Window
+[22:19:52 +02:00] [-I-] [thread 35129] Cleaned up window

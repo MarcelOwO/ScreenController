@@ -1,0 +1,38 @@
+[07:35:46 +02:00] [screen_controller] [---I---] [thread 3790251] 
+==========================================
+=                                        =
+=       Starting ScreenController        =
+=                                        =
+=                  OwO                   =
+=                                        =
+==========================================
+
+[07:35:46 +02:00] [screen_controller] [---I---] [thread 3790251] Creating WindowManager
+[07:35:47 +02:00] [screen_controller] [---I---] [thread 3790251] Initializing shaders
+[07:35:47 +02:00] [screen_controller] [---E---] [thread 3790251] Shader compilation error: ERROR: 0:1: '' :  version '300' is not supported
+ERROR: 0:1: '' : syntax error: #version
+ERROR: 0:2: '' :  #version required and missing.
+ERROR: 0:3: '0' : syntax error: integers in layouts require GLSL 140 or later
+
+[07:35:47 +02:00] [screen_controller] [---E---] [thread 3790251] Shader compilation error: ERROR: 0:1: '' :  version '300' is not supported
+ERROR: 0:1: '' : syntax error: #version
+ERROR: 0:2: '' :  #version required and missing.
+ERROR: 0:4: '0' : syntax error: integers in layouts require GLSL 140 or later
+
+[07:35:47 +02:00] [screen_controller] [---E---] [thread 3790251] Program linking error: ERROR: One or more attached shaders not successfully compiled
+
+[07:35:47 +02:00] [screen_controller] [---I---] [thread 3790251] Creating shader
+[07:35:47 +02:00] [screen_controller] [---I---] [thread 3790251] Creating GraphicsRenderer
+[07:35:47 +02:00] [screen_controller] [---I---] [thread 3790251] Creating StorageManager
+[07:35:47 +02:00] [screen_controller] [---I---] [thread 3790251] Creating FileProcessor
+[07:35:47 +02:00] [screen_controller] [---I---] [thread 3790251] Initializing App Subsystems...
+[07:35:47 +02:00] [screen_controller] [---E---] [thread 3790251] File does not exist: assets/startup_files/eevee.gif
+[07:35:47 +02:00] [screen_controller] [---E---] [thread 3790251] Decoder not initialized
+[07:35:47 +02:00] [screen_controller] [---I---] [thread 3790251] Setting fallback texture
+[07:35:47 +02:00] [screen_controller] [---I---] [thread 3790251] Cleaning up App class
+[07:35:47 +02:00] [screen_controller] [---I---] [thread 3790251] Cleaning up Event Manager
+[07:35:47 +02:00] [screen_controller] [---I---] [thread 3790251] Cleaning up File Processor
+[07:35:47 +02:00] [screen_controller] [---I---] [thread 3790251] Cleaning up Storage Mangager
+[07:35:47 +02:00] [screen_controller] [---I---] [thread 3790251] Cleaning up GraphicsRenderer
+[07:35:47 +02:00] [screen_controller] [---I---] [thread 3790251] Cleaning up Window
+[07:35:47 +02:00] [screen_controller] [---I---] [thread 3790251] Cleaned up window

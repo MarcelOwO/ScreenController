@@ -1,4 +1,4 @@
-#version 300 es
+#version 150
 precision mediump float;
 in vec2 vTexCoord;
 layout(location = 0) out vec4 fragColor;

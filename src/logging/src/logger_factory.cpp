@@ -1,5 +1,6 @@
-#include "../include/logging/logger.h"
-#include "default_logger.h"
+#include "logging/logger.hpp"
+
+#include "default_logger.hpp"
 
 namespace screen_controller {
 

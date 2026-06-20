@@ -1,0 +1,92 @@
+['0', '1', ':', '2', '0', ':', '0', '8', '\u{0}'] | INFO | 
+==========================================
+=                                        =
+=       Starting ScreenController        =
+=                                        =
+=                  OwO                   =
+=                                        =
+==========================================
+
+['0', '1', ':', '2', '0', ':', '0', '8', '\u{0}'] | INFO | Creating WindowManager
+['0', '1', ':', '2', '0', ':', '0', '8', '\u{0}'] | INFO | Initializing shaders
+['0', '1', ':', '2', '0', ':', '0', '8', '\u{0}'] | Error | Failed to read link No such file or directory
+['0', '1', ':', '2', '0', ':', '0', '8', '\u{0}'] | Error | Failed to init shader
+['0', '1', ':', '2', '0', ':', '0', '8', '\u{0}'] | INFO | Cleaning up Window
+['0', '1', ':', '2', '0', ':', '0', '8', '\u{0}'] | INFO | Cleaned up window
+['0', '1', ':', '2', '4', ':', '3', '4', '\u{0}'] | INFO | 
+==========================================
+=                                        =
+=       Starting ScreenController        =
+=                                        =
+=                  OwO                   =
+=                                        =
+==========================================
+
+['0', '1', ':', '2', '4', ':', '3', '4', '\u{0}'] | INFO | Creating WindowManager
+['0', '1', ':', '2', '4', ':', '3', '4', '\u{0}'] | INFO | Initializing shaders
+['0', '1', ':', '2', '4', ':', '3', '4', '\u{0}'] | Error | Failed to read link No such file or directory
+['0', '1', ':', '2', '4', ':', '3', '4', '\u{0}'] | Error | Failed to init shader
+['0', '1', ':', '2', '4', ':', '3', '4', '\u{0}'] | INFO | Cleaning up Window
+['0', '1', ':', '2', '4', ':', '3', '5', '\u{0}'] | INFO | Cleaned up window
+['0', '1', ':', '2', '4', ':', '4', '2', '\u{0}'] | INFO | 
+==========================================
+=                                        =
+=       Starting ScreenController        =
+=                                        =
+=                  OwO                   =
+=                                        =
+==========================================
+
+['0', '1', ':', '2', '4', ':', '4', '2', '\u{0}'] | INFO | Creating WindowManager
+['0', '1', ':', '2', '4', ':', '4', '2', '\u{0}'] | INFO | Initializing shaders
+['0', '1', ':', '2', '4', ':', '4', '2', '\u{0}'] | Error | Failed to read link No such file or directory
+['0', '1', ':', '2', '4', ':', '4', '2', '\u{0}'] | Error | Failed to init shader
+['0', '1', ':', '2', '4', ':', '4', '2', '\u{0}'] | INFO | Cleaning up Window
+['0', '1', ':', '2', '4', ':', '4', '2', '\u{0}'] | INFO | Cleaned up window
+['0', '5', ':', '2', '4', ':', '5', '0', '\u{0}'] | INFO | 
+==========================================
+=                                        =
+=       Starting ScreenController        =
+=                                        =
+=                  OwO                   =
+=                                        =
+==========================================
+
+['0', '5', ':', '2', '4', ':', '5', '0', '\u{0}'] | INFO | Creating WindowManager
+['0', '5', ':', '2', '4', ':', '5', '0', '\u{0}'] | INFO | Initializing shaders
+['0', '5', ':', '2', '4', ':', '5', '0', '\u{0}'] | Error | Failed to read link No such file or directory
+['0', '5', ':', '2', '4', ':', '5', '0', '\u{0}'] | Error | Failed to init shader
+['0', '5', ':', '2', '4', ':', '5', '0', '\u{0}'] | INFO | Cleaning up Window
+['0', '5', ':', '2', '4', ':', '5', '1', '\u{0}'] | INFO | Cleaned up window
+['0', '5', ':', '4', '4', ':', '1', '1', '\u{0}'] | INFO | 
+==========================================
+=                                        =
+=       Starting ScreenController        =
+=                                        =
+=                  OwO                   =
+=                                        =
+==========================================
+
+['0', '5', ':', '4', '4', ':', '1', '1', '\u{0}'] | INFO | Creating WindowManager
+['0', '5', ':', '4', '4', ':', '1', '1', '\u{0}'] | INFO | Initializing shaders
+['0', '5', ':', '4', '4', ':', '1', '1', '\u{0}'] | Error | Failed to read link No such file or directory
+['0', '5', ':', '4', '4', ':', '1', '1', '\u{0}'] | Error | Failed to init shader
+['0', '5', ':', '4', '4', ':', '1', '1', '\u{0}'] | Error | Factory: Failed to create the graphics renderer
+['0', '5', ':', '4', '4', ':', '1', '1', '\u{0}'] | INFO | Cleaning up Window
+['0', '5', ':', '4', '4', ':', '1', '2', '\u{0}'] | INFO | Cleaned up window
+['0', '6', ':', '0', '2', ':', '1', '0', '\u{0}'] | INFO | 
+==========================================
+=                                        =
+=       Starting ScreenController        =
+=                                        =
+=                  OwO                   =
+=                                        =
+==========================================
+
+['0', '6', ':', '0', '2', ':', '1', '0', '\u{0}'] | INFO | Creating WindowManager
+['0', '6', ':', '0', '2', ':', '1', '1', '\u{0}'] | INFO | Initializing shaders
+['0', '6', ':', '0', '2', ':', '1', '1', '\u{0}'] | Error | Failed to read link No such file or directory
+['0', '6', ':', '0', '2', ':', '1', '1', '\u{0}'] | Error | Failed to init shader
+['0', '6', ':', '0', '2', ':', '1', '1', '\u{0}'] | Error | Factory: Failed to create the graphics renderer
+['0', '6', ':', '0', '2', ':', '1', '1', '\u{0}'] | INFO | Cleaning up Window
+['0', '6', ':', '0', '2', ':', '1', '1', '\u{0}'] | INFO | Cleaned up window

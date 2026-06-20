@@ -1,6 +1,6 @@
-#include <storage/storage_manager.h>
+#include <storage/storage_manager.hpp>
 
-#include "storage_manager_impl.h"
+#include "storage_manager_impl.hpp"
 
 namespace screen_controller {
 

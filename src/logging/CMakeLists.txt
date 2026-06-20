@@ -8,4 +8,4 @@ target_include_directories(Logger
         "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
 
-target_link_libraries(Logger)
+target_link_libraries(Logger PUBLIC common PRIVATE spdlog)

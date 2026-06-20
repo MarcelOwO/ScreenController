@@ -2,19 +2,19 @@
 // Created by marce on 4/2/2025.
 //
 
-#include "graphics_renderer.h"
+#include "graphics_renderer.hpp"
 
 #include <array>
 #include <bit>
 #include <glm/mat4x4.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 
-#include <models/frame_data.h>
+#include <models/frame_data.hpp>
 
 #include <expected>
 
 #include "glm/gtx/rotate_vector.hpp"
-#include "shader/shader.h"
+#include "shader/shader.hpp"
 
 namespace screen_controller {
 
@@ -34,13 +34,13 @@ auto GraphicsRenderer::Create(ILogger& logger, ProcLoader dloadproc, int window_
                               int window_height)
     -> std::expected<std::unique_ptr<GraphicsRenderer>, std::error_code> {
   if (gladLoadGLES2Loader(dloadproc) == 0) {
-    logger.LogError("Failed to load GLAD");
+    logger.LogError("Renderer: Failed to load GLAD");
     return std::unexpected(std::make_error_code(std::errc::invalid_argument));
   }
 
-  const std::filesystem::path kVertexShaderSourcePath{"assets/shader_files/vertex_shader.vs"};
+  const std::filesystem::path kVertexShaderSourcePath{"res/shader_files/vertex_shader.vs"};
 
-  const std::filesystem::path kFragmentShaderSourcePath{"assets/shader_files/fragment_shader.fs"};
+  const std::filesystem::path kFragmentShaderSourcePath{"res/shader_files/fragment_shader.fs"};
 
   auto shader = Shader::Create(logger, kVertexShaderSourcePath, kFragmentShaderSourcePath);
 
@@ -91,6 +91,7 @@ auto GraphicsRenderer::Create(ILogger& logger, ProcLoader dloadproc, int window_
       new GraphicsRenderer(logger, shader.value(), texture, vao, vbo, window_width, window_height));
 
   if (!graphics_renderer) {
+    logger.LogError("Renderer: Graphics Renderer returned null");
     return std::unexpected(std::make_error_code(std::errc::invalid_argument));
   }
 
@@ -119,7 +120,7 @@ void GraphicsRenderer::Render() const {
   glBindVertexArray(0);
 }
 
-void GraphicsRenderer::SetTexture(const common::FrameData* data) {
+void GraphicsRenderer::SetTexture(const FrameData* data) {
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width_, height_, 0, GL_RGB, GL_UNSIGNED_BYTE,
                data->data.data());
   glGenerateMipmap(GL_TEXTURE_2D);

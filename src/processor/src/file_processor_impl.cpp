@@ -1,15 +1,15 @@
 //
 // Created by marce on 4/23/2025.
 //
-#include "file_processor_impl.h"
+#include "file_processor_impl.hpp"
 
-#include <file_type.h>
-#include <processor/file_processor.h>
+#include <enums/file_type.hpp>
+#include <processor/file_processor.hpp>
 
 #include <filesystem>
 #include <unordered_map>
 
-#include "decoders/decoder_factory.h"
+#include "decoders/decoder_factory.hpp"
 
 namespace screen_controller {
 
@@ -38,7 +38,7 @@ FileProcessor::~FileProcessor() {
 bool FileProcessor::process_file(const std::string_view path) {
   const auto type = get_type(path);
 
-  if (type == common::FileType::kNone) {
+  if (type == FileType::kNone) {
     logger_.LogError("File type not supported: " + std::string(path));
     return false;
   }
@@ -58,7 +58,7 @@ bool FileProcessor::process_file(const std::string_view path) {
   return true;
 }
 
-std::optional<std::unique_ptr<common::FrameData>> FileProcessor::get_processed_data() const {
+std::optional<std::unique_ptr<FrameData>> FileProcessor::get_processed_data() const {
   if (!decoder_) {
     logger_.LogError("Decoder not initialized");
     return std::nullopt;
@@ -71,20 +71,19 @@ std::optional<std::unique_ptr<common::FrameData>> FileProcessor::get_processed_d
   return decoder_->get_next_frame();
 }
 
-common::FileType FileProcessor::get_type(const std::string_view name) {
+FileType FileProcessor::get_type(const std::string_view name) {
   const auto ext = std::filesystem::path(name).extension();
   if (ext.empty() || ext == ".") {
-    return common::FileType::kNone;
+    return FileType::kNone;
   }
 
-  static const std::unordered_map<std::string, common::FileType> ext_map = {
-      {".jpg", common::FileType::kJpg},   {".jpeg", common::FileType::kJpg},
-      {".png", common::FileType::kPng},   {".gif", common::FileType::kGif},
-      {".bmp", common::FileType::kBmp},   {".mp4", common::FileType::kMp4},
-      {".webp", common::FileType::kWebp}, {".webm", common::FileType::kWebm}};
+  static const std::unordered_map<std::string, FileType> ext_map = {
+      {".jpg", FileType::kJpg},   {".jpeg", FileType::kJpg}, {".png", FileType::kPng},
+      {".gif", FileType::kGif},   {".bmp", FileType::kBmp},  {".mp4", FileType::kMp4},
+      {".webp", FileType::kWebp}, {".webm", FileType::kWebm}};
 
   if (!ext_map.contains(ext)) {
-    return common::FileType::kNone;
+    return FileType::kNone;
   }
 
   return ext_map.at(ext);

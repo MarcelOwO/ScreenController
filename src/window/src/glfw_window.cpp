@@ -1,4 +1,4 @@
-#include "glfw_window.h"
+#include "glfw_window.hpp"
 
 #include <format>
 
@@ -32,6 +32,11 @@ std::expected<std::unique_ptr<GlfwWindow>, std::error_code> GlfwWindow::Create(
     logger.LogError("Failed to initialize GLFW");
     return std::unexpected(std::make_error_code(std::errc::connection_refused));
   }
+
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
   auto* raw_window = glfwCreateWindow(1920, 1080, "My Title", glfwGetPrimaryMonitor(), nullptr);
 

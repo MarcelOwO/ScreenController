@@ -2,10 +2,10 @@
 // Created by marce on 5/6/2025.
 //
 
-#include "webp_decoder.h"
+#include "webp_decoder.hpp"
 
-#include <models/frame_data.h>
 #include <webp/decode.h>
+#include <models/frame_data.hpp>
 
 #include <fstream>
 #include <optional>
@@ -30,18 +30,16 @@ bool WebpDecoder::init() {
   const std::streamsize size = file.tellg();
 
   if (size <= 0) {
-    logger_.LogError("File is empty or could not be read: " +
-                     std::string(path_));
+    logger_.LogError("File is empty or could not be read: " + std::string(path_));
     file.close();
     return false;
   }
 
   if (size <= 0) {
-    logger_.LogError("File is empty or could not be read: " +
-                     std::string(path_));
+    logger_.LogError("File is empty or could not be read: " + std::string(path_));
   }
 
-  (void)file.seekg(0, std::ios::beg);
+  (void) file.seekg(0, std::ios::beg);
 
   std::vector<uint8_t> input_buffer(size);
 
@@ -57,8 +55,7 @@ bool WebpDecoder::init() {
     logger_.LogError("WebPInitDecoderConfig failed");
   }
 
-  if (WebPGetFeatures(input_buffer.data(), input_buffer.size(),
-                      &config.input) != VP8_STATUS_OK) {
+  if (WebPGetFeatures(input_buffer.data(), input_buffer.size(), &config.input) != VP8_STATUS_OK) {
     logger_.LogError("WebPGetFeatures failed");
   }
 
@@ -69,16 +66,14 @@ bool WebpDecoder::init() {
 
   config.output.colorspace = MODE_RGB;
 
-  if (WebPDecode(input_buffer.data(), input_buffer.size(), &config) !=
-      VP8_STATUS_OK) {
+  if (WebPDecode(input_buffer.data(), input_buffer.size(), &config) != VP8_STATUS_OK) {
     logger_.LogError("WebPDecode failed with code: ");
   }
 
   const auto private_memory = config.output.private_memory;
 
   frame_data_ = {
-      .data =
-          std::vector<uint8_t>(private_memory, output_size + private_memory),
+      .data = std::vector<uint8_t>(private_memory, output_size + private_memory),
       .width = width,
       .height = height,
       .channels = 3,
@@ -89,11 +84,12 @@ bool WebpDecoder::init() {
   return true;
 }
 
-bool WebpDecoder::has_data() { return is_loaded_; }
+bool WebpDecoder::has_data() {
+  return is_loaded_;
+}
 
-std::optional<std::unique_ptr<common::FrameData>>
-WebpDecoder::get_next_frame() {
-  return std::make_unique<common::FrameData>(frame_data_);
+std::optional<std::unique_ptr<FrameData>> WebpDecoder::get_next_frame() {
+  return std::make_unique<FrameData>(frame_data_);
 }
 
 }  // namespace screen_controller::processing

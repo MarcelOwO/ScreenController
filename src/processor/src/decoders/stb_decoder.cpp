@@ -2,7 +2,7 @@
 // Created by marce on 5/6/2025.
 //
 
-#include "stb_decoder.h"
+#include "stb_decoder.hpp"
 
 #include <optional>
 #include <vector>
@@ -19,22 +19,24 @@ StbDecoder::StbDecoder(const std::string_view path, ILogger& logger)
   logger_.LogInfo("Creating StbDecoder for path: " + std::string(path));
 }
 
-bool StbDecoder::has_data() { return is_loaded_; }
+bool StbDecoder::has_data() {
+  return is_loaded_;
+}
 bool StbDecoder::init() {
   frame_data_ = {};
   frame_data_.data.resize(1920 * 1080 * 3);
 
+  // stbi_load(const char* filename, int* x, int* y, int* comp, int req_comp)
+  //
   const auto raw_data =
-      stbi_load(path_.data(), &frame_data_.width, &frame_data_.height,
-                &frame_data_.channels, 3);
+      stbi_load(path_.data(), &frame_data_.width, &frame_data_.height, &frame_data_.channels, 3);
 
   if (raw_data == nullptr) {
     logger_.LogError("Failed to load image");
   }
 
-  (void)stbir_resize_uint8_srgb(raw_data, frame_data_.width, frame_data_.height,
-                                0, frame_data_.data.data(), 1920, 1080, 0,
-                                STBIR_RGB);
+  (void) stbir_resize_uint8_srgb(raw_data, frame_data_.width, frame_data_.height, 0,
+                                 frame_data_.data.data(), 1920, 1080, 0, STBIR_RGB);
 
   if (!!frame_data_.data.empty()) {
     logger_.LogError("Failed to resize image");
@@ -44,8 +46,8 @@ bool StbDecoder::init() {
   return true;
 }
 
-std::optional<std::unique_ptr<common::FrameData>> StbDecoder::get_next_frame() {
-  return std::make_unique<common::FrameData>(frame_data_);
+std::optional<std::unique_ptr<FrameData>> StbDecoder::get_next_frame() {
+  return std::make_unique<FrameData>(frame_data_);
 }
 
 }  // namespace screen_controller::processing

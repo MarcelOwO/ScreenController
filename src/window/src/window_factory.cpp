@@ -1,10 +1,10 @@
 
-#include <logging/logger.h>
-#include <window_manager/window_manager.h>
+#include <logging/logger.hpp>
+#include <window_manager/window_manager.hpp>
 
 #include <memory>
 
-#include "glfw_window.h"
+#include "glfw_window.hpp"
 
 namespace screen_controller {
 

@@ -2,9 +2,8 @@
 // Created by marce on 4/15/2025.
 //
 
-#include "shader.h"
+#include "shader.hpp"
 
-#include <linux/limits.h>
 #include <unistd.h>
 
 #include <array>
@@ -13,6 +12,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
 #include <expected>
+#include <sstream>
 
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtx/quaternion.hpp"
@@ -30,16 +30,7 @@ std::expected<Shader, std::error_code> Shader::Create(ILogger& logger,
 
   std::array<char, PATH_MAX> result{};
 
-  ssize_t count = readlink("/proc/self/exe", result.data(), PATH_MAX);
-
-  if (count < 0) {
-    logger.LogError("Failed to read link " + std::string(strerror(errno)));
-    return std::unexpected(std::make_error_code(std::errc::invalid_argument));
-  }
-
-  auto executable_path = std::filesystem::path(std::string(result.data(), count > 0 ? count : 0));
-
-  auto project_dir = executable_path.parent_path();
+  auto project_dir = std::filesystem::current_path();
 
   std::filesystem::path v_path(project_dir / vertex_path);
   std::filesystem::path f_path(project_dir / fragment_path);

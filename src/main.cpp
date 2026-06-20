@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <iostream>
-#include "app/app.h"
+#include <models/app_settings.hpp>
+#include "app/app.hpp"
 
 int main(int argc, char* argv[]) {
   // hack for launchin this from ssh

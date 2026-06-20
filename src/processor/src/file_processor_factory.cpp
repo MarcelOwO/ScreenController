@@ -1,8 +1,9 @@
-#include <processor/file_processor.h>
+
+#include <processor/file_processor.hpp>
 
 #include <memory>
 
-#include "file_processor_impl.h"
+#include "file_processor_impl.hpp"
 
 namespace screen_controller {
 

@@ -1,139 +1,59 @@
-#include "default_logger.h"
+#include "default_logger.hpp"
 
 #include <expected>
-#include <filesystem>
-#include <iostream>
-#include <print>
-#include <utility>
+
+#include "enums/log_level.hpp"
+#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
 
 namespace screen_controller {
 
 std::expected<std::unique_ptr<DefaultLogger>, std::error_code> DefaultLogger::Create() {
-  auto logger = std::unique_ptr<DefaultLogger>(new DefaultLogger());
+  auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
 
-  auto err = logger->SetupFile();
+  console_sink->set_level(spdlog::level::warn);
+  console_sink->set_pattern("[%H:%M:%S %z] [%n] [%^-%L-%$] [thread %t] %v");
+  auto file_sink =
+      std::make_shared<spdlog::sinks::basic_file_sink_mt>("screen_controller.log", true);
+  file_sink->set_pattern("[%H:%M:%S %z] [%^-%L-%$] [thread %t] %v");
+  file_sink->set_level(spdlog::level::trace);
 
-  if (!err) {
-    LogInternal("Failed to setup setup file in logger creation");
-    return std::unexpected(err.error());
-  }
+  spdlog::logger logger("screen_controller", {console_sink, file_sink});
 
-  logger->StartBackgroundThread();
+  logger.set_level(spdlog::level::debug);
 
-  logger->Log(LogLevel::INFO,
-              "\n==========================================\n"
-              "=                                        =\n"
-              "=       Starting ScreenController        =\n"
-              "=                                        =\n"
-              "=                  OwO                   =\n"
-              "=                                        =\n"
-              "==========================================\n");
-  return logger;
+  logger.info(
+      "\n==========================================\n"
+      "=                                        =\n"
+      "=       Starting ScreenController        =\n"
+      "=                                        =\n"
+      "=                  OwO                   =\n"
+      "=                                        =\n"
+      "==========================================\n");
+
+  auto logger_instance = std::unique_ptr<DefaultLogger>(new DefaultLogger(logger));
+
+  return logger_instance;
 }
 
 DefaultLogger::~DefaultLogger() = default;
 
-void DefaultLogger::StartBackgroundThread() {
-  background_thread_ = std::jthread([this](std::stop_token token) {
-    RunThread(std::move(token));
-    LogInternal("logger thread shutting down");
-  });
-}
+DefaultLogger::DefaultLogger(spdlog::logger logger)
+    : logger_(std::move(logger)) {
 
-std::expected<void, std::error_code> DefaultLogger::SetupFile() {
-  const std::filesystem::path kLogDir = "logs";
-  std::error_code err;
-
-  if (!std::filesystem::exists(kLogDir, err)) {
-    if (!std::filesystem::create_directory(kLogDir, err)) {
-      LogInternal("failed to create directory");
-      return std::unexpected(err);
-    }
-  }
-
-  auto now = std::chrono::system_clock::now();
-  std::time_t now_c = std::chrono::system_clock::to_time_t(now);
-
-  std::tm tm_buf;
-  localtime_r(&now_c, &tm_buf);
-
-  std::string filename = std::format("logs/logs_{:04}-{:02}-{:02}.log", tm_buf.tm_year + 1900,
-                                     tm_buf.tm_mon + 1, tm_buf.tm_mday);
-
-  log_file_.open(filename, std::ios::app);
-  if (!log_file_.is_open()) {
-    LogInternal("Logger: File is not open");
-    return std::unexpected(std::make_error_code(std::errc::io_error));
-  }
-
-  return {};
-}
-
-std::string DefaultLogger::FormatLog(LogLevel level, std::string_view log) {
-  auto now = std::chrono::system_clock::now();
-  std::time_t now_c = std::chrono::system_clock::to_time_t(now);
-
-  std::tm tm_buf;
-  localtime_r(&now_c, &tm_buf);
-
-  char time_str[9];
-  std::strftime(time_str, sizeof(time_str), "%H:%M:%S", &tm_buf);
-
-  return std::format("{} | {} | {}", time_str, EnumToString(level), log);
-}
-
-void DefaultLogger::RunThread(std::stop_token token) {
-  while (true) {
-    std::string msg;
-    {
-      std::unique_lock<std::mutex> lock(log_queue_mutex_);
-
-      log_queue_cv_.wait(lock,
-                         [this, &token] { return !log_queue_.empty() || token.stop_requested(); });
-
-      if (token.stop_requested() && log_queue_.empty()) {
-        LogInternal("Logger stopped");
-        break;
-      }
-
-      msg = std::move(log_queue_.front());
-
-      log_queue_.pop();
-    }
-
-    if (log_file_.is_open()) {
-      log_file_ << msg << std::endl;
-      std::println("{}", msg);
-    } else {
-      LogInternal("Log file is not open");
-    }
-  }
-}
-
-std::string DefaultLogger::EnumToString(const LogLevel kLevel) {
-  switch (kLevel) {
-    case LogLevel::INFO:
-      return "INFO";
-    case LogLevel::ERROR:
-      return "Error";
-    default:
-      return "Unknown";
-  };
-}
+      };
 
 void DefaultLogger::Log(const LogLevel kLevel, const std::string_view kLog) {
-  const std::string kLogMessage = FormatLog(kLevel, kLog);
-
-  {
-    std::lock_guard<std::mutex> lock(log_queue_mutex_);
-    log_queue_.push(kLogMessage);
+  switch (kLevel) {
+    case LogLevel::INFO: {
+      logger_.info(kLog);
+      break;
+    }
+    case LogLevel::ERROR: {
+      logger_.error(kLog);
+      break;
+    }
   }
-
-  log_queue_cv_.notify_one();
-}
-
-void DefaultLogger::LogInternal(std::string_view msg) {
-  std::println("INTERNAL_LOGGER | {}", msg);
 }
 
 }  // namespace screen_controller
