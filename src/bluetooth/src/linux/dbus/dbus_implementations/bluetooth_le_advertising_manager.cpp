@@ -2,7 +2,7 @@
 // Created by marce on 5/3/2025.
 //
 
-#include "bluetooth_le_advertising_manager.h"
+#include "bluetooth_le_advertising_manager.hpp"
 
 namespace screen_controller::dbus {
 

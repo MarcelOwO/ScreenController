@@ -2,10 +2,9 @@
 // Created by marce on 5/2/2025.
 //
 
-#ifndef BLUETOOTH_DEVICE_H
-#define BLUETOOTH_DEVICE_H
+#pragma once
 
-#include <logging/logger.h>
+#include <logging/logger.hpp>
 #include <sdbus-c++/sdbus-c++.h>
 
 #include <expected>
@@ -46,4 +45,3 @@ private:
   sdbus::InterfaceName device_interface_;
 };
 }  // namespace screen_controller::dbus
-#endif  // BLUETOOTH_DEVICE_H

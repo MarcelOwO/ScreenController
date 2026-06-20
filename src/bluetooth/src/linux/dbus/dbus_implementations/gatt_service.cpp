@@ -1,5 +1,5 @@
 
-#include "gatt_service.h"
+#include "gatt_service.hpp"
 
 #include "sdbus-c++/Types.h"
 

@@ -2,8 +2,7 @@
 // Created by marce on 4/23/2025.
 //
 
-#ifndef FRAME_DATA_H
-#define FRAME_DATA_H
+#pragma once
 
 #include <cstdint>
 #include <helper/define.hpp>
@@ -15,6 +14,5 @@ struct PixelData {
   u8 g;
   u8 b;
 };
-}  // namespace screen_controller::common::models
 
-#endif  // FRAME_DATA_H
+}  // namespace screen_controller

@@ -2,8 +2,7 @@
 // Created by marce on 06/08/2025.
 //
 
-#ifndef SOCKETHELPER_H
-#define SOCKETHELPER_H
+#pragma once
 
 #include <algorithm>
 #include <cstdint>
@@ -60,5 +59,3 @@ inline constexpr auto kCrcTable = []() {
 }
 
 }  // namespace screen_controller::socket
-
-#endif  // SOCKETHELPER_H

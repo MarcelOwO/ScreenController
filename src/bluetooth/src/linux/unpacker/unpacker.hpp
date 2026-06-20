@@ -2,21 +2,21 @@
 // Created by marce on 5/31/2025.
 //
 
-#ifndef UNPACKER_H
-#define UNPACKER_H
-#include <bluetooth_packet.h>
-#include <logging/logger.h>
-#include <models/error_enum.h>
+#pragma once
+
+#include <logging/logger.hpp>
+#include <models/bluetooth_packet.hpp>
 
 #include <span>
 
 namespace screen_controller::bluetooth {
+
 class Unpacker final {
 public:
   explicit Unpacker(ILogger& logger);
-  virtual ~Unpacker();
+  ~Unpacker();
 
-  void Decompress(std::span<std::byte> span, common::BluetoothPacket& packet) const;
+  void Decompress(std::span<const std::byte> span, BluetoothPacket& packet) const;
 
   Unpacker(const Unpacker&) = delete;
   Unpacker& operator=(const Unpacker&) = delete;
@@ -26,6 +26,5 @@ public:
 private:
   ILogger& logger_;
 };
-}  // namespace screen_controller::bluetooth
 
-#endif  // UNPACKER_H
+}  // namespace screen_controller::bluetooth

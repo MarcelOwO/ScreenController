@@ -12,9 +12,9 @@ class IFileProcessor {
 public:
   virtual ~IFileProcessor() = default;
 
-  virtual bool process_file(std::string_view path) = 0;
+  virtual bool ProcessFile(std::string_view path) = 0;
 
-  virtual std::optional<std::unique_ptr<FrameData>> get_processed_data() const = 0;
+  virtual std::optional<std::unique_ptr<FrameData>> GetProcessedData() const = 0;
 };
 
 class ProcessorFactory {

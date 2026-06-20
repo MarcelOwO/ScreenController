@@ -18,4 +18,4 @@ struct BluetoothPacket {
   std::size_t size;
   std::vector<std::byte> data;
 };
-};  // namespace screen_controller
+}  // namespace screen_controller

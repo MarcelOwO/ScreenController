@@ -18,7 +18,7 @@ class StorageManager : public IStorageManager {
 public:
   ~StorageManager();
 
-  static std::expected<std::unique_ptr<StorageManager>, std::error_code> create(ILogger& logger);
+  static std::expected<std::unique_ptr<StorageManager>, std::error_code> Create(ILogger& logger);
 
   StorageManager(const StorageManager&) = delete;
   StorageManager& operator=(const StorageManager&) = delete;

@@ -19,4 +19,4 @@ using Result = std::expected<T, std::error_code>;
 template <typename T>
 using Optional = std::optional<T>;
 
-};  // namespace screen_controller
+}  // namespace screen_controller

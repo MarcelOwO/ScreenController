@@ -2,7 +2,7 @@
 // Created by marce on 5/2/2025.
 //
 
-#include "bluetooth_device.h"
+#include "bluetooth_device.hpp"
 
 #include <iostream>
 

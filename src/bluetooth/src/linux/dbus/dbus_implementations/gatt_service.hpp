@@ -1,7 +1,6 @@
-#ifndef GATT_SERVICE_H
-#define GATT_SERVICE_H
+#pragma once
 
-#include <logging/logger.h>
+#include <logging/logger.hpp>
 
 #include "sdbus-c++/AdaptorInterfaces.h"
 #include "sdbus-c++/IConnection.h"
@@ -25,6 +24,4 @@ private:
   std::unique_ptr<sdbus::IObject> gatt_service_object_;
 };
 
-};  // namespace screen_controller::dbus
-
-#endif
+}  // namespace screen_controller::dbus

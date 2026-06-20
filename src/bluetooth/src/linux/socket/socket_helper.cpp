@@ -2,7 +2,7 @@
 // Created by marce on 06/08/2025.
 //
 
-#include "socket_helper.h"
+#include "socket_helper.hpp"
 #include <ranges>
 
 namespace screen_controller::socket {

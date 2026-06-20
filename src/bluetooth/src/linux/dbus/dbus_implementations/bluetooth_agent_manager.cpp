@@ -2,9 +2,9 @@
 // Created by marce on 5/3/2025.
 //
 
-#include "bluetooth_agent_manager.h"
+#include "bluetooth_agent_manager.hpp"
 
-#include <logging/logger.h>
+#include <logging/logger.hpp>
 
 #include "sdbus-c++/IProxy.h"
 namespace screen_controller::dbus {

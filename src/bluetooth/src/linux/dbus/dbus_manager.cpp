@@ -2,12 +2,12 @@
 // Created by marce on 05/08/2025.
 //
 
-#include "dbus_manager.h"
+#include "dbus_manager.hpp"
 
-#include "dbus_implementations/bluetooth_adapter.h"
-#include "dbus_implementations/bluetooth_agent.h"
-#include "dbus_implementations/bluetooth_agent_manager.h"
-#include "logging/logger.h"
+#include "dbus_implementations/bluetooth_adapter.hpp"
+#include "dbus_implementations/bluetooth_agent.hpp"
+#include "dbus_implementations/bluetooth_agent_manager.hpp"
+#include <logging/logger.hpp>
 #include "sdbus-c++/sdbus-c++.h"
 
 namespace screen_controller::dbus {
@@ -26,8 +26,6 @@ DbusManager::DbusManager(ILogger& logger) try
       agent_manager_(logger_, *bluez_proxy_),
       adapter_(logger_, adapter_proxy_) {
   logger_.LogInfo("Creating DBusManager");
-
-  // test
 
   connection_->requestName(service_name_);
 
@@ -81,7 +79,7 @@ void DbusManager::MakeConnectable() {
   if (!adapter_.set_discoverable(true)) {
     logger_.LogError("Failed to set discoverable");
   }
-  if (adapter_.set_pairable(true)) {
+  if (!adapter_.set_pairable(true)) {
     logger_.LogError("Failed to set pairable");
   }
 }

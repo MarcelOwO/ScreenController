@@ -16,19 +16,17 @@ App::App() try
     : is_running_(false),
       logger_(LoggerFactory::Create()),
       settings_(std::make_unique<AppSettings>()),
+      window_manager_(WindowFactory::Create(*logger_, [this] { is_running_ = false; })),
       renderer_(RendererFactory::Create(*logger_, window_manager_->get_proc_address(),
                                         window_manager_->get_width(),
                                         window_manager_->get_height())),
-      window_manager_(WindowFactory::Create(*logger_, [this] { is_running_ = false; })),
-      bluetooth_manager_(BluetoothFactory::Create(*logger_, *settings_,
-                                                  [this](const auto& packet) {
-                                                    // std::lock_guard lock(queue_mutex_);
-                                                    // command_queue_.push(packet);
-                                                    // queue_condition_.notify_one();
-                                                  })),
       storage_manager_(StorageFactory::Create(*logger_)),
       event_manager_(EventFactory::Create(*logger_, *settings_)),
-      file_processor_(ProcessorFactory::Create(*logger_)) {
+      file_processor_(ProcessorFactory::Create(*logger_)),
+      bluetooth_manager_(BluetoothFactory::Create(*logger_, *settings_,
+                                                  [this](const BluetoothPacket& packet) {
+                                                    ProcessCommand(packet);
+                                                  })) {
   logger_->LogInfo("Initializing App Subsystems...");
 
   if (LoadImage("startup_files/eevee.gif", true)) {
@@ -75,14 +73,14 @@ bool App::ProcessCommand(const BluetoothPacket& packet) {
         return true;
       }
       if (kType == "Rotate") {
-        logger_->LogInfo("Rotate command received:");
+        logger_->LogInfo("Rotate command received");
         renderer_->Rotate();
         return true;
       }
       logger_->LogError("Unknown command type: " + kType);
       return false;
     }
-    case 0: {  // file packet
+    case 0: {
       if (!storage_manager_->SaveFile(packet.name, packet.data)) {
         logger_->LogError("Failed to save file: " + packet.name);
       }
@@ -104,7 +102,7 @@ bool App::LoadImage(std::string_view k_name, bool k_is_asset) {
     return false;
   }
 
-  if (!file_processor_->process_file(kPath.c_str())) {
+  if (!file_processor_->ProcessFile(kPath.c_str())) {
     logger_->LogError("Failed to process file: " + kPath.string());
     return false;
   }
@@ -115,40 +113,24 @@ bool App::LoadImage(std::string_view k_name, bool k_is_asset) {
 }
 
 void App::ProcessFrame() {
-  const auto kFrame = file_processor_->get_processed_data();
+  const auto kFrame = file_processor_->GetProcessedData();
 
   if (!kFrame.has_value()) {
     renderer_->SetFallbackTexture();
+    return;
   }
 
   renderer_->UpdateRatio(kFrame.value()->width, kFrame.value()->height);
-
   renderer_->SetTexture(kFrame.value().get());
 }
 
-void App::HandleCommands(const std::stop_token& stop_token) {
-  while (!stop_token.stop_requested()) {
-    // std::unique_lock lock(queue_mutex_);
-    // queue_condition_.wait(lock, [this] { return !command_queue_.empty(); });
-    // if (auto packet = command_queue_.front(); !ProcessCommand(packet)) {
-    //   logger_->LogError("Failed to process command: " + packet.name);
-    // }
-    // command_queue_.pop();
-    // lock.unlock();
-  }
-}
-
 void App::Run() {
-  // std::jthread command_thread(&App::HandleCommands, this);
-  // command_thread_ = std::move(command_thread);
   RenderLoop();
-  // if (command_thread_.joinable()) {
-  //   command_thread_.join();
-  // }
 }
 
 void App::RenderLoop() {
   while (is_running_) {
+    bluetooth_manager_->Poll();
     ProcessFrame();
     window_manager_->update([this] { renderer_->Render(); });
     window_manager_->poll_events();
@@ -162,6 +144,6 @@ void App::RenderLoop() {
 
 App::~App() {
   logger_->LogInfo("Cleaning up App class");
-  //queue_condition_.notify_all();
 }
+
 }  // namespace screen_controller

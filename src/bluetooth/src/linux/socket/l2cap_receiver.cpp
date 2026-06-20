@@ -2,14 +2,14 @@
 // Created by marce on 5/8/2025.
 //
 
-#include "l2cap_receiver.h"
+#include "l2cap_receiver.hpp"
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
 #include <bluetooth/l2cap.h>
 #include <fcntl.h>
-#include <logging/logger.h>
+#include <logging/logger.hpp>
 #include <sys/poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -21,9 +21,9 @@
 #include <functional>
 #include <vector>
 
-#include "socket_helper.h"
-#include "socket_options.h"
-#include "socket_variables.h"
+#include "socket_helper.hpp"
+#include "socket_options.hpp"
+#include "socket_variables.hpp"
 
 namespace screen_controller::socket {
 
@@ -245,7 +245,7 @@ void L2CapReceiver::ReadAllAvailable() {
 }
 
 bool L2CapReceiver::ExtractOnePacket() {
-  std::vector<uint8_t>& buf = received_buffer_;
+  std::vector<uint8_t>& buf = received_data_;
 
   if (buf.size() < kHeaderMin) {
     logger_.LogError("Packet size is too small");
@@ -335,7 +335,7 @@ bool L2CapReceiver::ExtractOnePacket() {
   }
   const size_t kNeed = kAfterName + 8 + static_cast<size_t>(kPayloadLen);
   if (kPayloadLen > kMaxPayload) {
-    logger_.LogError(&"Payload too large: "[kPayloadLen]);
+    logger_.LogError(std::format("Payload too large: {}", kPayloadLen));
     if (on_error_) {
       on_error_(-2, "payload too large");
     }

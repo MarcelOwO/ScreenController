@@ -8,7 +8,7 @@
 namespace screen_controller {
 
 std::unique_ptr<IFileProcessor> ProcessorFactory::Create(ILogger& logger) {
-  auto file_processor = FileProcessor::create(logger);
+  auto file_processor = FileProcessor::Create(logger);
   if (!file_processor) {
     throw std::runtime_error("failed to create file processor");
   }

@@ -2,9 +2,9 @@
 // Created by marce on 5/3/2025.
 //
 
-#ifndef BLUETOOTH_AGENT_MANAGER_H
-#define BLUETOOTH_AGENT_MANAGER_H
-#include <logging/logger.h>
+#pragma once
+
+#include <logging/logger.hpp>
 
 #include <expected>
 #include <memory>
@@ -37,5 +37,3 @@ private:
   sdbus::InterfaceName agent_manager_interface_name_;
 };
 }  // namespace screen_controller::dbus
-
-#endif  // BLUETOOTH_AGENT_MANAGER_H

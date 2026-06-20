@@ -1,4 +1,4 @@
-#include "object_manager.h"
+#include "object_manager.hpp"
 
 #include "sdbus-c++/StandardInterfaces.h"
 #include "sdbus-c++/Types.h"

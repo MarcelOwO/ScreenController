@@ -1,6 +1,6 @@
-#include <bt/manager.h>
+#include <bt/manager.hpp>
 
-#include "bluetooth_manager.h"
+#include "bluetooth_manager.hpp"
 
 namespace screen_controller {
 

@@ -2,9 +2,10 @@
 // Created by marce on 5/31/2025.
 //
 
-#include "unpacker.h"
+#include "unpacker.hpp"
 
-#include <bits/ranges_util.h>
+#include <algorithm>
+#include <ranges>
 
 #include "zstd.h"
 
@@ -12,7 +13,7 @@ namespace screen_controller::bluetooth {
 Unpacker::Unpacker(ILogger& logger) : logger_(logger) {}
 Unpacker::~Unpacker() = default;
 
-void Unpacker::Decompress(const std::span<std::byte> kSpan, common::BluetoothPacket& packet) const {
+void Unpacker::Decompress(const std::span<const std::byte> kSpan, BluetoothPacket& packet) const {
   std::vector<char> debug_string{};
 
   const auto kType = static_cast<uint8_t>(kSpan[static_cast<size_t>(0)]);

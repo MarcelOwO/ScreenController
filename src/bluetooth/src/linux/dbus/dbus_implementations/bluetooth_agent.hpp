@@ -2,9 +2,9 @@
 // Created by marce on 5/2/2025.
 //
 
-#ifndef BLUETOOTH_AGENT_H
-#define BLUETOOTH_AGENT_H
-#include <logging/logger.h>
+#pragma once
+
+#include <logging/logger.hpp>
 
 #include <memory>
 
@@ -32,4 +32,3 @@ private:
   std::shared_ptr<sdbus::IConnection> connection_;
 };
 }  // namespace screen_controller::dbus
-#endif  // BLUETOOTH_AGENT_H

@@ -14,7 +14,7 @@ namespace screen_controller {
 StorageManager::StorageManager(ILogger& logger)
     : logger_(logger), asset_path_("assets"), user_files_path_("files") {}
 
-std::expected<std::unique_ptr<StorageManager>, std::error_code> StorageManager::create(
+std::expected<std::unique_ptr<StorageManager>, std::error_code> StorageManager::Create(
     ILogger& logger) {
   logger.LogInfo("Creating StorageManager");
 
@@ -108,7 +108,7 @@ std::optional<std::vector<std::byte>> StorageManager::LoadFile(std::string_view 
     return std::nullopt;
   }
 
-  (void) file.seekg(std::ios::beg);
+  (void) file.seekg(0, std::ios::beg);
 
   std::vector<std::byte> buffer(static_cast<size_t>(size));
   if (!file.read(reinterpret_cast<char*>(buffer.data()), size)) {

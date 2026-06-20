@@ -2,9 +2,9 @@
 // Created by marce on 5/2/2025.
 //
 
-#include "bluetooth_agent.h"
+#include "bluetooth_agent.hpp"
 
-#include "bluetooth_device.h"
+#include "bluetooth_device.hpp"
 namespace screen_controller::dbus {
 
 BluetoothAgent::BluetoothAgent(ILogger& logger,

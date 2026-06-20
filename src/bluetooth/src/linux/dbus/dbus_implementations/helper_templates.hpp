@@ -16,4 +16,4 @@ auto run_dbus_op(Func&& op) -> decltype(op()) {
   }
 }
 
-};  // namespace screen_controller::dbus
+}  // namespace screen_controller::dbus

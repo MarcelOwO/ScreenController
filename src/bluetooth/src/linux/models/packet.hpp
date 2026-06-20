@@ -2,8 +2,7 @@
 // Created by marce on 05/08/2025.
 //
 
-#ifndef BLUETOOTHPACKET_H
-#define BLUETOOTHPACKET_H
+#pragma once
 
 #include <cstddef>
 #include <cstdint>
@@ -21,4 +20,3 @@ struct Packet {
 };
 
 }  // namespace screen_controller
-#endif  // BLUETOOTHPACKET_H

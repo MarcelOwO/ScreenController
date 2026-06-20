@@ -13,7 +13,7 @@
 
 namespace screen_controller {
 
-std::expected<std::unique_ptr<FileProcessor>, std::error_code> FileProcessor::create(
+std::expected<std::unique_ptr<FileProcessor>, std::error_code> FileProcessor::Create(
     ILogger& logger) {
   auto file_processor = std::unique_ptr<FileProcessor>(new FileProcessor(logger));
 
@@ -35,7 +35,7 @@ FileProcessor::~FileProcessor() {
   }
 };
 
-bool FileProcessor::process_file(const std::string_view path) {
+bool FileProcessor::ProcessFile(const std::string_view path) {
   const auto type = get_type(path);
 
   if (type == FileType::kNone) {
@@ -58,7 +58,7 @@ bool FileProcessor::process_file(const std::string_view path) {
   return true;
 }
 
-std::optional<std::unique_ptr<FrameData>> FileProcessor::get_processed_data() const {
+std::optional<std::unique_ptr<FrameData>> FileProcessor::GetProcessedData() const {
   if (!decoder_) {
     logger_.LogError("Decoder not initialized");
     return std::nullopt;

@@ -163,13 +163,11 @@ void GraphicsRenderer::UpdateRatio(const int kWidth, const int kHeight) const {
 }
 
 void GraphicsRenderer::Rotate() const {
-  constexpr float kDefaultRationAmount = 90.0F;
+  constexpr float kStepDegrees = 90.0F;
+  rotation_angle_ += glm::radians(kStepDegrees);
 
-  float k_angle = kDefaultRationAmount;
-
-  k_angle += glm::radians(k_angle);  // Increment rotation by 90 degrees
-
-  const glm::mat4 kRotation = glm::rotate(glm::mat4(1.0F), k_angle, glm::vec3(0.0F, 0.0F, 1.0F));
+  const glm::mat4 kRotation =
+      glm::rotate(glm::mat4(1.0F), rotation_angle_, glm::vec3(0.0F, 0.0F, 1.0F));
 
   shader_.SetMat4("uRotation", kRotation);
 }

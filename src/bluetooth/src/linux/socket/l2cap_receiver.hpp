@@ -2,8 +2,7 @@
 // Created by marce on 5/8/2025.
 //
 
-#ifndef L_2_CAP_RECEIVER_H
-#define L_2_CAP_RECEIVER_H
+#pragma once
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/l2cap.h>
@@ -12,9 +11,9 @@
 #include <span>
 #include <vector>
 
-#include "../models/packet.h"
-#include "app_settings.h"
-#include "logging/logger.h"
+#include "../models/packet.hpp"
+#include <models/app_settings.hpp>
+#include <logging/logger.hpp>
 
 namespace screen_controller::socket {
 class L2CapReceiver {
@@ -66,5 +65,3 @@ private:
 };
 
 }  // namespace screen_controller::socket
-
-#endif  // L_2_CAP_RECEIVER_H

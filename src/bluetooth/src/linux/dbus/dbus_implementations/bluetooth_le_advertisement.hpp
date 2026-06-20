@@ -2,9 +2,9 @@
 // Created by marce on 5/3/2025.
 //
 
-#ifndef BLUETOOTH_LE_ADVERTISEMENT_H
-#define BLUETOOTH_LE_ADVERTISEMENT_H
-#include "logging/logger.h"
+#pragma once
+
+#include <logging/logger.hpp>
 #include "sdbus-c++/IObject.h"
 
 namespace screen_controller::dbus {
@@ -30,5 +30,3 @@ private:
   std::unique_ptr<sdbus::IObject> le_advertisement_;
 };
 }  // namespace screen_controller::dbus
-
-#endif  // BLUETOOTH_LE_ADVERTISEMENT_H

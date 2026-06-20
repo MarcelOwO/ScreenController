@@ -46,22 +46,11 @@ public:
 
   [[nodiscard]] Result<std::string_view> get_address() const;
 
-  [[nodiscard]] Result<std::string_view> get_address_type() const;
-
-  [[nodiscard]] Result<std::string_view> get_name();
-
   [[nodiscard]] Result<void> set_alias(std::string_view alias) const;
   [[nodiscard]] Result<std::string_view> get_alias() const;
 
-  [[nodiscard]] Result<uint32_t> get_class() const;
-
-  [[nodiscard]] Result<bool> get_connectable() const;
-  [[nodiscard]] Result<void> set_connectable(bool connectable);
-
   [[nodiscard]] Result<bool> get_powered() const;
   [[nodiscard]] Result<void> set_powered(bool powered);
-
-  [[nodiscard]] Result<bool> get_powerstate() const;
 
   [[nodiscard]] Result<bool> get_discoverable() const;
   [[nodiscard]] Result<void> set_discoverable(bool discoverable);
@@ -69,51 +58,10 @@ public:
   [[nodiscard]] Result<bool> get_pairable() const;
   [[nodiscard]] Result<void> set_pairable(bool pairable);
 
-  /*
-    uint32 PairableTimeout [readwrite] (Default: 0)
-
-    The pairable timeout in seconds. A value of zero means that the timeout is
-    disabled and it will stay in pairable mode forever.
-  */
-  [[nodiscard]] Result<uint32_t> get_pairable_timeout() const;
-
-  /*
-    uint32 PairableTimeout [readwrite] (Default: 0)
-
-    The pairable timeout in seconds. A value of zero means that the timeout is
-    disabled and it will stay in pairable mode forever.
-  */
   [[nodiscard]] Result<void> set_pairable_timeout(uint32_t timeout);
-
-  /*
-    uint32 DiscoverableTimeout [readwrite] (Default: 180)
-
-    The discoverable timeout in seconds. A value of zero means that the timeout
-    is disabled and it will stay in discoverable/limited mode forever.
-  */
-  [[nodiscard]] Result<uint32_t> get_discoverable_timeout() const;
-
-  /*
-    uint32 DiscoverableTimeout [readwrite] (Default: 180)
-
-    The discoverable timeout in seconds. A value of zero means that the timeout
-    is disabled and it will stay in discoverable/limited mode forever.
-  */
   [[nodiscard]] Result<void> set_discoverable_timeout(uint32_t timeout);
 
   [[nodiscard]] Result<bool> get_discovering() const;
-
-  [[nodiscard]] Result<std::vector<std::string>> get_uuids() const;
-
-  [[nodiscard]] Optional<std::string> get_modalias() const;
-
-  [[nodiscard]] Result<std::vector<std::string>> get_roles() const;
-
-  [[nodiscard]] Result<std::vector<std::string>> get_experimental_features() const;
-
-  [[nodiscard]] Result<uint32_t> get_manufacturer() const;
-
-  [[nodiscard]] Result<std::byte> get_version() const;
 
 private:
   ILogger& logger_;
@@ -137,5 +85,3 @@ private:
 };
 
 }  // namespace screen_controller::dbus
-
-#endif  // BLUETOOTH_ADAPTER_H

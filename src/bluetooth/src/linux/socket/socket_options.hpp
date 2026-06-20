@@ -2,8 +2,8 @@
 // Created by marce on 06/08/2025.
 //
 
-#ifndef SOCKETOPTIONS_H
-#define SOCKETOPTIONS_H
+#pragma once
+
 #include <expected>
 #include <system_error>
 
@@ -20,5 +20,3 @@ using expected = std::expected<void, std::error_code>;
 [[nodiscard]] expected SetNonBlocking(int socket);
 
 }  // namespace screen_controller::socket
-
-#endif  // SOCKETOPTIONS_H

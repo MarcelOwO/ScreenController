@@ -2,9 +2,9 @@
 // Created by marce on 5/3/2025.
 //
 
-#ifndef BLUETOOTH_LE_ADVERTISING_MANAGER_H
-#define BLUETOOTH_LE_ADVERTISING_MANAGER_H
-#include <logging/logger.h>
+#pragma once
+
+#include <logging/logger.hpp>
 
 #include <expected>
 #include <memory>
@@ -42,5 +42,3 @@ private:
   sdbus::InterfaceName adv_manager_interface_name;
 };
 }  // namespace screen_controller::dbus
-
-#endif  // BLUETOOTH_LE_ADVERTISING_MANAGER_H

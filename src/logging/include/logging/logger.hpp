@@ -27,4 +27,4 @@ public:
   static std::unique_ptr<ILogger> Create();
 };
 
-};  // namespace screen_controller
+}  // namespace screen_controller

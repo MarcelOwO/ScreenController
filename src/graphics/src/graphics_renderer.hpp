@@ -43,6 +43,8 @@ private:
   int height_;
   int width_;
 
+  mutable float rotation_angle_{0.0F};
+
   GLuint texture_;
   GLuint vao_;
   GLuint vbo_;

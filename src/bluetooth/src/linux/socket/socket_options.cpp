@@ -2,7 +2,7 @@
 // Created by marce on 06/08/2025.
 //
 
-#include "socket_options.h"
+#include "socket_options.hpp"
 
 #include <bluetooth/bluetooth.h>
 #include <fcntl.h>

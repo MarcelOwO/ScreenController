@@ -1,7 +1,6 @@
-#ifndef OBJECT_MANAGER_H
-#define OBJECT_MANAGER_H
+#pragma once
 
-#include "logging/logger.h"
+#include <logging/logger.hpp>
 #include "sdbus-c++/sdbus-c++.h"
 
 namespace screen_controller::dbus {
@@ -23,5 +22,3 @@ private:
 };
 
 }  // namespace screen_controller::dbus
-
-#endif

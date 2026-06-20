@@ -38,10 +38,7 @@ std::expected<std::unique_ptr<DefaultLogger>, std::error_code> DefaultLogger::Cr
 
 DefaultLogger::~DefaultLogger() = default;
 
-DefaultLogger::DefaultLogger(spdlog::logger logger)
-    : logger_(std::move(logger)) {
-
-      };
+DefaultLogger::DefaultLogger(spdlog::logger logger) : logger_(std::move(logger)) {}
 
 void DefaultLogger::Log(const LogLevel kLevel, const std::string_view kLog) {
   switch (kLevel) {

@@ -2,8 +2,7 @@
 // Created by marce on 05/08/2025.
 //
 
-#ifndef DBUSMANAGER_H
-#define DBUSMANAGER_H
+#pragma once
 
 #include <logging/logger.hpp>
 
@@ -53,5 +52,3 @@ private:
   void SetupAdapter();
 };
 }  // namespace screen_controller::dbus
-
-#endif  // DBUSMANAGER_H

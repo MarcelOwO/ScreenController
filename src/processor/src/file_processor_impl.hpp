@@ -20,16 +20,16 @@ class FileProcessor : public IFileProcessor {
 public:
   ~FileProcessor();
 
-  static std::expected<std::unique_ptr<FileProcessor>, std::error_code> create(ILogger& logger);
+  static std::expected<std::unique_ptr<FileProcessor>, std::error_code> Create(ILogger& logger);
 
   FileProcessor(const FileProcessor&) = delete;
   FileProcessor& operator=(const FileProcessor&) = delete;
   FileProcessor(FileProcessor&&) = delete;
   FileProcessor& operator=(FileProcessor&&) = delete;
 
-  bool process_file(std::string_view path);
+  bool ProcessFile(std::string_view path);
 
-  [[nodiscard]] std::optional<std::unique_ptr<FrameData>> get_processed_data() const;
+  [[nodiscard]] std::optional<std::unique_ptr<FrameData>> GetProcessedData() const;
 
 private:
   FileProcessor(ILogger& logger);
