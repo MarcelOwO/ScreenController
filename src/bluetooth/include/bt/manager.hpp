@@ -1,7 +1,6 @@
 #pragma once
 
-#include <functional>
-
+#include <events/events.hpp>
 #include <logging/logger.hpp>
 #include <models/app_settings.hpp>
 #include <models/bluetooth_packet.hpp>
@@ -17,9 +16,8 @@ public:
 
 class BluetoothFactory {
 public:
-  static std::unique_ptr<IBluetoothManager> Create(
-      ILogger& logger, const AppSettings& settings,
-      const std::function<void(const BluetoothPacket& packet)>& callback);
+  static std::unique_ptr<IBluetoothManager> Create(ILogger& logger, const AppSettings& settings,
+                                                   IEventManager& events);
 };
 
 }  // namespace screen_controller

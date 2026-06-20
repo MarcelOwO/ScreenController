@@ -43,14 +43,14 @@ bool FileProcessor::ProcessFile(const std::string_view path) {
     return false;
   }
 
-  decoder_ = processing::DecoderFactory::create(path, type, logger_);
+  decoder_ = processing::DecoderFactory::Create(path, type, logger_);
 
   if (decoder_ == nullptr) {
     logger_.LogError("Decoder not supported for file: " + std::string(path));
     return false;
   }
 
-  if (!decoder_->init()) {
+  if (!decoder_->Init()) {
     logger_.LogError("Failed to initialize decoder for file: " + std::string(path));
     return false;
   }
@@ -64,11 +64,11 @@ std::optional<std::unique_ptr<FrameData>> FileProcessor::GetProcessedData() cons
     return std::nullopt;
   }
 
-  if (!decoder_->has_data()) {
+  if (!decoder_->HasData()) {
     return std::nullopt;
   }
 
-  return decoder_->get_next_frame();
+  return decoder_->GetNextFrame();
 }
 
 FileType FileProcessor::get_type(const std::string_view name) {

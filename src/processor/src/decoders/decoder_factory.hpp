@@ -15,9 +15,7 @@ namespace screen_controller::processing {
 
 class DecoderFactory {
  public:
-  static std::unique_ptr<IDecoder> create(std::string_view name,
-                                          FileType type,
-                                          ILogger& logger);
+  static std::unique_ptr<IDecoder> Create(std::string_view name, FileType type, ILogger& logger);
 };
 
 }  // namespace screen_controller::processing

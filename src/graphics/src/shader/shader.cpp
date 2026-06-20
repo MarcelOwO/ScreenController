@@ -36,7 +36,7 @@ std::expected<Shader, std::error_code> Shader::Create(ILogger& logger,
   std::filesystem::path f_path(project_dir / fragment_path);
 
   if (!std::filesystem::exists(v_path)) {
-    logger.LogError("Vertex shader path does not exist: " + f_path.string());
+    logger.LogError("Vertex shader path does not exist: " + v_path.string());
     return std::unexpected(std::make_error_code(std::errc::invalid_argument));
   }
 

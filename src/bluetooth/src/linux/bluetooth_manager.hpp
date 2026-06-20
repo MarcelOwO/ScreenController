@@ -6,11 +6,10 @@
 
 #include <bt/manager.hpp>
 
+#include <events/events.hpp>
 #include <logging/logger.hpp>
 #include <models/app_settings.hpp>
 #include <models/bluetooth_packet.hpp>
-
-#include <functional>
 
 #include "dbus/dbus_manager.hpp"
 #include "models/connection_state.hpp"
@@ -23,8 +22,7 @@ public:
   ~BluetoothManager() override;
 
   static std::expected<std::unique_ptr<BluetoothManager>, std::error_code> Create(
-      ILogger& logger, const AppSettings& settings,
-      const std::function<void(const BluetoothPacket& packet)>& callback);
+      ILogger& logger, const AppSettings& settings, IEventManager& events);
 
   BluetoothManager(const BluetoothManager&) = delete;
   BluetoothManager& operator=(const BluetoothManager&) = delete;
@@ -34,18 +32,16 @@ public:
   void Poll() override;
 
 private:
-  explicit BluetoothManager(ILogger& logger, const AppSettings& settings,
-                            const std::function<void(const BluetoothPacket& packet)>& callback);
+  explicit BluetoothManager(ILogger& logger, const AppSettings& settings, IEventManager& events);
 
   const AppSettings& settings_;
-
   ILogger& logger_;
+  IEventManager& events_;
 
   socket::L2CapReceiver l2_cap_receiver_;
   dbus::DbusManager dbus_manager_;
 
   ConnectionState connection_state_;
-
-  std::function<void(const BluetoothPacket& packet)> bluetooth_callback_;
 };
+
 }  // namespace screen_controller::bluetooth

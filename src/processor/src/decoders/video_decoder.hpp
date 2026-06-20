@@ -3,7 +3,7 @@
 //
 #pragma once
 
-#include <string_view>
+#include <string>
 
 #include <logging/logger.hpp>
 #include "decoder.hpp"
@@ -18,12 +18,14 @@ namespace screen_controller::processing {
 class VideoDecoder final : public IDecoder {
 public:
   explicit VideoDecoder(std::string_view path, ILogger& logger);
-  virtual bool init() override;
-  virtual ~VideoDecoder() override;
-  virtual bool has_data() override;
-  std::optional<std::unique_ptr<FrameData>> get_next_frame() override;
+  bool Init() override;
+  ~VideoDecoder() override;
+  bool HasData() override;
+  std::optional<std::unique_ptr<FrameData>> GetNextFrame() override;
 
 private:
+  bool ScaleFrame();
+
   bool looped_;
   int frame_count_;
   int current_frame_;
@@ -34,7 +36,7 @@ private:
   std::vector<FrameData> frames_;
   FrameData frame_data_;
 
-  std::string_view path_;
+  std::string path_;
 
   AVCodecContext* codec_context_;
   AVFormatContext* format_context_;

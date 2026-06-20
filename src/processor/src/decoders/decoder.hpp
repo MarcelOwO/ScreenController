@@ -13,9 +13,9 @@ namespace screen_controller::processing {
 class IDecoder {
 public:
   virtual ~IDecoder() = default;
-  virtual bool init() = 0;
-  virtual std::optional<std::unique_ptr<FrameData>> get_next_frame() = 0;
-  virtual bool has_data() = 0;
+  virtual bool Init() = 0;
+  virtual std::optional<std::unique_ptr<FrameData>> GetNextFrame() = 0;
+  virtual bool HasData() = 0;
 };
 
 }  // namespace screen_controller::processing

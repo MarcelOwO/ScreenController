@@ -4,47 +4,43 @@
 #include "bluetooth_manager.hpp"
 
 #include <models/app_settings.hpp>
-#include <models/bluetooth_packet.hpp>
 
 #include "models/packet.hpp"
 #include "unpacker/unpacker.hpp"
 
 namespace screen_controller::bluetooth {
 
-BluetoothManager::BluetoothManager(
-    ILogger& logger, const AppSettings& settings,
-    const std::function<void(const BluetoothPacket& packet)>& callback)
+BluetoothManager::BluetoothManager(ILogger& logger, const AppSettings& settings,
+                                   IEventManager& events)
     : settings_(settings),
       logger_(logger),
+      events_(events),
       l2_cap_receiver_(logger, settings),
       dbus_manager_(dbus::DbusManager(logger)),
-      connection_state_(ConnectionState::kStarting),
-      bluetooth_callback_(callback) {
+      connection_state_(ConnectionState::kStarting) {
   l2_cap_receiver_.OnPacket([this](const Packet& raw) {
-    BluetoothPacket packet{};
-    packet.type = raw.type_;
-    packet.name = raw.name_;
-
     if (raw.has_payload_) {
+      BluetoothPacket packet{};
+      packet.name = raw.name_;
       const Unpacker unpacker(logger_);
       unpacker.Decompress(raw.payload_, packet);
+      events_.Publish(FileReceivedEvent{.filename = packet.name, .data = packet.data});
+    } else {
+      events_.Publish(CommandReceivedEvent{.command = raw.name_});
     }
-
-    bluetooth_callback_(packet);
   });
 
-  logger_.LogInfo("Creating BluetoothManager");
+  logger_.LogInfo("BluetoothManager ready");
 }
 
 std::expected<std::unique_ptr<BluetoothManager>, std::error_code> BluetoothManager::Create(
-    ILogger& logger, const AppSettings& settings,
-    const std::function<void(const BluetoothPacket& packet)>& callback) {
+    ILogger& logger, const AppSettings& settings, IEventManager& events) {
   try {
-    auto bluetooth_manager =
-        std::unique_ptr<BluetoothManager>(new BluetoothManager(logger, settings, callback));
-    return bluetooth_manager;
-  } catch (std::exception& e) {
-    logger.LogError(std::string("BluetoothManager::Create failed: ") + e.what());
+    auto manager =
+        std::unique_ptr<BluetoothManager>(new BluetoothManager(logger, settings, events));
+    return manager;
+  } catch (const std::exception& e) {
+    logger.LogFmt(LogLevel::ERROR, "BluetoothManager::Create failed: {}", e.what());
     return std::unexpected(std::make_error_code(std::errc::invalid_argument));
   }
 }

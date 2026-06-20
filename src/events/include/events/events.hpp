@@ -4,12 +4,35 @@
 #include <logging/logger.hpp>
 #include <models/app_settings.hpp>
 #include <typeindex>
+#include <vector>
 
 namespace screen_controller {
+
+// ── Base ──────────────────────────────────────────────────────────────────────
 
 struct Message {
   virtual ~Message() = default;
 };
+
+// ── Domain events ─────────────────────────────────────────────────────────────
+
+// Bluetooth received a command string from the phone (e.g. "Select:foo", "Rotate").
+struct CommandReceivedEvent : Message {
+  std::string command;
+};
+
+// Bluetooth received a raw file payload from the phone ready to be saved.
+struct FileReceivedEvent : Message {
+  std::string filename;
+  std::vector<std::byte> data;
+};
+
+// The Bluetooth peer connected or disconnected.
+struct ConnectionChangedEvent : Message {
+  bool connected{false};
+};
+
+// ── Interface ─────────────────────────────────────────────────────────────────
 
 class IEventManager {
 public:
@@ -24,15 +47,17 @@ public:
   template <typename T>
   void Subscribe(std::function<void(const T&)> on_receive) {
     static_assert(std::is_base_of_v<Message, T>, "T must inherit from Message");
-    auto wrapper = [on_receive](const Message& msg) { on_receive(static_cast<const T&>(msg)); };
-    InternalSubscribe(typeid(T), std::move(wrapper));
+    InternalSubscribe(typeid(T),
+                      [on_receive](const Message& msg) { on_receive(static_cast<const T&>(msg)); });
   }
 
 protected:
   virtual void InternalPublish(std::type_index type, const Message& msg) = 0;
   virtual void InternalSubscribe(std::type_index type,
-                                 std::function<void(const Message&)> msg_callback) = 0;
+                                 std::function<void(const Message&)> callback) = 0;
 };
+
+// ── Factory ───────────────────────────────────────────────────────────────────
 
 class EventFactory {
 public:

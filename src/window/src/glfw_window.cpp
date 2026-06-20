@@ -79,7 +79,7 @@ bool GlfwWindow::should_close() const {
 }
 
 void GlfwWindow::poll_events() {
-  return glfwPollEvents();
+  glfwPollEvents();
 }
 
 void GlfwWindow::swap_buffers() {
@@ -88,12 +88,12 @@ void GlfwWindow::swap_buffers() {
 
 int GlfwWindow::get_height() const {
   const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-  return mode->height;
+  return (mode != nullptr) ? mode->height : 1080;
 }
 
 int GlfwWindow::get_width() const {
   const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-  return mode->width;
+  return (mode != nullptr) ? mode->width : 1920;
 }
 
 IWindowManager::ProcLoader GlfwWindow::get_proc_address() const {

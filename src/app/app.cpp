@@ -4,11 +4,9 @@
 
 #include "app.hpp"
 
+#include <chrono>
 #include <iostream>
 #include <thread>
-
-#include <graphics/renderer.hpp>
-#include <logging/logger.hpp>
 
 namespace screen_controller {
 
@@ -23,97 +21,88 @@ App::App() try
       storage_manager_(StorageFactory::Create(*logger_)),
       event_manager_(EventFactory::Create(*logger_, *settings_)),
       file_processor_(ProcessorFactory::Create(*logger_)),
-      bluetooth_manager_(BluetoothFactory::Create(*logger_, *settings_,
-                                                  [this](const BluetoothPacket& packet) {
-                                                    ProcessCommand(packet);
-                                                  })) {
-  logger_->LogInfo("Initializing App Subsystems...");
+      bluetooth_manager_(BluetoothFactory::Create(*logger_, *settings_, *event_manager_)) {
+  event_manager_->Subscribe<CommandReceivedEvent>(
+      [this](const CommandReceivedEvent& e) { OnCommandReceived(e); });
+
+  event_manager_->Subscribe<FileReceivedEvent>(
+      [this](const FileReceivedEvent& e) { OnFileReceived(e); });
+
+  logger_->LogInfo("App subsystems initialized");
 
   if (LoadImage("startup_files/eevee.gif", true)) {
-    logger_->LogInfo("Startup image loaded.");
+    logger_->LogInfo("Startup image loaded");
   }
 
   is_running_ = true;
-} catch (std::exception& e) {
-  std::cerr << "Failed to create submodules" << e.what() << '\n';
+} catch (const std::exception& e) {
+  std::cerr << "Failed to create App: " << e.what() << '\n';
 }
 
 void App::AdjustSettings(const std::function<void(AppSettings&)>& update_settings) {
   update_settings(*settings_);
 }
 
-bool App::ProcessCommand(const BluetoothPacket& packet) {
-  logger_->LogInfo("Received packet: " + packet.name);
+void App::OnCommandReceived(const CommandReceivedEvent& event) {
+  const auto& command = event.command;
+  logger_->LogFmt(LogLevel::INFO, "Command received: {}", command);
 
-  switch (packet.type) {
-    case 1: {
-      const auto& command = packet.name;
-      const auto kIt = command.find(':');
+  if (command == "Rotate") {
+    renderer_->Rotate();
+    return;
+  }
 
-      if (kIt == std::string::npos) {
-        logger_->LogError("Invalid command format: " + command);
-        return false;
-      }
+  const auto kSep = command.find(':');
+  if (kSep == std::string::npos) {
+    logger_->LogFmt(LogLevel::ERROR, "Unknown command: {}", command);
+    return;
+  }
 
-      const auto kType = command.substr(0, kIt);
-      const auto kName = command.substr(kIt + 1, command.size());
+  const auto kType = command.substr(0, kSep);
+  const auto kName = command.substr(kSep + 1);
 
-      if (kType == "Select") {
-        logger_->LogInfo("Select command received: " + kName);
-        if (!LoadImage(kName, false)) {
-          logger_->LogError("Failed to load image: " + kName);
-        }
-        return true;
-      }
-      if (kType == "Delete") {
-        logger_->LogInfo("Delete command received: " + kName);
-        if (!storage_manager_->DeleteFile(kName)) {
-          logger_->LogError("Failed to delete file: " + kName);
-        }
-        return true;
-      }
-      if (kType == "Rotate") {
-        logger_->LogInfo("Rotate command received");
-        renderer_->Rotate();
-        return true;
-      }
-      logger_->LogError("Unknown command type: " + kType);
-      return false;
+  if (kType == "Select") {
+    if (!LoadImage(kName, false)) {
+      logger_->LogFmt(LogLevel::ERROR, "Failed to load image: {}", kName);
     }
-    case 0: {
-      if (!storage_manager_->SaveFile(packet.name, packet.data)) {
-        logger_->LogError("Failed to save file: " + packet.name);
-      }
-      return true;
+  } else if (kType == "Delete") {
+    if (!storage_manager_->DeleteFile(kName)) {
+      logger_->LogFmt(LogLevel::ERROR, "Failed to delete file: {}", kName);
     }
-    default: {
-      logger_->LogError("Unknown packet type: " + std::to_string(packet.type));
-      return false;
-    }
+  } else {
+    logger_->LogFmt(LogLevel::ERROR, "Unknown command type: {}", kType);
   }
 }
 
-bool App::LoadImage(std::string_view k_name, bool k_is_asset) {
-  const auto kPath = k_is_asset ? storage_manager_->GetResourcePath(k_name)
-                                : storage_manager_->GetUserFilePath(k_name);
+void App::OnFileReceived(const FileReceivedEvent& event) {
+  logger_->LogFmt(LogLevel::INFO, "File received: {} ({} bytes)", event.filename,
+                  event.data.size());
+
+  if (!storage_manager_->SaveFile(event.filename, event.data)) {
+    logger_->LogFmt(LogLevel::ERROR, "Failed to save file: {}", event.filename);
+  }
+}
+
+bool App::LoadImage(std::string_view name, bool is_asset) {
+  const auto kPath = is_asset ? storage_manager_->GetResourcePath(name)
+                              : storage_manager_->GetUserFilePath(name);
 
   if (!std::filesystem::exists(kPath)) {
-    logger_->LogError("File does not exist: " + kPath.string());
+    logger_->LogFmt(LogLevel::ERROR, "File does not exist: {}", kPath.string());
     return false;
   }
 
-  if (!file_processor_->ProcessFile(kPath.c_str())) {
-    logger_->LogError("Failed to process file: " + kPath.string());
+  if (!file_processor_->ProcessFile(kPath.string())) {
+    logger_->LogFmt(LogLevel::ERROR, "Failed to process file: {}", kPath.string());
     return false;
   }
 
   ProcessFrame();
-
   return true;
 }
 
 void App::ProcessFrame() {
-  const auto kFrame = file_processor_->GetProcessedData();
+  auto kFrame = file_processor_->GetProcessedData();
 
   if (!kFrame.has_value()) {
     renderer_->SetFallbackTexture();
@@ -143,7 +132,7 @@ void App::RenderLoop() {
 }
 
 App::~App() {
-  logger_->LogInfo("Cleaning up App class");
+  logger_->LogInfo("Shutting down App");
 }
 
 }  // namespace screen_controller

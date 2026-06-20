@@ -31,7 +31,7 @@ else()
 
   target_link_libraries(
     Bluetooth
-    PUBLIC Logger common
+    PUBLIC Logger common Events
   )
 
 
