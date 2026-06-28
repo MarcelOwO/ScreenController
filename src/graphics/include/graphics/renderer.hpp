@@ -1,6 +1,5 @@
 #pragma once
 
-#include <enums/error_enum.hpp>
 #include <logging/logger.hpp>
 #include <models/frame_data.hpp>
 

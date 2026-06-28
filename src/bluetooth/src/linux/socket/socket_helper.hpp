@@ -16,9 +16,6 @@ namespace screen_controller::socket {
 void BuildPacketBytes(uint8_t type, uint16_t magic, std::string_view name,
                       std::span<const std::byte> payload, std::vector<std::byte>& out_vec);
 
-uint16_t Le16(const std::array<std::byte, 2>& data);
-uint32_t Le32(const std::array<std::byte, 4>& data);
-
 void Push16(std::vector<std::byte>& vec, uint16_t value);
 void Push32(std::vector<std::byte>& vec, uint32_t value);
 
@@ -52,7 +49,7 @@ inline constexpr auto kCrcTable = []() {
   requires std::convertible_to<std::ranges::range_value_t<decltype(rng)>, std::uint8_t>
 {
   return ~std::accumulate(std::ranges::begin(rng), std::ranges::end(rng),
-                          std::uint32_t{0xff'ff'ff'ffU} & ~std::uint32_t{0},
+                          std::uint32_t{0xffffffffU},
                           [](std::uint32_t checksum, std::uint8_t value) {
                             return (checksum >> 8) ^ kCrcTable[(checksum ^ value) & 0xff];
                           });

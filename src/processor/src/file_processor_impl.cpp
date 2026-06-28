@@ -30,20 +30,17 @@ FileProcessor::FileProcessor(ILogger& logger) : logger_(logger) {
 
 FileProcessor::~FileProcessor() {
   logger_.LogInfo("Cleaning up File Processor");
-  if (decoder_ != nullptr) {
-    decoder_.reset();
-  }
-};
+}
 
-bool FileProcessor::ProcessFile(const std::string_view path) {
-  const auto type = get_type(path);
+bool FileProcessor::ProcessFile(std::string_view path) {
+  const auto kType = GetType(path);
 
-  if (type == FileType::kNone) {
+  if (kType == FileType::kNone) {
     logger_.LogError("File type not supported: " + std::string(path));
     return false;
   }
 
-  decoder_ = processing::DecoderFactory::Create(path, type, logger_);
+  decoder_ = processing::DecoderFactory::Create(path, kType, logger_);
 
   if (decoder_ == nullptr) {
     logger_.LogError("Decoder not supported for file: " + std::string(path));
@@ -71,21 +68,22 @@ std::optional<std::unique_ptr<FrameData>> FileProcessor::GetProcessedData() cons
   return decoder_->GetNextFrame();
 }
 
-FileType FileProcessor::get_type(const std::string_view name) {
-  const auto ext = std::filesystem::path(name).extension();
-  if (ext.empty() || ext == ".") {
+FileType FileProcessor::GetType(std::string_view name) {
+  const auto kExt = std::filesystem::path(name).extension();
+  if (kExt.empty() || kExt == ".") {
     return FileType::kNone;
   }
 
-  static const std::unordered_map<std::string, FileType> ext_map = {
+  static const std::unordered_map<std::string, FileType> kExtMap = {
       {".jpg", FileType::kJpg},   {".jpeg", FileType::kJpg}, {".png", FileType::kPng},
       {".gif", FileType::kGif},   {".bmp", FileType::kBmp},  {".mp4", FileType::kMp4},
       {".webp", FileType::kWebp}, {".webm", FileType::kWebm}};
 
-  if (!ext_map.contains(ext)) {
+  const auto kIt = kExtMap.find(kExt.string());
+  if (kIt == kExtMap.end()) {
     return FileType::kNone;
   }
 
-  return ext_map.at(ext);
+  return kIt->second;
 }
 }  // namespace screen_controller

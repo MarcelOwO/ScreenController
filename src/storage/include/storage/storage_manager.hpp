@@ -22,6 +22,7 @@ public:
   [[nodiscard]] virtual bool SaveFile(std::string_view name,
                                       const std::vector<std::byte>& data) const = 0;
   [[nodiscard]] virtual bool DeleteFile(std::string_view path) const = 0;
+  [[nodiscard]] virtual std::vector<std::string> ListFiles() const = 0;
   [[nodiscard]] virtual std::filesystem::path GetUserFilePath(std::string_view name) const = 0;
   [[nodiscard]] virtual std::filesystem::path GetResourcePath(std::string_view name) const = 0;
 };

@@ -1,18 +1,13 @@
-
-#include <processor/file_processor.hpp>
-
+#include <helper/unwrap.hpp>
 #include <memory>
+#include <processor/file_processor.hpp>
 
 #include "file_processor_impl.hpp"
 
 namespace screen_controller {
 
 std::unique_ptr<IFileProcessor> ProcessorFactory::Create(ILogger& logger) {
-  auto file_processor = FileProcessor::Create(logger);
-  if (!file_processor) {
-    throw std::runtime_error("failed to create file processor");
-  }
-  return std::move(file_processor.value());
+  return Unwrap(FileProcessor::Create(logger), "Failed to create file processor");
 }
 
 }  // namespace screen_controller

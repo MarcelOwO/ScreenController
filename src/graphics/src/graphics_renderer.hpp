@@ -7,7 +7,6 @@
 #include <graphics/renderer.hpp>
 #include <logging/logger.hpp>
 #include <models/frame_data.hpp>
-#include <models/pixel_data.hpp>
 
 #include <expected>
 

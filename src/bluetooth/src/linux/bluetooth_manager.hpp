@@ -30,6 +30,8 @@ public:
   BluetoothManager& operator=(BluetoothManager&&) = delete;
 
   void Poll() override;
+  bool SendPacket(uint8_t type, std::string_view name,
+                  std::span<const std::byte> payload = {}) override;
 
 private:
   explicit BluetoothManager(ILogger& logger, const AppSettings& settings, IEventManager& events);

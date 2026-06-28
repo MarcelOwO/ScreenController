@@ -5,7 +5,10 @@
 #include "unpacker.hpp"
 
 #include <algorithm>
+#include <array>
+#include <cstddef>
 #include <ranges>
+#include <string>
 
 #include "zstd.h"
 
@@ -14,60 +17,47 @@ Unpacker::Unpacker(ILogger& logger) : logger_(logger) {}
 Unpacker::~Unpacker() = default;
 
 void Unpacker::Decompress(const std::span<const std::byte> kSpan, BluetoothPacket& packet) const {
-  std::vector<char> debug_string{};
-
-  const auto kType = static_cast<uint8_t>(kSpan[static_cast<size_t>(0)]);
-
-  debug_string.push_back(static_cast<char>(kType));
-  debug_string.push_back(' ');
-
+  const auto kType = static_cast<uint8_t>(kSpan[0]);
   packet.type = kType;
-  const int kLenString = static_cast<int>(kSpan[static_cast<size_t>(1)]);
 
-  debug_string.push_back(static_cast<char>(kLenString));
-  debug_string.push_back(' ');
+  const auto kNameLen = static_cast<size_t>(kSpan[1]);
 
-  std::vector<char> name_vector(kLenString);
+  const auto kNameBytes = kSpan.subspan(2, kNameLen);
+  std::string name(kNameBytes.size(), '\0');
+  std::ranges::transform(kNameBytes, name.begin(),
+                         [](std::byte byte) { return static_cast<char>(byte); });
 
-  for (int i = 0; i < kLenString; ++i) {
-    name_vector[i] = static_cast<char>(kSpan[i + 2]);
-  }
-
-  const auto kName = std::string(name_vector.data(), name_vector.size());
-
-  packet.name = kName;
-  logger_.LogInfo(kName);
+  packet.name = name;
+  logger_.LogInfo(name);
   if (kType == 1) {
     logger_.LogInfo("command");
     return;
   }
   logger_.LogInfo("File");
 
-  std::vector<std::byte> magic_number = {
+  static constexpr std::array kMagicNumber = {
       std::byte{0x28},
       std::byte{0xb5},
       std::byte{0x2f},
       std::byte{0xfd},
   };
 
-  const auto search_subrange = std::ranges::search(kSpan, magic_number);
+  const auto kSearchSubrange = std::ranges::search(kSpan, kMagicNumber);
 
-  if (search_subrange.empty()) {
+  if (kSearchSubrange.empty()) {
     logger_.LogInfo("Magic number not found in the span");
     return;
   }
 
-  const auto index = std::distance(kSpan.begin(), search_subrange.begin());
+  const auto kIndex = std::distance(kSpan.begin(), kSearchSubrange.begin());
 
-  if (index < 0 || index >= static_cast<int>(kSpan.size())) {
-    logger_.LogError("Invalid index for magic number:" + index);
+  if (kIndex < 0 || kIndex >= static_cast<ptrdiff_t>(kSpan.size())) {
+    logger_.LogFmt(LogLevel::ERROR, "Invalid index for magic number: {}", kIndex);
     return;
   }
 
-  const int start_file = index;
-
-  const int size = static_cast<int>(kSpan.size()) - start_file;
-  const std::span<const std::byte> src(kSpan.data() + start_file, size);
+  const auto kStartFile = static_cast<size_t>(kIndex);
+  const std::span<const std::byte> src = kSpan.subspan(kStartFile);
 
   const size_t decompressed_size = ZSTD_getFrameContentSize(src.data(), src.size());
   if (decompressed_size == ZSTD_CONTENTSIZE_ERROR) {

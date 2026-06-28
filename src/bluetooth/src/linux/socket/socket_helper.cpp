@@ -41,14 +41,6 @@ void BuildPacketBytes(uint8_t type, uint16_t magic, std::string_view name,
   }
 }
 
-uint16_t Le16(const std::array<std::byte, 2>& data) {
-  return std::bit_cast<uint16_t>(data);
-}
-
-uint32_t Le32(const std::array<std::byte, 4>& data) {
-  return std::bit_cast<uint32_t>(data);
-}
-
 void Push16(std::vector<std::byte>& vec, uint16_t value) {
   vec.insert(vec.end(), {static_cast<std::byte>(value >> 8), static_cast<std::byte>(value)});
 }

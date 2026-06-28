@@ -16,7 +16,6 @@ using expected = std::expected<void, std::error_code>;
 [[nodiscard]] expected SetReceiveBufferSize(int file_descriptor, int value);
 [[nodiscard]] expected SetSendBufferSize(int file_descriptor, int value);
 [[nodiscard]] expected SetFlushable(int file_descriptor, int value);
-[[nodiscard]] expected SetDefer(int file_descriptor, int value);
 [[nodiscard]] expected SetNonBlocking(int socket);
 
 }  // namespace screen_controller::socket

@@ -22,11 +22,11 @@ GraphicsRenderer::GraphicsRenderer(ILogger& logger, Shader shader, GLuint textur
                                    GLuint vbo, int width, int height)
     : logger_(logger),
       shader_(shader),
+      height_(height),
+      width_(width),
       texture_(texture),
       vao_(vao),
-      vbo_(vbo),
-      width_(width),
-      height_(height) {
+      vbo_(vbo) {
   logger_.LogInfo("Creating GraphicsRenderer");
 }
 

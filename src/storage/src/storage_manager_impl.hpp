@@ -25,20 +25,29 @@ public:
   StorageManager(StorageManager&&) = delete;
   StorageManager& operator=(StorageManager&&) = delete;
 
-  std::optional<std::vector<std::byte>> LoadResource(std::string_view name) const;
+  [[nodiscard]] std::optional<std::vector<std::byte>> LoadResource(
+      std::string_view name) const override;
 
-  std::optional<std::vector<std::byte>> LoadFile(std::string_view name) const;
+  [[nodiscard]] std::optional<std::vector<std::byte>> LoadFile(
+      std::string_view name) const override;
 
-  bool SaveFile(std::string_view name, std::span<std::byte> data) const;
-  bool SaveFile(std::string_view name, const std::vector<std::byte>& data) const;
-  bool DeleteFile(std::string_view path) const;
+  [[nodiscard]] bool SaveFile(std::string_view name, std::span<std::byte> data) const override;
+  [[nodiscard]] bool SaveFile(std::string_view name,
+                              const std::vector<std::byte>& data) const override;
+  [[nodiscard]] bool DeleteFile(std::string_view path) const override;
+  [[nodiscard]] std::vector<std::string> ListFiles() const override;
 
-  std::filesystem::path GetUserFilePath(std::string_view name) const;
-  std::filesystem::path GetResourcePath(std::string_view name) const;
+  [[nodiscard]] std::filesystem::path GetUserFilePath(std::string_view name) const override;
+  [[nodiscard]] std::filesystem::path GetResourcePath(std::string_view name) const override;
 
 private:
-  StorageManager(ILogger& logger);
+  explicit StorageManager(ILogger& logger);
   [[nodiscard]] std::expected<void, std::error_code> Init() const;
+
+  [[nodiscard]] std::optional<std::vector<std::byte>> ReadFile(
+      const std::filesystem::path& path) const;
+  [[nodiscard]] bool WriteFile(const std::filesystem::path& path,
+                               std::span<const std::byte> data) const;
 
   ILogger& logger_;
   std::filesystem::path asset_path_;

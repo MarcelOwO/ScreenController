@@ -4,10 +4,10 @@
 
 #include "dbus_manager.hpp"
 
+#include <logging/logger.hpp>
 #include "dbus_implementations/bluetooth_adapter.hpp"
 #include "dbus_implementations/bluetooth_agent.hpp"
 #include "dbus_implementations/bluetooth_agent_manager.hpp"
-#include <logging/logger.hpp>
 #include "sdbus-c++/sdbus-c++.h"
 
 namespace screen_controller::dbus {
@@ -88,7 +88,7 @@ void DbusManager::DisableNewConnection() {
   if (!adapter_.set_discoverable(false)) {
     logger_.LogError("Failed to set discoverable");
   }
-  if (adapter_.set_pairable(false)) {
+  if (!adapter_.set_pairable(false)) {
     logger_.LogError("Failed to set pairable");
   }
 }

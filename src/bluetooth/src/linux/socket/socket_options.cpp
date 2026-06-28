@@ -33,10 +33,6 @@ expected SetFlushable(int file_descriptor, int value) {
   return SetSocketOption(file_descriptor, SOL_BLUETOOTH, BT_FLUSHABLE, value);
 }
 
-expected SetDefer(int file_descriptor, int value) {
-  return SetSocketOption(file_descriptor, SOL_BLUETOOTH, BT_DEFER_SETUP, value);
-}
-
 expected SetNonBlocking(int socket) {
   if (fcntl(socket, F_SETFL, O_NONBLOCK) < 0) {
     return std::unexpected(std::make_error_code(std::errc::operation_not_permitted));

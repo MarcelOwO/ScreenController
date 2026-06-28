@@ -46,6 +46,7 @@ private:
 
   void OnCommandReceived(const CommandReceivedEvent& event);
   void OnFileReceived(const FileReceivedEvent& event);
+  void SendFileList();
 };
 
 }  // namespace screen_controller

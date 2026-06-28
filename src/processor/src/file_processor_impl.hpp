@@ -27,15 +27,15 @@ public:
   FileProcessor(FileProcessor&&) = delete;
   FileProcessor& operator=(FileProcessor&&) = delete;
 
-  bool ProcessFile(std::string_view path);
+  bool ProcessFile(std::string_view path) override;
 
-  [[nodiscard]] std::optional<std::unique_ptr<FrameData>> GetProcessedData() const;
+  [[nodiscard]] std::optional<std::unique_ptr<FrameData>> GetProcessedData() const override;
 
 private:
-  FileProcessor(ILogger& logger);
+  explicit FileProcessor(ILogger& logger);
 
   ILogger& logger_;
   std::unique_ptr<processing::IDecoder> decoder_;
-  static FileType get_type(std::string_view name);
+  static FileType GetType(std::string_view name);
 };
 }  // namespace screen_controller

@@ -11,14 +11,16 @@ public:
   DummyManager& operator=(const DummyManager&) = default;
   DummyManager& operator=(DummyManager&&) = default;
 
-  virtual ~DummyManager() override;
+  ~DummyManager() override;
 
-  virtual void Poll() override;
+  void Poll() override;
+  bool SendPacket(uint8_t type, std::string_view name,
+                  std::span<const std::byte> payload = {}) override;
 
   static std::expected<std::unique_ptr<DummyManager>, std::error_code> Create();
 
 private:
-    explicit DummyManager();
+  explicit DummyManager();
 };
 
 }  // namespace screen_controller::bluetooth

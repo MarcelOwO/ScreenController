@@ -1,17 +1,13 @@
 #include "logging/logger.hpp"
 
+#include <helper/unwrap.hpp>
+
 #include "default_logger.hpp"
 
 namespace screen_controller {
 
 std::unique_ptr<ILogger> LoggerFactory::Create() {
-  auto logger = DefaultLogger::Create();
-
-  if (!logger) {
-    throw std::runtime_error("failed to create logger");
-  }
-
-  return std::move(logger.value());
-};
+  return Unwrap(DefaultLogger::Create(), "Failed to create logger");
+}
 
 }  // namespace screen_controller

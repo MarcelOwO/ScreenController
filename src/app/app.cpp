@@ -5,28 +5,26 @@
 #include "app.hpp"
 
 #include <chrono>
-#include <iostream>
 #include <thread>
 
 namespace screen_controller {
 
-App::App() try
+App::App()
     : is_running_(false),
       logger_(LoggerFactory::Create()),
       settings_(std::make_unique<AppSettings>()),
       window_manager_(WindowFactory::Create(*logger_, [this] { is_running_ = false; })),
-      renderer_(RendererFactory::Create(*logger_, window_manager_->get_proc_address(),
-                                        window_manager_->get_width(),
-                                        window_manager_->get_height())),
+      renderer_(RendererFactory::Create(*logger_, window_manager_->GetProcAddress(),
+                                        window_manager_->GetWidth(), window_manager_->GetHeight())),
       storage_manager_(StorageFactory::Create(*logger_)),
       event_manager_(EventFactory::Create(*logger_, *settings_)),
       file_processor_(ProcessorFactory::Create(*logger_)),
       bluetooth_manager_(BluetoothFactory::Create(*logger_, *settings_, *event_manager_)) {
   event_manager_->Subscribe<CommandReceivedEvent>(
-      [this](const CommandReceivedEvent& e) { OnCommandReceived(e); });
+      [this](const CommandReceivedEvent& event) { OnCommandReceived(event); });
 
   event_manager_->Subscribe<FileReceivedEvent>(
-      [this](const FileReceivedEvent& e) { OnFileReceived(e); });
+      [this](const FileReceivedEvent& event) { OnFileReceived(event); });
 
   logger_->LogInfo("App subsystems initialized");
 
@@ -35,8 +33,6 @@ App::App() try
   }
 
   is_running_ = true;
-} catch (const std::exception& e) {
-  std::cerr << "Failed to create App: " << e.what() << '\n';
 }
 
 void App::AdjustSettings(const std::function<void(AppSettings&)>& update_settings) {
@@ -49,6 +45,11 @@ void App::OnCommandReceived(const CommandReceivedEvent& event) {
 
   if (command == "Rotate") {
     renderer_->Rotate();
+    return;
+  }
+
+  if (command == "GetFiles") {
+    SendFileList();
     return;
   }
 
@@ -74,6 +75,25 @@ void App::OnCommandReceived(const CommandReceivedEvent& event) {
   }
 }
 
+void App::SendFileList() {
+  const auto kFiles = storage_manager_->ListFiles();
+
+  // Build newline-separated payload.
+  std::string payload;
+  for (const auto& name : kFiles) {
+    payload += name;
+    payload += '\n';
+  }
+
+  logger_->LogFmt(LogLevel::INFO, "Sending file list ({} files)", kFiles.size());
+
+  const auto kSpan = std::span<const std::byte>(reinterpret_cast<const std::byte*>(payload.data()),
+                                                payload.size());
+
+  constexpr uint8_t kTypeFileList = 0xC1;
+  bluetooth_manager_->SendPacket(kTypeFileList, "files", kSpan);
+}
+
 void App::OnFileReceived(const FileReceivedEvent& event) {
   logger_->LogFmt(LogLevel::INFO, "File received: {} ({} bytes)", event.filename,
                   event.data.size());
@@ -84,8 +104,8 @@ void App::OnFileReceived(const FileReceivedEvent& event) {
 }
 
 bool App::LoadImage(std::string_view name, bool is_asset) {
-  const auto kPath = is_asset ? storage_manager_->GetResourcePath(name)
-                              : storage_manager_->GetUserFilePath(name);
+  const auto kPath =
+      is_asset ? storage_manager_->GetResourcePath(name) : storage_manager_->GetUserFilePath(name);
 
   if (!std::filesystem::exists(kPath)) {
     logger_->LogFmt(LogLevel::ERROR, "File does not exist: {}", kPath.string());
@@ -102,7 +122,7 @@ bool App::LoadImage(std::string_view name, bool is_asset) {
 }
 
 void App::ProcessFrame() {
-  auto kFrame = file_processor_->GetProcessedData();
+  const auto kFrame = file_processor_->GetProcessedData();
 
   if (!kFrame.has_value()) {
     renderer_->SetFallbackTexture();
@@ -118,14 +138,17 @@ void App::Run() {
 }
 
 void App::RenderLoop() {
+  // ~60 fps target.
+  constexpr auto kFrameInterval = std::chrono::milliseconds{16};
+
   while (is_running_) {
     bluetooth_manager_->Poll();
     ProcessFrame();
-    window_manager_->update([this] { renderer_->Render(); });
-    window_manager_->poll_events();
-    std::this_thread::sleep_for(std::chrono::milliseconds{16});
+    window_manager_->Update([this] { renderer_->Render(); });
+    window_manager_->PollEvents();
+    std::this_thread::sleep_for(kFrameInterval);
 
-    if (window_manager_->should_close()) {
+    if (window_manager_->ShouldClose()) {
       is_running_ = false;
     }
   }

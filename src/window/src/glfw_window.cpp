@@ -7,10 +7,10 @@
 namespace screen_controller {
 
 std::expected<std::unique_ptr<GlfwWindow>, std::error_code> GlfwWindow::Create(
-    ILogger& logger, const std::function<void()> kOnShutdownRequested) {
+    ILogger& logger, std::function<void()> on_shutdown_requested) {
   logger.LogInfo("Creating WindowManager");
 
-  if (!kOnShutdownRequested) {
+  if (!on_shutdown_requested) {
     return std::unexpected(std::make_error_code(std::errc::invalid_argument));
   }
 
@@ -56,13 +56,14 @@ std::expected<std::unique_ptr<GlfwWindow>, std::error_code> GlfwWindow::Create(
                            return;
                          }
 
-                         kRef->kOnShutdownRequested();
+                         kRef->on_shutdown_requested_();
                        }
                      });
 
   glfwSwapInterval(1);
 
-  auto window = std::unique_ptr<GlfwWindow>(new GlfwWindow(logger, kOnShutdownRequested));
+  auto window =
+      std::unique_ptr<GlfwWindow>(new GlfwWindow(logger, std::move(on_shutdown_requested)));
 
   window->window_ = std::unique_ptr<GLFWwindow, GlfwWindowDeleter>(raw_window);
 
@@ -71,36 +72,32 @@ std::expected<std::unique_ptr<GlfwWindow>, std::error_code> GlfwWindow::Create(
   return window;
 }
 
-GlfwWindow::GlfwWindow(ILogger& logger, const std::function<void()>& on_shutdown_requested)
-    : logger_(logger), kOnShutdownRequested(on_shutdown_requested) {}
+GlfwWindow::GlfwWindow(ILogger& logger, std::function<void()> on_shutdown_requested)
+    : logger_(logger), on_shutdown_requested_(std::move(on_shutdown_requested)) {}
 
-bool GlfwWindow::should_close() const {
+bool GlfwWindow::ShouldClose() const {
   return glfwWindowShouldClose(window_.get()) != 0;
 }
 
-void GlfwWindow::poll_events() {
+void GlfwWindow::PollEvents() {
   glfwPollEvents();
 }
 
-void GlfwWindow::swap_buffers() {
-  glfwSwapBuffers(window_.get());
-}
-
-int GlfwWindow::get_height() const {
+int GlfwWindow::GetHeight() const {
   const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
   return (mode != nullptr) ? mode->height : 1080;
 }
 
-int GlfwWindow::get_width() const {
+int GlfwWindow::GetWidth() const {
   const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
   return (mode != nullptr) ? mode->width : 1920;
 }
 
-IWindowManager::ProcLoader GlfwWindow::get_proc_address() const {
+IWindowManager::ProcLoader GlfwWindow::GetProcAddress() const {
   return reinterpret_cast<IWindowManager::ProcLoader>(glfwGetProcAddress);
 }
 
-void GlfwWindow::update(const std::function<void()>& render) {
+void GlfwWindow::Update(const std::function<void()>& render) {
   if (window_ == nullptr) {
     return;
   }

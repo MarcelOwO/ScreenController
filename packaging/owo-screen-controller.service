@@ -1,14 +1,20 @@
 [Unit]
 Description=OwO Screen Controller Service
-Requires=dbus.socket
-After=dbus.socket
+Requires=dbus.socket bluetooth.service
+After=dbus.socket bluetooth.service network.target
+Wants=bluetooth.service
 
 [Service]
 Type=dbus
 BusName=com.owo.screen_controller
 ExecStart=/usr/bin/screen_controller
 Restart=on-failure
-User=Root
+RestartSec=3
+User=root
+StandardOutput=journal
+StandardError=journal
+# Allow the process direct access to the display framebuffer and Bluetooth HCI.
+SupplementaryGroups=bluetooth video render input
 
 [Install]
 WantedBy=multi-user.target

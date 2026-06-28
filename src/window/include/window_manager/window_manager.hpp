@@ -15,23 +15,22 @@ class IWindowManager {
 public:
   virtual ~IWindowManager() = default;
 
-  virtual void update(const std::function<void()>& render) = 0;
+  virtual void Update(const std::function<void()>& render) = 0;
 
-  virtual void poll_events() = 0;
-  virtual void swap_buffers() = 0;
+  virtual void PollEvents() = 0;
 
-  virtual int get_height() const = 0;
-  virtual int get_width() const = 0;
-  virtual bool should_close() const = 0;
+  [[nodiscard]] virtual int GetHeight() const = 0;
+  [[nodiscard]] virtual int GetWidth() const = 0;
+  [[nodiscard]] virtual bool ShouldClose() const = 0;
 
   using ProcLoader = void* (*) (const char*);
-  virtual ProcLoader get_proc_address() const = 0;
+  [[nodiscard]] virtual ProcLoader GetProcAddress() const = 0;
 };
 
 class WindowFactory {
 public:
   static std::unique_ptr<IWindowManager> Create(ILogger& logger,
-                                                const std::function<void()> onShutdownRequested);
+                                                std::function<void()> on_shutdown_requested);
 };
 
 }  // namespace screen_controller

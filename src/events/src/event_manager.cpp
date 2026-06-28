@@ -14,7 +14,7 @@ EventManager::~EventManager() {
 }
 
 EventManager::EventManager(ILogger& logger, const AppSettings& settings)
-    : settings_(settings), logger_(logger), registry_({}) {}
+    : logger_(logger), settings_(settings) {}
 
 void EventManager::InternalPublish(std::type_index type, const Message& msg) {
   std::lock_guard<std::mutex> lock(mutex_);

@@ -23,22 +23,21 @@ public:
   GlfwWindow(GlfwWindow&&) = delete;
   GlfwWindow& operator=(GlfwWindow&&) = delete;
 
-  void update(const std::function<void()>& render) override;
+  void Update(const std::function<void()>& render) override;
 
-  void poll_events() override;
-  void swap_buffers() override;
+  void PollEvents() override;
 
-  [[nodiscard]] IWindowManager::ProcLoader get_proc_address() const override;
+  [[nodiscard]] IWindowManager::ProcLoader GetProcAddress() const override;
 
-  [[nodiscard]] int get_height() const override;
-  [[nodiscard]] int get_width() const override;
+  [[nodiscard]] int GetHeight() const override;
+  [[nodiscard]] int GetWidth() const override;
 
-  [[nodiscard]] bool should_close() const override;
+  [[nodiscard]] bool ShouldClose() const override;
 
 private:
-  GlfwWindow(ILogger& logger, const std::function<void()>& on_shutdown_requested);
+  GlfwWindow(ILogger& logger, std::function<void()> on_shutdown_requested);
 
-  const std::function<void()> kOnShutdownRequested;
+  std::function<void()> on_shutdown_requested_;
 
   ILogger& logger_;
 

@@ -7,15 +7,18 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/l2cap.h>
 
+#include <array>
+#include <chrono>
 #include <functional>
 #include <span>
 #include <vector>
 
-#include "../models/packet.hpp"
-#include <models/app_settings.hpp>
 #include <logging/logger.hpp>
+#include <models/app_settings.hpp>
+#include "../models/packet.hpp"
 
 namespace screen_controller::socket {
+
 class L2CapReceiver {
 public:
   explicit L2CapReceiver(ILogger& logger, const AppSettings& settings);
@@ -26,22 +29,36 @@ public:
   L2CapReceiver(L2CapReceiver&&) = delete;
   L2CapReceiver& operator=(L2CapReceiver&&) = delete;
 
+  // Poll for new data or connections. Call this every frame from the main loop.
   void PollSocket();
 
-  void OnReceived(const std::function<void(const std::span<std::byte>& data)>& callback);
-
+  // Callbacks — set before PollSocket is first called.
+  void OnReceived(std::function<void(const std::span<std::byte>&)> callback);
   void OnPacket(std::function<void(const Packet&)> callback);
+  void OnError(std::function<void(int code, std::string_view message)> callback);
+  void OnConnected(std::function<void()> callback);
+  void OnAuthenticated(std::function<void()> callback);
+  void OnDisconnected(std::function<void()> callback);
 
-  void OnError(const std::function<void(int code, std::string_view message)>& callback);
-
+  // Send a packet to the connected, authenticated client.
   bool SendPacket(uint8_t type, std::string_view name, std::span<const std::byte> payload = {});
+  bool SendError(uint32_t err_code, std::string_view message, uint8_t type = 0xCF);
 
-  bool SendError(uint32_t err_code, std::string_view message, uint8_t type = 0xFF);
+  [[nodiscard]] bool IsConnected() const {
+    return client_socket_ >= 0;
+  }
+  [[nodiscard]] bool IsAuthenticated() const {
+    return auth_state_ == AuthState::kAuthenticated;
+  }
 
 private:
+  enum class AuthState { kWaiting, kChallengeSent, kAuthenticated };
+
   void CheckClient();
   void ReadAllAvailable();
   bool ExtractOnePacket();
+  void ValidateAuth(std::span<const uint8_t> payload);
+  void CloseClient(bool notify = true);
 
   void TryEnable2MDefaultPhy();
 
@@ -49,12 +66,14 @@ private:
   int client_socket_{-1};
 
   const AppSettings& settings_;
-
   int imtu_;
   int omtu_;
   ILogger& logger_;
 
-  std::vector<uint8_t> received_buffer_;
+  AuthState auth_state_{AuthState::kWaiting};
+  std::array<uint8_t, 16> nonce_{};
+  std::chrono::steady_clock::time_point challenge_deadline_{};
+
   std::vector<uint8_t> temp_record_;
   std::vector<uint8_t> received_data_;
   std::vector<uint8_t> current_payload_;
@@ -62,6 +81,9 @@ private:
   std::function<void(const std::span<std::byte>&)> on_received_;
   std::function<void(const Packet&)> on_packet_;
   std::function<void(int, std::string_view)> on_error_;
+  std::function<void()> on_connected_;
+  std::function<void()> on_authenticated_;
+  std::function<void()> on_disconnected_;
 };
 
 }  // namespace screen_controller::socket
