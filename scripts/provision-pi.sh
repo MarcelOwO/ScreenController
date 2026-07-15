@@ -33,5 +33,5 @@ ssh "$target" "cmake -S '$remote_dir' -B '$remote_dir/build-pi' -G Ninja \
 
 ssh "$target" "sudo apt-get install -y '$remote_dir'/build-pi/packages/screencontroller_*.deb; \
   sudo systemctl --no-pager --full status owo-screen-controller.service; \
-  printf '\nController provisioning key (keep secret):\n'; \
-  sudo screencontroller-show-key"
+  printf '\nController enrollment URI (keep secret):\n'; \
+  sudo screencontroller-show-key --uri"

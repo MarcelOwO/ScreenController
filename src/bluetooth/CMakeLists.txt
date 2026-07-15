@@ -13,6 +13,8 @@ add_library(
   src/linux/dbus/dbus_implementations/bluetooth_le_advertisement.cpp
   src/linux/dbus/dbus_implementations/bluetooth_le_advertising_manager.cpp
   src/linux/dbus/dbus_implementations/bluetooth_adapter.cpp
+  src/linux/dbus/dbus_implementations/gatt_application.cpp
+  src/linux/dbus/dbus_implementations/object_manager.cpp
   src/linux/unpacker/unpacker.cpp
   src/linux/socket/l2cap_receiver.cpp
   src/linux/socket/socket_helper.cpp

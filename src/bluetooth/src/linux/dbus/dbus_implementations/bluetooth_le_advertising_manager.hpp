@@ -6,6 +6,7 @@
 
 #include <logging/logger.hpp>
 
+#include <atomic>
 #include <expected>
 #include <memory>
 
@@ -25,10 +26,11 @@ public:
 
   [[nodiscard]] std::expected<void, std::error_code> RegisterAdvertisement(
       const sdbus::ObjectPath& advertisement,
-      const std::unordered_map<std::string, sdbus::Variant>& options) const;
+      const std::unordered_map<std::string, sdbus::Variant>& options);
 
   [[nodiscard]] std::expected<void, std::error_code> UnregisterAdvertisement(
-      const sdbus::ObjectPath& advertisement) const;
+      const sdbus::ObjectPath& advertisement);
+  [[nodiscard]] bool IsRegisteredOrPending() const noexcept;
   [[nodiscard]] std::optional<uint8_t> GetActiveInstances() const;
   [[nodiscard]] std::optional<uint8_t> GetSupportedInstances() const;
   [[nodiscard]] std::optional<std::vector<std::string>> GetSupportedIncludes() const;
@@ -41,5 +43,8 @@ private:
   ILogger& logger_;
   std::shared_ptr<sdbus::IProxy> adapter_proxy_;
   sdbus::InterfaceName adv_manager_interface_name;
+  std::atomic_bool registered_{false};
+  std::atomic_bool registration_pending_{false};
+  sdbus::Slot registration_slot_;
 };
 }  // namespace screen_controller::dbus

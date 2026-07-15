@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="ScreenController.App.Views.DashboardPage" x:Name="Root"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:model="clr-namespace:ScreenController.Protocol;assembly=ScreenController.Protocol"
+    xmlns:vm="clr-namespace:ScreenController.App.ViewModels"
+    x:DataType="vm:ControllerViewModel" Title="Screen Controller">
+    <ScrollView>
+        <VerticalStackLayout MaximumWidthRequest="980" Padding="24,16,24,48" Spacing="18">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                <VerticalStackLayout Spacing="3">
+                    <Label FontAttributes="Bold" FontSize="30" Text="Your display" />
+                    <Label Text="{Binding ConnectionText}" TextColor="{StaticResource TextSecondary}" />
+                </VerticalStackLayout>
+                <ActivityIndicator Grid.Column="1" IsRunning="{Binding IsBusy}" Color="{StaticResource Primary}" />
+            </Grid>
+
+            <Border Style="{StaticResource Card}">
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+                    <Ellipse HeightRequest="14" WidthRequest="14">
+                        <Ellipse.Triggers>
+                            <DataTrigger TargetType="Ellipse" Binding="{Binding IsConnected}" Value="True"><Setter Property="Fill" Value="{StaticResource Success}" /></DataTrigger>
+                            <DataTrigger TargetType="Ellipse" Binding="{Binding IsConnected}" Value="False"><Setter Property="Fill" Value="{StaticResource Danger}" /></DataTrigger>
+                        </Ellipse.Triggers>
+                    </Ellipse>
+                    <VerticalStackLayout Grid.Column="1" Spacing="2">
+                        <Label FontAttributes="Bold" Text="{Binding ActivityText}" />
+                        <Label FontSize="12" Text="Encrypted Bluetooth and application authentication" TextColor="{StaticResource TextSecondary}" />
+                    </VerticalStackLayout>
+                    <Button Grid.Column="2" Command="{Binding ConnectCommand}" IsVisible="{Binding IsConnected, Converter={StaticResource InvertedBoolConverter}}" Text="Connect" />
+                    <Button Grid.Column="2" Command="{Binding DisconnectCommand}" IsVisible="{Binding IsConnected}" Text="Disconnect" />
+                </Grid>
+            </Border>
+
+            <Border IsVisible="{Binding HasEnrollment, Converter={StaticResource InvertedBoolConverter}}" Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="14">
+                    <Label Style="{StaticResource SectionTitle}" Text="Set up this controller" />
+                    <Label Text="Find your Raspberry Pi, select it, then paste the private enrollment URI." TextColor="{StaticResource TextSecondary}" />
+                    <Button Command="{Binding ScanCommand}" Text="Scan for displays" />
+                    <CollectionView HeightRequest="150" ItemsSource="{Binding Devices}" SelectionMode="Single" SelectedItem="{Binding SelectedDevice}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="model:DeviceCandidate">
+                                <Grid Padding="8" ColumnDefinitions="*,Auto">
+                                    <Label FontAttributes="Bold" Text="{Binding Name}" />
+                                    <Label Grid.Column="1" Text="{Binding SignalStrength, StringFormat='{0} dBm'}" TextColor="{StaticResource TextSecondary}" />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                        <Entry Placeholder="screencontroller://enroll?key=…" Text="{Binding EnrollmentText}" />
+                        <Button Grid.Column="1" Command="{Binding PasteEnrollmentCommand}" Text="Paste" />
+                    </Grid>
+                    <Button Command="{Binding SaveEnrollmentCommand}" Text="Save secure enrollment" />
+                </VerticalStackLayout>
+            </Border>
+
+            <VerticalStackLayout IsVisible="{Binding IsConnected}" Spacing="18">
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="16">
+                        <Label Style="{StaticResource SectionTitle}" Text="Display controls" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <VerticalStackLayout>
+                                <Label FontAttributes="Bold" Text="Screen output" />
+                                <Label FontSize="12" Text="Temporarily render black without disconnecting" TextColor="{StaticResource TextSecondary}" />
+                            </VerticalStackLayout>
+                            <Button Grid.Column="1" Command="{Binding ToggleDisplayCommand}">
+                                <Button.Triggers>
+                                    <DataTrigger TargetType="Button" Binding="{Binding DisplayEnabled}" Value="True"><Setter Property="Text" Value="Turn off" /></DataTrigger>
+                                    <DataTrigger TargetType="Button" Binding="{Binding DisplayEnabled}" Value="False"><Setter Property="Text" Value="Turn on" /></DataTrigger>
+                                </Button.Triggers>
+                            </Button>
+                        </Grid>
+                        <Label Text="{Binding Brightness, StringFormat='Brightness  {0:F0}%'}" />
+                        <Slider Maximum="100" Minimum="0" Value="{Binding Brightness}" />
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                            <Button Command="{Binding ApplyBrightnessCommand}" Text="Apply brightness" />
+                            <Button Grid.Column="1" Command="{Binding RotateCommand}" Text="Rotate 90°" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="16">
+                        <Label Style="{StaticResource SectionTitle}" Text="Upload media" />
+                        <Label Text="JPEG, PNG, BMP, GIF, WebP, MP4 or WebM up to 128 MiB." TextColor="{StaticResource TextSecondary}" />
+                        <ProgressBar Progress="{Binding UploadProgress}" ProgressColor="{StaticResource Primary}" />
+                        <Button Command="{Binding UploadCommand}" Text="Choose and upload" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="14">
+                        <Grid ColumnDefinitions="*,Auto"><Label Style="{StaticResource SectionTitle}" Text="Media library" /><Button Grid.Column="1" Command="{Binding RefreshCommand}" Text="Refresh" /></Grid>
+                        <Label IsVisible="{Binding Files.Count, Converter={StaticResource ZeroToBoolConverter}}" Text="No uploaded media yet." TextColor="{StaticResource TextSecondary}" />
+                        <CollectionView ItemsSource="{Binding Files}" MaximumHeightRequest="420">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Padding="8,10" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                                        <Label VerticalOptions="Center" Text="{Binding .}" />
+                                        <Button Grid.Column="1" Command="{Binding Source={x:Reference Root}, Path=BindingContext.SelectFileCommand}" CommandParameter="{Binding .}" Text="Show" />
+                                        <Button Grid.Column="2" BackgroundColor="{StaticResource Danger}" Command="{Binding Source={x:Reference Root}, Path=BindingContext.DeleteFileCommand}" CommandParameter="{Binding .}" Text="Delete" />
+                                    </Grid>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
+            <Border IsVisible="{Binding HasEnrollment}" Style="{StaticResource Card}">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <VerticalStackLayout><Label FontAttributes="Bold" Text="Controller enrollment" /><Label FontSize="12" Text="The private key is held in the operating system secure store." TextColor="{StaticResource TextSecondary}" /></VerticalStackLayout>
+                    <Button Grid.Column="1" BackgroundColor="{StaticResource Danger}" Command="{Binding ForgetControllerCommand}" Text="Forget" />
+                </Grid>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

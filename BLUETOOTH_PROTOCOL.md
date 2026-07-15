@@ -1,15 +1,16 @@
 # ScreenController Bluetooth Protocol v2
 
-This is the wire-level contract for the future phone controller. Version 2 is intentionally
+This is the wire-level contract shared by the Pi and MAUI controller. Version 2 is intentionally
 incompatible with the earlier fixed-key/XOR draft.
 
 ## Security model
 
 The protocol uses two layers:
 
-1. The L2CAP socket requests `BT_SECURITY_MEDIUM`, so BlueZ requires an encrypted Bluetooth LE
-   link before application traffic is accepted. Headless `NoInputNoOutput` pairing uses LE Secure
-   Connections where supported, but its Just Works association does **not** provide MITM protection.
+1. Both transports require an encrypted Bluetooth LE link. The L2CAP socket requests
+   `BT_SECURITY_MEDIUM`; the GATT characteristics use BlueZ's `encrypt-write` and `encrypt-notify`
+   flags. Headless `NoInputNoOutput` pairing uses LE Secure Connections where supported, but its
+   Just Works association does **not** provide MITM protection.
 2. The application performs an HMAC-SHA256 challenge using a random, device-specific 256-bit key.
    Clients without that key are disconnected after five seconds and cannot issue commands.
 
@@ -20,9 +21,17 @@ SCREEN_CONTROLLER_PSK_HEX=<64 lowercase or uppercase hex characters>
 ```
 
 The systemd unit reads this from `/etc/screencontroller/screencontroller.env`, which must be owned
-by root and mode `0600`. `scripts/provision-pi.sh` generates it. Import the resulting key into the
-phone app through a protected enrollment flow (for example, a QR code shown or supplied with that
-specific Pi). Do not ship one shared key in every copy of the phone app.
+by root and mode `0600`. `scripts/provision-pi.sh` generates it. Import the resulting enrollment URI
+into the controller app and keep it private. Do not ship one shared key in every app copy.
+
+The enrollment URI format is:
+
+```text
+screencontroller://enroll?v=2&name=ScreenController&key=<64-hex>&psm=129
+```
+
+`id` may optionally contain the platform Bluetooth identifier. The MAUI UI normally fills it from
+the selected scan result. Unknown query parameters must be ignored for forward compatibility.
 
 This design authorizes possession of the per-device secret; Bluetooth cannot prove which app binary
 is running. A compromised/rooted phone can disclose its key. For deployments exposed to hostile
@@ -33,18 +42,22 @@ nearby attackers, add a screen-displayed enrollment code or QR flow before produ
 | Property | Value |
 |---|---|
 | Role | Pi = BLE Peripheral, phone = BLE Central |
-| Advertisement name | `ScreenController` |
+| Controller UI name | `ScreenController` (discovery filters by UUID, not local name) |
 | Advertisement service UUID | `8e7f1a10-6e40-4d5f-8d7c-9b5a9f88a001` |
-| Transport | LE L2CAP Connection-Oriented Channel, `SOCK_SEQPACKET` |
+| Android/macOS transport | LE L2CAP Connection-Oriented Channel, `SOCK_SEQPACKET` |
+| Windows transport | BLE GATT write/notify byte-stream tunnel |
 | LE PSM | `0x0081` |
+| GATT write UUID | `8e7f1a10-6e40-4d5f-8d7c-9b5a9f88a002` |
+| GATT notify UUID | `8e7f1a10-6e40-4d5f-8d7c-9b5a9f88a003` |
 | Byte order | Network order (big-endian) |
 | Compressed packet limit | 64 MiB |
 | Decompressed file limit | 128 MiB |
 | Preferred PHY | LE 2M when the controller and adapter support it |
 
-Before commissioning, the advertisement is active and BlueZ is discoverable/pairable. The first
-phone that successfully completes HMAC authentication is atomically recorded as the commissioned
-controller using its Bluetooth address and address type. The advertisement and BlueZ
+Before commissioning, the UUID advertisement is active and BlueZ is pairable; general adapter
+discoverability remains disabled because the controller app performs a UUID-filtered LE scan. The
+first phone that successfully completes HMAC authentication is atomically recorded as the
+commissioned controller using its Bluetooth address and address type. The advertisement and BlueZ
 discoverable/pairable flags are disabled while it is connected.
 
 After that phone disconnects, the advertisement is restored so the bonded controller can reconnect,
@@ -83,12 +96,22 @@ including when the payload is empty:
 CRC32 is the IEEE/zlib variant (polynomial `0xEDB88320`, initial value `0xFFFFFFFF`, final XOR
 `0xFFFFFFFF`). CRC detects transport/framing errors; it is not an authentication primitive.
 
-An L2CAP record may contain only part of a protocol packet. Both implementations must retain bytes
-until a complete packet is available and must also handle multiple complete packets in one read.
+A transport read or GATT notification may contain only part of a protocol packet. Both
+implementations must retain bytes until a complete packet is available and must also handle multiple
+complete packets in one read. GATT write and notification boundaries have no framing meaning.
+
+### Windows GATT session start
+
+The Windows client subscribes to the notify characteristic, then writes the single byte `0x01` to
+the write characteristic. This out-of-band byte requests a session and is not a framed packet. The
+Pi then sends the normal `0xC0/auth-v2` challenge over notifications. After that, concatenate all
+write/notify chunks and use the framing below unchanged. Write Without Response should be used with
+chunks no larger than the negotiated ATT payload.
 
 ## Authentication
 
-Immediately after accepting an encrypted L2CAP connection, the Pi sends:
+Immediately after accepting an encrypted L2CAP connection, or after the GATT session-start byte,
+the Pi sends:
 
 | Direction | Type | Name | Payload |
 |---|---:|---|---|
@@ -174,8 +197,9 @@ Allowed extensions are `.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`, `.webp`, `.mp4`,
 (case-insensitive). Names must be a single base name: no `/`, `\\`, `.`/`..`, or parent path. The Pi
 writes to a temporary file and atomically publishes it only after validation and decompression.
 
-For speed, negotiate the largest platform-supported L2CAP MTU, keep a send buffer of at least 1 MiB,
-avoid application-level delays between writes, and keep one connection open for a batch of uploads.
+For speed, use native L2CAP on Android/macOS, negotiate the largest platform-supported MTU, keep a
+send buffer of at least 1 MiB, avoid application-level delays between writes, and keep one connection
+open for a batch of uploads. Windows should use Write Without Response and the session ATT payload.
 
 ## File list
 
@@ -202,10 +226,11 @@ file list confirms it is absent.
 
 ## Recommended phone flow
 
-1. Load the enrolled device key from Android Keystore/iOS Keychain.
+1. Load the enrolled device key from operating-system secure storage.
 2. Scan for the service UUID and connect/pair with the advertised Pi. Pairing is available only
    before the first controller has been commissioned.
-3. Open LE L2CAP PSM `0x0081`.
+3. Android/macOS: open LE L2CAP PSM `0x0081`. Windows: subscribe to GATT notifications and write the
+   session-start byte.
 4. Read `0xC0/auth-v2`, calculate HMAC-SHA256, and send `0x80/auth-v2` within five seconds.
 5. Request `GetStatus` and `GetFiles`.
 6. Keep one socket and process acknowledgements/errors for every mutation.

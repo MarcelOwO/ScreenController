@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Application x:Class="ScreenController.App.ApplicationRoot"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:local="clr-namespace:ScreenController.App">
+    <Application.Resources>
+        <local:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+        <local:ZeroToBoolConverter x:Key="ZeroToBoolConverter" />
+        <Color x:Key="Background">#0B1020</Color>
+        <Color x:Key="Surface">#151D31</Color>
+        <Color x:Key="SurfaceRaised">#202B45</Color>
+        <Color x:Key="Primary">#7C8CFF</Color>
+        <Color x:Key="TextPrimary">#F5F7FF</Color>
+        <Color x:Key="TextSecondary">#AEB8D0</Color>
+        <Color x:Key="Success">#50D890</Color>
+        <Color x:Key="Danger">#FF6B7A</Color>
+        <Style TargetType="ContentPage"><Setter Property="BackgroundColor" Value="{StaticResource Background}" /></Style>
+        <Style TargetType="Label"><Setter Property="TextColor" Value="{StaticResource TextPrimary}" /></Style>
+        <Style TargetType="Button">
+            <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+            <Setter Property="TextColor" Value="White" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="HeightRequest" Value="48" />
+            <Setter Property="Padding" Value="18,10" />
+        </Style>
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="BackgroundColor" Value="{StaticResource Surface}" />
+            <Setter Property="Stroke" Value="#2B3858" />
+            <Setter Property="StrokeThickness" Value="1" />
+            <Setter Property="Padding" Value="20" />
+            <Setter Property="StrokeShape" Value="RoundRectangle 20" />
+        </Style>
+        <Style x:Key="SectionTitle" TargetType="Label"><Setter Property="FontSize" Value="20" /><Setter Property="FontAttributes" Value="Bold" /></Style>
+        <Style TargetType="Entry"><Setter Property="TextColor" Value="{StaticResource TextPrimary}" /><Setter Property="PlaceholderColor" Value="{StaticResource TextSecondary}" /><Setter Property="BackgroundColor" Value="{StaticResource SurfaceRaised}" /></Style>
+    </Application.Resources>
+</Application>

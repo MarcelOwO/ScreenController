@@ -218,6 +218,9 @@ void L2CapReceiver::CheckClient() {
   (void) ba2str(&raddr.l2_bdaddr, addrstr.data());
   const std::string controller =
       std::format("{}/{}", addrstr.data(), static_cast<unsigned int>(raddr.l2_bdaddr_type));
+  if (!authorized_controller_) {
+    LoadAuthorizedController();
+  }
   if (authorized_controller_ && *authorized_controller_ != controller) {
     logger_.LogFmt(LogLevel::WARN, "Rejected non-commissioned controller {}", controller);
     (void) close(kFd);

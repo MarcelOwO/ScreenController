@@ -25,7 +25,8 @@ DbusManager::DbusManager(ILogger& logger) try
       agent_(logger_, connection_, agent_path_),
       adapter_(logger_, adapter_proxy_),
       advertising_manager_(logger_, adapter_proxy_),
-      advertisement_(logger_, connection_, advertisement_path_) {
+      advertisement_(logger_, connection_, advertisement_path_),
+      gatt_application_(logger_, connection_, adapter_proxy_) {
   logger_.LogInfo("Creating DBusManager");
 
   if (!agent_manager_.RegisterAgent(agent_path_, "NoInputNoOutput")) {
@@ -40,6 +41,9 @@ DbusManager::DbusManager(ILogger& logger) try
   SetupName();
 
   connection_->enterEventLoopAsync();
+  if (!gatt_application_.Register()) {
+    throw std::runtime_error("Failed to register the BLE GATT application");
+  }
 } catch (std::exception& e) {
   auto format = std::format("Failed to create DBusManager: {}", e.what());
 
@@ -49,10 +53,15 @@ DbusManager::DbusManager(ILogger& logger) try
 }
 
 DbusManager::~DbusManager() {
-  if (advertisement_registered_) {
+  gatt_application_.Unregister();
+  if (advertising_manager_.IsRegisteredOrPending()) {
     (void) advertising_manager_.UnregisterAdvertisement(advertisement_path_);
   }
   connection_->leaveEventLoop();
+}
+
+GattApplication& DbusManager::Gatt() noexcept {
+  return gatt_application_;
 }
 
 void DbusManager::SetupName() {
@@ -78,15 +87,11 @@ void DbusManager::SetupName() {
 }
 
 void DbusManager::MakeConnectable(const bool allow_pairing) {
-  if (!advertisement_registered_) {
-    if (!advertising_manager_.RegisterAdvertisement(advertisement_path_, {})) {
-      logger_.LogError("Failed to register the BLE advertisement");
-    } else {
-      advertisement_registered_ = true;
-    }
-  }
-  if (!adapter_.set_discoverable(allow_pairing)) {
-    logger_.LogError("Failed to set discoverable");
+  connectable_requested_ = true;
+  // UUID-filtered LE scans do not require general adapter discoverability. Keeping it disabled
+  // also avoids a controller-level conflict between classic discovery and custom LE advertising.
+  if (!adapter_.set_discoverable(false)) {
+    logger_.LogError("Failed to disable general discoverability");
   }
   if (!adapter_.set_pairable(allow_pairing)) {
     logger_.LogError("Failed to set pairable");
@@ -94,11 +99,10 @@ void DbusManager::MakeConnectable(const bool allow_pairing) {
 }
 
 void DbusManager::DisableNewConnection() {
-  if (advertisement_registered_) {
+  connectable_requested_ = false;
+  if (advertising_manager_.IsRegisteredOrPending()) {
     if (!advertising_manager_.UnregisterAdvertisement(advertisement_path_)) {
       logger_.LogError("Failed to unregister the BLE advertisement");
-    } else {
-      advertisement_registered_ = false;
     }
   }
   if (!adapter_.set_discoverable(false)) {
@@ -109,8 +113,23 @@ void DbusManager::DisableNewConnection() {
   }
 }
 
+void DbusManager::Poll() {
+  if (!connectable_requested_ || !gatt_application_.IsRegistered() ||
+      advertising_manager_.IsRegisteredOrPending() ||
+      std::chrono::steady_clock::now() < next_advertisement_attempt_) {
+    return;
+  }
+  next_advertisement_attempt_ = std::chrono::steady_clock::now() + std::chrono::seconds{2};
+  if (!advertising_manager_.RegisterAdvertisement(advertisement_path_, {})) {
+    logger_.LogError("Failed to register the BLE advertisement");
+  }
+}
+
 void DbusManager::SetupAdapter() {
-  if (!adapter_.get_powered()) {
+  const auto powered = adapter_.get_powered();
+  if (!powered) {
+    logger_.LogError("Failed to read Bluetooth adapter power state");
+  } else if (!*powered) {
     if (!adapter_.set_powered(true)) {
       logger_.LogError("Failed to set powered");
     }

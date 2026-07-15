@@ -16,11 +16,48 @@ BluetoothLeAdvertisingManager::~BluetoothLeAdvertisingManager() = default;
 
 std::expected<void, std::error_code> BluetoothLeAdvertisingManager::RegisterAdvertisement(
     const sdbus::ObjectPath& advertisement,
-    const std::unordered_map<std::string, sdbus::Variant>& options) const {
+    const std::unordered_map<std::string, sdbus::Variant>& options) {
+  if (IsRegisteredOrPending()) {
+    return {};
+  }
   try {
-    adapter_proxy_->callMethod(sdbus::MethodName("RegisterAdvertisement"))
+    registration_pending_.store(true);
+    registration_slot_ =
+        adapter_proxy_->callMethodAsync(sdbus::MethodName("RegisterAdvertisement"))
+            .onInterface(adv_manager_interface_name)
+            .withArguments(advertisement, options)
+            .uponReplyInvoke(
+                [this](const std::optional<sdbus::Error> error) {
+                  registration_pending_.store(false);
+                  if (error) {
+                    logger_.LogFmt(LogLevel::ERROR, "Could not register BLE advertisement: {}",
+                                   error->getMessage());
+                    return;
+                  }
+                  registered_.store(true);
+                  logger_.LogInfo("Registered BLE advertisement");
+                },
+                sdbus::return_slot);
+    return {};
+  } catch (const sdbus::Error& e) {
+    registration_pending_.store(false);
+    logger_.LogError(e.getMessage());
+    return std::unexpected(std::make_error_code(std::errc::operation_not_permitted));
+  }
+}
+
+std::expected<void, std::error_code> BluetoothLeAdvertisingManager::UnregisterAdvertisement(
+    const sdbus::ObjectPath& advertisement) {
+  registration_slot_.reset();
+  registration_pending_.store(false);
+  if (!registered_.load()) {
+    return {};
+  }
+  try {
+    adapter_proxy_->callMethod(sdbus::MethodName("UnregisterAdvertisement"))
         .onInterface(adv_manager_interface_name)
-        .withArguments(advertisement, options);
+        .withArguments(advertisement);
+    registered_.store(false);
     return {};
   } catch (const sdbus::Error& e) {
     logger_.LogError(e.getMessage());
@@ -28,17 +65,8 @@ std::expected<void, std::error_code> BluetoothLeAdvertisingManager::RegisterAdve
   }
 }
 
-std::expected<void, std::error_code> BluetoothLeAdvertisingManager::UnregisterAdvertisement(
-    const sdbus::ObjectPath& advertisement) const {
-  try {
-    adapter_proxy_->callMethod(sdbus::MethodName("UnregisterAdvertisement"))
-        .onInterface(adv_manager_interface_name)
-        .withArguments(advertisement);
-    return {};
-  } catch (const sdbus::Error& e) {
-    logger_.LogError(e.getMessage());
-    return std::unexpected(std::make_error_code(std::errc::operation_not_permitted));
-  }
+bool BluetoothLeAdvertisingManager::IsRegisteredOrPending() const noexcept {
+  return registered_.load() || registration_pending_.load();
 }
 
 std::optional<uint8_t> BluetoothLeAdvertisingManager::GetActiveInstances() const {

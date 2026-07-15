@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ScreenController.App/ScreenController.App.csproj" />
+    <Project Path="src/ScreenController.Protocol/ScreenController.Protocol.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ScreenController.Protocol.Tests/ScreenController.Protocol.Tests.csproj" />
+  </Folder>
+</Solution>

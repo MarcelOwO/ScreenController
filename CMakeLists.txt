@@ -39,7 +39,7 @@ set(CPACK_PACKAGE_CONTACT "MarcelOwO")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
     "Secure Bluetooth-controlled fullscreen display for Raspberry Pi")
 set(CPACK_PACKAGE_DESCRIPTION
-    "ScreenController turns a Raspberry Pi into a dedicated fullscreen media display. It accepts one commissioned phone controller over encrypted Bluetooth LE L2CAP and supports authenticated media upload and display control.")
+    "ScreenController turns a Raspberry Pi into a dedicated fullscreen media display. It accepts one commissioned controller over encrypted Bluetooth LE L2CAP or GATT and supports authenticated media upload and display control.")
 set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/MarcelOwO/ScreenController")
 
 set(CPACK_DEBIAN_PACKAGE_SECTION "utils")

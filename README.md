@@ -1,20 +1,23 @@
 # ScreenController
 
 ScreenController is a C++23 fullscreen Linux application for a dedicated Raspberry Pi display. A
-phone controller connects over encrypted Bluetooth LE L2CAP, authenticates with a per-device key,
-uploads images/video, chooses content, rotates it, and controls rendered brightness/output.
+controller app connects over encrypted Bluetooth, authenticates with a per-device key, uploads
+images/video, chooses content, rotates it, and controls rendered brightness/output.
 
-The phone application is not part of this repository yet. Its wire contract is documented in
-[BLUETOOTH_PROTOCOL.md](BLUETOOTH_PROTOCOL.md).
+The cross-platform .NET MAUI controller is in [`mobile`](mobile/README.md). Android and Mac Catalyst
+use native LE L2CAP for maximum throughput. Windows uses a native BLE GATT byte-stream tunnel because
+the public Windows application API does not expose LE L2CAP CoC. Both transports use the same
+authenticated wire contract in [BLUETOOTH_PROTOCOL.md](BLUETOOTH_PROTOCOL.md).
 
 ## Current capabilities
 
 - Fullscreen OpenGL display for JPEG, PNG, BMP, GIF, WebP, MP4, and WebM
-- BLE advertisement and one-client LE L2CAP transport
+- BLE advertisement, high-throughput LE L2CAP, and Windows-compatible GATT transport
 - BlueZ link encryption plus HMAC-SHA256 application authentication
 - zstd-compressed uploads with CRC, size limits, filename validation, and atomic writes
 - File listing, selection, deletion, rotation, status, brightness, and logical screen on/off
 - installable Debian package, systemd service, and Raspberry Pi provisioning script
+- .NET MAUI controller for Android, macOS, and Windows with secure enrollment storage
 
 `ScreenOff` and brightness currently change rendered output; they do not power down arbitrary HDMI
 or DSI panels. Physical backlight/DPMS support needs a backend specific to the attached display.
@@ -68,7 +71,7 @@ Copy the resulting `screencontroller_2.0.0_arm64.deb` to a new Pi and install it
 ```bash
 sudo apt install ./screencontroller_2.0.0_arm64.deb
 sudo systemctl status owo-screen-controller --no-pager -l
-sudo screencontroller-show-key
+sudo screencontroller-show-key --uri
 ```
 
 Installation generates a unique root-readable key, enables the service, creates private state
@@ -85,7 +88,7 @@ package, installs it through APT, and prints its newly generated enrollment key:
 ./scripts/provision-pi.sh owo@10.0.0.163
 ```
 
-It prints the device key once for enrollment into the future phone app. Treat it like a password.
+It prints the private enrollment URI for the MAUI controller. Treat it like a password.
 The Pi must be reachable over SSH and the user must have passwordless or interactive `sudo` access.
 
 Useful diagnostics:
@@ -100,10 +103,11 @@ at `/var/lib/screencontroller/controller.id`, reads assets from
 `/usr/share/screencontroller/assets`, and reads its secret from
 `/etc/screencontroller/screencontroller.env`.
 
-The first phone that completes HMAC authentication is permanently commissioned. After that, the Pi
-remains advertisable for that bonded phone but is no longer discoverable or pairable, and L2CAP
-connections from other Bluetooth addresses are rejected before the authentication challenge. To
-replace the controller deliberately:
+The first controller that completes HMAC authentication is permanently commissioned. General
+discoverability remains off; before commissioning the UUID advertisement is pairable. After that,
+the Pi remains advertisable for that bonded controller but is no longer pairable,
+and connections from other Bluetooth identities are rejected before the authentication challenge.
+To replace the controller deliberately:
 
 ```bash
 sudo screencontroller-reset-controller
@@ -126,10 +130,10 @@ ssh owo@10.0.0.163 'systemctl --user restart owo-screen-controller'
 ## Security notes
 
 - Never commit or document a real provisioning key.
-- Use a unique key per Pi and store phone-side keys in Android Keystore/iOS Keychain.
+- Use a unique key per Pi. The MAUI app stores it through the operating system secure-storage API.
 - Headless Bluetooth Just Works pairing encrypts the radio link but does not prevent an active MITM;
-  the HMAC key prevents unauthenticated command access. A screen-displayed enrollment QR/code is the
-  recommended next security feature.
+  the independent HMAC key prevents unauthenticated command access. Protect the enrollment URI like
+  a password; deployments may render the same URI as a QR code outside this application.
 - Bluetooth possession is enforced by the secret plus the commissioned controller identity. No
   protocol can prove an unmodified official app is running on a rooted phone that has extracted the
   secret.

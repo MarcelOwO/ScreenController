@@ -12,4 +12,21 @@ if [ ! -r "$environment" ]; then
   exit 1
 fi
 
-sed -n 's/^SCREEN_CONTROLLER_PSK_HEX=//p' "$environment"
+key=$(sed -n 's/^SCREEN_CONTROLLER_PSK_HEX=//p' "$environment")
+if [ -z "$key" ]; then
+  echo "ScreenController has no valid provisioning key." >&2
+  exit 1
+fi
+
+case "${1:---uri}" in
+  --uri)
+    printf 'screencontroller://enroll?v=2&name=ScreenController&key=%s&psm=129\n' "$key"
+    ;;
+  --key)
+    printf '%s\n' "$key"
+    ;;
+  *)
+    echo "Usage: screencontroller-show-key [--uri|--key]" >&2
+    exit 2
+    ;;
+esac

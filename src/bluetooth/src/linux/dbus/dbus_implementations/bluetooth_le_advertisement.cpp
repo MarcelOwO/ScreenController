@@ -18,9 +18,6 @@ BluetoothLEAdvertisement::BluetoothLEAdvertisement(
           sdbus::registerMethod("Release").withNoReply().implementedAs(
               [this] { logger_.LogInfo("Advertisement is released"); }),
           sdbus::registerProperty("Type").withGetter([] { return std::string("peripheral"); }),
-          sdbus::registerProperty("LocalName").withGetter([] {
-            return std::string("ScreenController");
-          }),
           sdbus::registerProperty("ServiceUUIDs").withGetter([=] {
             return std::vector<std::string>{std::string("8e7f1a10-6e40-4d5f-8d7c-9b5a9f88a001")};
           }))

@@ -4,6 +4,9 @@ build/
 build-*/
 /dist/*.deb
 .cache/
+/mobile/**/bin/
+/mobile/**/obj/
+/mobile/.vs/
 
 CMakeLists.txt.user
 CMakeCache.txt
