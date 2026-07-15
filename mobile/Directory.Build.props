@@ -5,5 +5,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AnalysisLevel>latest</AnalysisLevel>
+
+    <!-- Homebrew does not register its JDK with /usr/libexec/java_home. Keep a fresh checkout
+         buildable without machine-specific command-line properties on both Apple architectures. -->
+    <JavaSdkDirectory Condition="$([MSBuild]::IsOSPlatform('osx')) And '$(JavaSdkDirectory)' == '' And Exists('/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home')">/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home</JavaSdkDirectory>
+    <JavaSdkDirectory Condition="$([MSBuild]::IsOSPlatform('osx')) And '$(JavaSdkDirectory)' == '' And Exists('/usr/local/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home')">/usr/local/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home</JavaSdkDirectory>
+    <AndroidSdkDirectory Condition="$([MSBuild]::IsOSPlatform('osx')) And '$(AndroidSdkDirectory)' == '' And Exists('$(HOME)/Library/Android/sdk')">$(HOME)/Library/Android/sdk</AndroidSdkDirectory>
   </PropertyGroup>
 </Project>

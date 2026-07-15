@@ -25,6 +25,10 @@ advertises one service UUID and accepts both transport forms.
 - Xcode on macOS for Mac Catalyst
 - Visual Studio 2026/.NET MAUI tooling on Windows for Windows packaging
 
+On macOS the build automatically detects Homebrew `openjdk@21` on Apple Silicon or Intel and the
+standard `~/Library/Android/sdk` location. A nonstandard installation can still be selected with
+`-p:JavaSdkDirectory=/path/to/jdk -p:AndroidSdkDirectory=/path/to/android-sdk`.
+
 Restore and test the shared protocol:
 
 ```bash
