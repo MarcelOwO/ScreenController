@@ -28,6 +28,8 @@ public:
   void UpdateRatio(int width, int height) const override;
 
   void Rotate() const override;
+  void SetBrightness(float brightness) override;
+  void SetDisplayEnabled(bool enabled) override;
 
   void Render() const override;
 
@@ -43,6 +45,8 @@ private:
   int width_;
 
   mutable float rotation_angle_{0.0F};
+  float brightness_{1.0F};
+  bool display_enabled_{true};
 
   GLuint texture_;
   GLuint vao_;

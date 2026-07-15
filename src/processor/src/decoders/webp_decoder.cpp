@@ -55,7 +55,12 @@ bool WebpDecoder::Init() {
 
   const int width = config.input.width;
   const int height = config.input.height;
-  const size_t output_size = static_cast<size_t>(width * height * 3);
+  constexpr int kMaxDimension = 16384;
+  if (width <= 0 || height <= 0 || width > kMaxDimension || height > kMaxDimension) {
+    logger_.LogError("WebP dimensions are invalid or too large");
+    return false;
+  }
+  const size_t output_size = static_cast<size_t>(width) * static_cast<size_t>(height) * 3U;
 
   config.output.colorspace = MODE_RGB;
 
@@ -83,6 +88,10 @@ bool WebpDecoder::HasData() {
 }
 
 std::optional<std::unique_ptr<FrameData>> WebpDecoder::GetNextFrame() {
+  if (!is_loaded_) {
+    return std::nullopt;
+  }
+  is_loaded_ = false;
   return std::make_unique<FrameData>(frame_data_);
 }
 

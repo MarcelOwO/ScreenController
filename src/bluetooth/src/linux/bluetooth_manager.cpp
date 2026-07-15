@@ -21,9 +21,9 @@ BluetoothManager::BluetoothManager(ILogger& logger, const AppSettings& settings,
       connection_state_(ConnectionState::kStarting) {
   // Register socket lifecycle callbacks.
   l2_cap_receiver_.OnConnected([this] {
-    logger_.LogInfo("Phone connected — disabling discoverability");
-    connection_state_ = ConnectionState::kConnecting;
-    events_.Publish(ConnectionChangedEvent{.connected = true});
+    logger_.LogInfo("Phone connected — awaiting authentication");
+    connection_state_ = ConnectionState::kAuthenticating;
+    events_.Publish(ConnectionChangedEvent{true});
   });
 
   l2_cap_receiver_.OnAuthenticated([this] {
@@ -33,28 +33,46 @@ BluetoothManager::BluetoothManager(ILogger& logger, const AppSettings& settings,
   });
 
   l2_cap_receiver_.OnDisconnected([this] {
-    logger_.LogInfo("Phone disconnected — restoring discoverability");
+    logger_.LogInfo("Phone disconnected — restoring controller advertisement");
     connection_state_ = ConnectionState::kStarting;
-    dbus_manager_.MakeConnectable();
-    events_.Publish(ConnectionChangedEvent{.connected = false});
+    dbus_manager_.MakeConnectable(!l2_cap_receiver_.IsCommissioned());
+    events_.Publish(ConnectionChangedEvent{false});
   });
 
   l2_cap_receiver_.OnPacket([this](const Packet& raw) {
-    if (raw.has_payload_) {
-      BluetoothPacket packet{};
-      packet.name = raw.name_;
-      const Unpacker unpacker(logger_);
-      unpacker.Decompress(raw.payload_, packet);
-      events_.Publish(FileReceivedEvent{.filename = packet.name, .data = packet.data});
-    } else {
-      events_.Publish(CommandReceivedEvent{.command = raw.name_});
+    if (raw.type_ == socket::kTypeCommand && !raw.has_payload_) {
+      events_.Publish(CommandReceivedEvent{raw.name_});
+      return;
     }
+
+    if (raw.type_ != socket::kTypeFileTransfer || !raw.has_payload_) {
+      logger_.LogFmt(LogLevel::WARN, "Unsupported packet type: {}", raw.type_);
+      l2_cap_receiver_.SendError(0x04, "unsupported packet type");
+      return;
+    }
+
+    constexpr std::size_t kMaxDecompressedFileSize = 128U * 1024U * 1024U;
+    const Unpacker unpacker;
+    auto data = unpacker.Decompress(raw.payload_, kMaxDecompressedFileSize);
+    if (!data) {
+      logger_.LogFmt(LogLevel::ERROR, "Rejected file transfer: {}", data.error());
+      l2_cap_receiver_.SendError(0x05, data.error());
+      return;
+    }
+    events_.Publish(FileReceivedEvent{raw.name_, std::move(*data)});
   });
 
-  // Start discoverable so the phone can find the device.
-  dbus_manager_.MakeConnectable();
+  l2_cap_receiver_.OnError([this](const int code, const std::string_view message) {
+    logger_.LogFmt(LogLevel::ERROR, "Bluetooth socket error {}: {}", code, message);
+  });
 
-  logger_.LogInfo("BluetoothManager ready — device is discoverable");
+  // An uncommissioned device allows pairing. After the first authenticated controller claims the
+  // device, it advertises for that bonded controller but never becomes pairable again.
+  dbus_manager_.MakeConnectable(!l2_cap_receiver_.IsCommissioned());
+
+  logger_.LogInfo(l2_cap_receiver_.IsCommissioned()
+                      ? "BluetoothManager ready — device is locked to its controller"
+                      : "BluetoothManager ready — device is available for commissioning");
 }
 
 std::expected<std::unique_ptr<BluetoothManager>, std::error_code> BluetoothManager::Create(

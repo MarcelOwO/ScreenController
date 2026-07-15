@@ -27,7 +27,8 @@ public:
       const sdbus::ObjectPath& advertisement,
       const std::unordered_map<std::string, sdbus::Variant>& options) const;
 
-  [[nodiscard]] std::expected<void, std::error_code> UnregisterAdvertisement() const;
+  [[nodiscard]] std::expected<void, std::error_code> UnregisterAdvertisement(
+      const sdbus::ObjectPath& advertisement) const;
   [[nodiscard]] std::optional<uint8_t> GetActiveInstances() const;
   [[nodiscard]] std::optional<uint8_t> GetSupportedInstances() const;
   [[nodiscard]] std::optional<std::vector<std::string>> GetSupportedIncludes() const;

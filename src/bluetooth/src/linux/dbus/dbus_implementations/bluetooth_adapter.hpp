@@ -7,6 +7,7 @@
 #include <logging/logger.hpp>
 
 #include <memory>
+#include <string>
 #include <string_view>
 
 #include "helper_templates.hpp"
@@ -47,7 +48,7 @@ public:
   [[nodiscard]] Result<std::string_view> get_address() const;
 
   [[nodiscard]] Result<void> set_alias(std::string_view alias) const;
-  [[nodiscard]] Result<std::string_view> get_alias() const;
+  [[nodiscard]] Result<std::string> get_alias() const;
 
   [[nodiscard]] Result<bool> get_powered() const;
   [[nodiscard]] Result<void> set_powered(bool powered);
@@ -59,7 +60,9 @@ public:
   [[nodiscard]] Result<void> set_pairable(bool pairable);
 
   [[nodiscard]] Result<void> set_pairable_timeout(uint32_t timeout);
+  [[nodiscard]] Result<uint32_t> get_pairable_timeout() const;
   [[nodiscard]] Result<void> set_discoverable_timeout(uint32_t timeout);
+  [[nodiscard]] Result<uint32_t> get_discoverable_timeout() const;
 
   [[nodiscard]] Result<bool> get_discovering() const;
 

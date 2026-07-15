@@ -30,10 +30,19 @@ std::expected<Shader, std::error_code> Shader::Create(ILogger& logger,
 
   std::array<char, PATH_MAX> result{};
 
-  auto project_dir = std::filesystem::current_path();
-
-  std::filesystem::path v_path(project_dir / vertex_path);
-  std::filesystem::path f_path(project_dir / fragment_path);
+  std::filesystem::path v_path;
+  std::filesystem::path f_path;
+  for (const auto& base : {std::filesystem::path{"res"}, std::filesystem::path{"assets"},
+                           std::filesystem::path{"/usr/share/screencontroller/assets"},
+                           std::filesystem::path{"/usr/local/share/screencontroller/assets"}}) {
+    const auto vertex_candidate = base / vertex_path;
+    const auto fragment_candidate = base / fragment_path;
+    if (std::filesystem::exists(vertex_candidate) && std::filesystem::exists(fragment_candidate)) {
+      v_path = vertex_candidate;
+      f_path = fragment_candidate;
+      break;
+    }
+  }
 
   if (!std::filesystem::exists(v_path)) {
     logger.LogError("Vertex shader path does not exist: " + v_path.string());

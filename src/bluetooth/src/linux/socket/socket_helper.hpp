@@ -5,7 +5,9 @@
 #pragma once
 
 #include <algorithm>
+#include <concepts>
 #include <cstdint>
+#include <limits>
 #include <numeric>
 #include <span>
 #include <string_view>
@@ -20,12 +22,17 @@ void Push16(std::vector<std::byte>& vec, uint16_t value);
 void Push32(std::vector<std::byte>& vec, uint32_t value);
 
 template <std::integral T>
-T FromSpan(std::span<const uint8_t, sizeof(T)> data) {
-  return std::bit_cast<T>(*reinterpret_cast<const std::array<uint8_t, sizeof(T)>*>(data.data()));
+[[nodiscard]] constexpr T FromSpan(std::span<const uint8_t, sizeof(T)> data) noexcept {
+  using Unsigned = std::make_unsigned_t<T>;
+  Unsigned value{};
+  for (const uint8_t byte : data) {
+    value = static_cast<Unsigned>((value << std::numeric_limits<uint8_t>::digits) | byte);
+  }
+  return static_cast<T>(value);
 }
 
 template <std::integral T>
-T FromVector(const std::vector<uint8_t>& data, size_t offset) {
+[[nodiscard]] T FromVector(const std::vector<uint8_t>& data, size_t offset) {
   auto part = std::span<const uint8_t>(data).subspan(offset).first<sizeof(T)>();
   return FromSpan<T>(part);
 }

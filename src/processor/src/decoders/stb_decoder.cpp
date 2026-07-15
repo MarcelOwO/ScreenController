@@ -4,6 +4,7 @@
 
 #include "stb_decoder.hpp"
 
+#include <limits>
 #include <optional>
 #include <vector>
 
@@ -25,7 +26,6 @@ bool StbDecoder::HasData() {
 
 bool StbDecoder::Init() {
   frame_data_ = {};
-  frame_data_.data.resize(1920 * 1080 * 3);
 
   auto* raw_data =
       stbi_load(path_.c_str(), &frame_data_.width, &frame_data_.height, &frame_data_.channels, 3);
@@ -35,23 +35,27 @@ bool StbDecoder::Init() {
     return false;
   }
 
-  const auto* result =
-      stbir_resize_uint8_srgb(raw_data, frame_data_.width, frame_data_.height, 0,
-                               frame_data_.data.data(), 1920, 1080, 0, STBIR_RGB);
-  stbi_image_free(raw_data);
-
-  if (result == nullptr) {
-    logger_.LogError("Failed to resize image");
+  constexpr int kMaxDimension = 16384;
+  if (frame_data_.width <= 0 || frame_data_.height <= 0 || frame_data_.width > kMaxDimension ||
+      frame_data_.height > kMaxDimension) {
+    stbi_image_free(raw_data);
+    logger_.LogError("Image dimensions are invalid or too large");
     return false;
   }
-
-  frame_data_.width = 1920;
-  frame_data_.height = 1080;
+  const std::size_t size = static_cast<std::size_t>(frame_data_.width) *
+                           static_cast<std::size_t>(frame_data_.height) * 3U;
+  frame_data_.data.assign(raw_data, raw_data + size);
+  stbi_image_free(raw_data);
+  frame_data_.channels = 3;
   is_loaded_ = true;
   return true;
 }
 
 std::optional<std::unique_ptr<FrameData>> StbDecoder::GetNextFrame() {
+  if (!is_loaded_) {
+    return std::nullopt;
+  }
+  is_loaded_ = false;
   return std::make_unique<FrameData>(frame_data_);
 }
 

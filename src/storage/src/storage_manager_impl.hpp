@@ -31,7 +31,8 @@ public:
   [[nodiscard]] std::optional<std::vector<std::byte>> LoadFile(
       std::string_view name) const override;
 
-  [[nodiscard]] bool SaveFile(std::string_view name, std::span<std::byte> data) const override;
+  [[nodiscard]] bool SaveFile(std::string_view name,
+                              std::span<const std::byte> data) const override;
   [[nodiscard]] bool SaveFile(std::string_view name,
                               const std::vector<std::byte>& data) const override;
   [[nodiscard]] bool DeleteFile(std::string_view path) const override;
@@ -48,6 +49,7 @@ private:
       const std::filesystem::path& path) const;
   [[nodiscard]] bool WriteFile(const std::filesystem::path& path,
                                std::span<const std::byte> data) const;
+  [[nodiscard]] bool IsValidFilename(std::string_view name) const;
 
   ILogger& logger_;
   std::filesystem::path asset_path_;

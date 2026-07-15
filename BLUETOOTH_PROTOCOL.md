@@ -1,193 +1,212 @@
-# ScreenController Bluetooth Protocol
+# ScreenController Bluetooth Protocol v2
 
-Reference for the phone app (BackpackControllerApp) to implement the Bluetooth client.
+This is the wire-level contract for the future phone controller. Version 2 is intentionally
+incompatible with the earlier fixed-key/XOR draft.
 
----
+## Security model
 
-## Transport
+The protocol uses two layers:
+
+1. The L2CAP socket requests `BT_SECURITY_MEDIUM`, so BlueZ requires an encrypted Bluetooth LE
+   link before application traffic is accepted. Headless `NoInputNoOutput` pairing uses LE Secure
+   Connections where supported, but its Just Works association does **not** provide MITM protection.
+2. The application performs an HMAC-SHA256 challenge using a random, device-specific 256-bit key.
+   Clients without that key are disconnected after five seconds and cannot issue commands.
+
+The server no longer contains a universal key. Provision each Pi with:
+
+```text
+SCREEN_CONTROLLER_PSK_HEX=<64 lowercase or uppercase hex characters>
+```
+
+The systemd unit reads this from `/etc/screencontroller/screencontroller.env`, which must be owned
+by root and mode `0600`. `scripts/provision-pi.sh` generates it. Import the resulting key into the
+phone app through a protected enrollment flow (for example, a QR code shown or supplied with that
+specific Pi). Do not ship one shared key in every copy of the phone app.
+
+This design authorizes possession of the per-device secret; Bluetooth cannot prove which app binary
+is running. A compromised/rooted phone can disclose its key. For deployments exposed to hostile
+nearby attackers, add a screen-displayed enrollment code or QR flow before production.
+
+## Discovery and transport
 
 | Property | Value |
 |---|---|
-| Transport | Bluetooth LE (BLE / BT 5.x) |
-| Protocol | L2CAP Connection-Oriented Channel (CoC), `SOCK_SEQPACKET` |
-| PSM | `0x0081` |
-| MTU | Negotiated at connect; device requests up to 65535 bytes |
-| PHY | Prefers LE 2M (set via HCI at startup) |
-| Max payload | 64 MB |
+| Role | Pi = BLE Peripheral, phone = BLE Central |
+| Advertisement name | `ScreenController` |
+| Advertisement service UUID | `8e7f1a10-6e40-4d5f-8d7c-9b5a9f88a001` |
+| Transport | LE L2CAP Connection-Oriented Channel, `SOCK_SEQPACKET` |
+| LE PSM | `0x0081` |
+| Byte order | Network order (big-endian) |
+| Compressed packet limit | 64 MiB |
+| Decompressed file limit | 128 MiB |
+| Preferred PHY | LE 2M when the controller and adapter support it |
 
-The phone app acts as the **BLE Central** (initiates connection).  
-The device acts as the **BLE Peripheral** (listens, accepts).
+Before commissioning, the advertisement is active and BlueZ is discoverable/pairable. The first
+phone that successfully completes HMAC authentication is atomically recorded as the commissioned
+controller using its Bluetooth address and address type. The advertisement and BlueZ
+discoverable/pairable flags are disabled while it is connected.
 
----
+After that phone disconnects, the advertisement is restored so the bonded controller can reconnect,
+but discoverable and pairable remain disabled. Connections from any different Bluetooth identity
+are closed before an authentication challenge is sent. Replacing a phone is an explicit local
+administrative action:
 
-## Discoverability
-
-- The device is **discoverable and pairable** while no phone is connected.
-- After a successful authentication handshake the device becomes **non-discoverable and non-pairable**, blocking all other connection attempts.
-- On disconnect the device reverts to discoverable mode automatically.
-
----
-
-## Packet Format
-
-All packets — in both directions — share this binary layout (big-endian integers):
-
+```bash
+sudo screencontroller-reset-controller
 ```
+
+The phone should use a stable bonded LE identity. If its operating system loses the bond or changes
+the presented identity, reset commissioning on the Pi and enroll it again.
+
+## Packet framing
+
+Every packet starts with:
+
+```text
 Offset  Size  Field
-------  ----  -----
-0       2     Magic          = 0xBEEF
-2       1     Type           (see type table below)
-3       4     NameLen        (uint32, number of bytes that follow)
-7       N     Name           (UTF-8 string, not null-terminated)
-
-— For types with payload (type >= 0x80) —
-7+N     4     PayloadLen     (uint32)
-11+N    4     CRC32          (IEEE 802.3 CRC of the raw payload bytes)
-15+N    P     Payload        (PayloadLen bytes)
+0       2     Magic = 0xBEEF
+2       1     Type
+3       4     NameLen (uint32)
+7       N     UTF-8 Name (not NUL-terminated; maximum 256 bytes)
 ```
 
-Types `< 0x80` carry **only** the Name field (no payload block).  
-Types `>= 0x80` always carry a payload block (even if `PayloadLen == 0`).
+Types below `0x80` end after `Name`. Types `0x80` and above always append the following block,
+including when the payload is empty:
 
----
-
-## Packet Types
-
-### Phone → Device
-
-| Type | Constant | Name field | Payload |
-|------|----------|-----------|---------|
-| `0x01` | `kTypeCommand` | Command string (see Commands) | — |
-| `0x80` | `kTypeAuthResponse` | `"auth"` | 32-byte PSK response (see Auth) |
-| `0x81` | `kTypeFileTransfer` | Filename (e.g. `"photo.jpg"`) | zstd-compressed file data |
-
-### Device → Phone
-
-| Type | Constant | Name field | Payload |
-|------|----------|-----------|---------|
-| `0xC0` | `kTypeChallenge` | `"challenge"` | 16-byte random nonce |
-| `0xC1` | `kTypeFileList` | `"files"` | Newline-separated filenames |
-| `0xC2` | `kTypeAck` | Ack tag string | — |
-| `0xCF` | `kTypeDeviceError` | `"error"` | UTF-8 error string `ERR:<code>:<message>` |
-
----
-
-## Authentication Handshake
-
-Authentication happens **once per L2CAP connection**, immediately after connect.  
-The phone has **5 seconds** to complete it or the connection is closed.
-
-```
-Phone                           Device
-  |                               |
-  |------- L2CAP connect -------->|
-  |                               |
-  |<-- 0xC0 "challenge" nonce ----|  (16 random bytes)
-  |                               |
-  |--- 0x80 "auth" response ----->|  (32-byte XOR response, see below)
-  |                               |
-  |          [if valid]           |
-  |<===== session open ==========>|
-  |                               |
-  |          [if invalid]         |
-  |<-- 0xCF "error" ERR:1:... ----|
-  |        [connection closed]    |
+```text
+7+N     4     PayloadLen (uint32)
+11+N    4     CRC32 of Payload
+15+N    P     Payload bytes
 ```
 
-### Computing the Auth Response
+CRC32 is the IEEE/zlib variant (polynomial `0xEDB88320`, initial value `0xFFFFFFFF`, final XOR
+`0xFFFFFFFF`). CRC detects transport/framing errors; it is not an authentication primitive.
 
-Both apps share the same **pre-shared key (PSK)**: 32 bytes.
+An L2CAP record may contain only part of a protocol packet. Both implementations must retain bytes
+until a complete packet is available and must also handle multiple complete packets in one read.
 
-```
-PSK (hex):
-4F 77 4F 42 61 63 6B 70  61 63 6B 43 6F 6E 74 72
-6F 6C 6C 65 72 32 30 32  35 4F 57 4F 21 4F 57 4F
+## Authentication
 
-PSK (ASCII): OwOBackpackController2025OWO!OWO
-```
+Immediately after accepting an encrypted L2CAP connection, the Pi sends:
 
-Given the 16-byte nonce from the device, compute:
+| Direction | Type | Name | Payload |
+|---|---:|---|---|
+| Pi → phone | `0xC0` | `auth-v2` | 32 cryptographically random bytes |
 
-```
-response[i] = PSK[i] XOR nonce[i % 16]    for i in 0..31
-```
+The phone calculates:
 
-Send this 32-byte `response` as the payload of an `0x80 / "auth"` packet.
-
-The CRC32 in the packet header covers the payload bytes (the response itself).
-
----
-
-## Commands (type 0x01)
-
-The `Name` field is the entire command string.
-
-| Command | Effect |
-|---------|--------|
-| `Rotate` | Rotate the displayed image by 90° |
-| `Select:<filename>` | Display the named file from device storage |
-| `Delete:<filename>` | Delete the named file from device storage |
-| `GetFiles` | Device replies with a `0xC1` file list packet |
-
----
-
-## File Transfer (type 0x81, phone → device)
-
-1. Set `Name` = filename including extension (e.g. `"holiday.mp4"`).
-2. Compress the file bytes with **zstd** (any compression level).
-3. Set `Payload` = compressed bytes.
-4. Compute CRC32 over the compressed bytes and set it in the header.
-5. Send the packet. The device decompresses, saves to `files/<filename>`, and the file becomes available for `Select:`.
-
-Supported file types: `.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`, `.mp4`, `.webm`, `.webp`
-
-For large files the packet may span multiple L2CAP PDUs; the device reassembles automatically. The phone must similarly reassemble incoming device packets.
-
----
-
-## File List Response (type 0xC1, device → phone)
-
-Payload is a UTF-8 string: filenames separated by `\n`, one trailing newline.
-
-```
-photo1.jpg\nphoto2.png\nvideo.mp4\n
+```text
+response = HMAC-SHA256(
+    key = the 32-byte device key,
+    message = ASCII("screen-controller/auth/v2") || nonce
+)
 ```
 
-Parse by splitting on `\n` and discarding empty tokens.
+It must reply within five seconds:
 
----
+| Direction | Type | Name | Payload |
+|---|---:|---|---|
+| phone → Pi | `0x80` | `auth-v2` | 32-byte HMAC response |
 
-## Error Packet (type 0xCF)
+The Pi compares the response in constant time. Any command, upload, malformed response, or timeout
+before successful authentication is rejected and the connection is closed.
 
-Payload is a UTF-8 string: `ERR:<code>:<message>`
+## Packet types
+
+### Phone → Pi
+
+| Type | Name field | Payload |
+|---:|---|---|
+| `0x01` | Command string | none |
+| `0x80` | `auth-v2` | HMAC response |
+| `0x81` | File name | One complete zstd frame |
+
+### Pi → phone
+
+| Type | Name field | Payload |
+|---:|---|---|
+| `0xC0` | `auth-v2` | Random challenge |
+| `0xC1` | `files` | Newline-separated UTF-8 file names |
+| `0xC2` | Operation name | Empty payload block |
+| `0xC3` | `status` | UTF-8 JSON status |
+| `0xCF` | `error` | UTF-8 `ERR:<code>:<message>` |
+
+## Commands
+
+Send commands as type `0x01`, with the entire command in `Name`.
+
+| Command | Result |
+|---|---|
+| `GetFiles` | Sends a `0xC1/files` response |
+| `GetStatus` | Sends a `0xC3/status` response |
+| `Select:<filename>` | Starts displaying the named uploaded file |
+| `Delete:<filename>` | Deletes the named uploaded file |
+| `Rotate` | Rotates the rendered content 90 degrees |
+| `SetBrightness:<0-100>` | Sets software-rendered brightness |
+| `ScreenOff` | Renders black without stopping playback or disconnecting |
+| `ScreenOn` | Restores rendered output |
+
+Successful state-changing commands return type `0xC2`; its `Name` is one of `Rotate`, `Select`,
+`Delete`, `SetBrightness`, `ScreenOff`, `ScreenOn`, or `Upload`.
+
+Brightness and screen-off are currently renderer controls. They work with every connected display
+but do not cut panel power. Hardware backlight/DPMS control should be added as a board/display-specific
+backend rather than assumed by the phone app.
+
+The status payload currently has this schema:
+
+```json
+{"brightness":100,"displayEnabled":true}
+```
+
+Unknown JSON properties added in later versions must be ignored by the phone.
+
+## File upload
+
+1. Validate the source extension.
+2. Compress the complete file as a zstd frame that includes its content size. Level 1 is recommended
+   for images/video because they are already compressed and Bluetooth throughput is the bottleneck.
+3. Send type `0x81`, the base filename in `Name`, and the zstd frame in `Payload`.
+4. Wait for `0xC2/Upload` before presenting the file as available.
+
+Allowed extensions are `.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`, `.webp`, `.mp4`, and `.webm`
+(case-insensitive). Names must be a single base name: no `/`, `\\`, `.`/`..`, or parent path. The Pi
+writes to a temporary file and atomically publishes it only after validation and decompression.
+
+For speed, negotiate the largest platform-supported L2CAP MTU, keep a send buffer of at least 1 MiB,
+avoid application-level delays between writes, and keep one connection open for a batch of uploads.
+
+## File list
+
+The `0xC1/files` payload contains sorted filenames separated by `\n`, with a trailing newline when
+the list is non-empty. Split on `\n` and discard empty entries.
+
+## Errors
 
 | Code | Meaning |
-|------|---------|
-| 1 | Auth failed / timeout |
-| 2 | Payload too large |
+|---:|---|
+| 1 | Authentication failed or timed out |
+| 2 | Packet/receive limit exceeded |
 | 3 | CRC mismatch |
+| 4 | Malformed, unsupported, or unknown command/packet |
+| 5 | Invalid zstd data or decompressed-size violation |
+| 6 | File save/delete failure |
+| 7 | File selection/decoding failure |
+| 8 | Invalid brightness value |
+| 9 | Authenticated controller could not be persisted |
 
----
+After framing or authentication errors, the phone must assume the socket can be closed and reconnect
+from discovery. Never retry an upload blindly unless no `Upload` acknowledgement was received and the
+file list confirms it is absent.
 
-## Recommended Connection Flow (phone app)
+## Recommended phone flow
 
-```
-1. Scan for BLE devices advertising with the device name / known service UUID.
-2. Connect via L2CAP CoC on PSM 0x0081.
-3. Immediately read the incoming 0xC0 challenge packet.
-4. Compute and send the 0x80 auth response within 5 seconds.
-5. Send 0x01 "GetFiles" to retrieve the current file list.
-6. Use the file list to populate the UI.
-7. Send commands or files as needed.
-8. On app background / disconnect: close the L2CAP socket (device becomes discoverable again).
-```
-
----
-
-## Notes for Implementers
-
-- The device runs as a systemd service (`owo-screen-controller`) started at boot.
-- All integers in packet headers are **big-endian**.
-- The CRC is IEEE 802.3 (same polynomial as Ethernet / zlib CRC32), initialised to `0xFFFFFFFF`, final XOR `0xFFFFFFFF`.
-- The zstd decompressor on the device accepts any valid zstd frame; no specific compression parameters are required.
-- Keep socket read buffers at least 1 MB on the phone side to handle large file list or future response packets.
+1. Load the enrolled device key from Android Keystore/iOS Keychain.
+2. Scan for the service UUID and connect/pair with the advertised Pi. Pairing is available only
+   before the first controller has been commissioned.
+3. Open LE L2CAP PSM `0x0081`.
+4. Read `0xC0/auth-v2`, calculate HMAC-SHA256, and send `0x80/auth-v2` within five seconds.
+5. Request `GetStatus` and `GetFiles`.
+6. Keep one socket and process acknowledgements/errors for every mutation.
+7. On background/disconnect, close the channel so the Pi advertises again.

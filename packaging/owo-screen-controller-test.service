@@ -1,0 +1,19 @@
+[Unit]
+Description=ScreenController Raspberry Pi test service
+After=graphical-session.target bluetooth.target
+
+[Service]
+Type=simple
+ExecStart=/home/owo/ScreenController-codex/build-pi/src/screen_controller
+WorkingDirectory=/home/owo/ScreenController-codex
+Environment=DISPLAY=:0
+Environment=SCREEN_CONTROLLER_ASSET_DIR=/home/owo/ScreenController-codex/res
+Environment=SCREEN_CONTROLLER_STATE_DIR=/home/owo/ScreenController-codex/runtime-files
+Environment=SCREEN_CONTROLLER_CONTROLLER_ID_PATH=/home/owo/.local/state/screencontroller/controller.id
+EnvironmentFile=/home/owo/.config/screencontroller/environment
+Restart=on-failure
+RestartSec=3
+UMask=0077
+
+[Install]
+WantedBy=default.target

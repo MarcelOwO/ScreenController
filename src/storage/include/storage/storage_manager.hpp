@@ -18,7 +18,8 @@ public:
       std::string_view name) const = 0;
   [[nodiscard]] virtual std::optional<std::vector<std::byte>> LoadFile(
       std::string_view name) const = 0;
-  [[nodiscard]] virtual bool SaveFile(std::string_view name, std::span<std::byte> data) const = 0;
+  [[nodiscard]] virtual bool SaveFile(std::string_view name,
+                                      std::span<const std::byte> data) const = 0;
   [[nodiscard]] virtual bool SaveFile(std::string_view name,
                                       const std::vector<std::byte>& data) const = 0;
   [[nodiscard]] virtual bool DeleteFile(std::string_view path) const = 0;

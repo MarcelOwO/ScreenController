@@ -1,212 +1,171 @@
-//
-// Created by marce on 5/6/2025.
-//
-
 #include "video_decoder.hpp"
 
-#include <format>
+#include <algorithm>
+#include <cmath>
+#include <memory>
 #include <vector>
 
 namespace screen_controller::processing {
 
 VideoDecoder::VideoDecoder(const std::string_view path, ILogger& logger)
-    : looped_(false),
-      frame_count_(0),
-      current_frame_(0),
-      frame_rate_(0.0),
-      video_stream_index_(-1),
-      logger_(logger),
-      frame_data_{.data = std::vector<uint8_t>(static_cast<size_t>(1920 * 1080 * 3), 0U),
-                  .width = 1920,
-                  .height = 1080,
-                  .channels = 3},
-      path_(path),
-      codec_context_(nullptr),
-      format_context_(nullptr),
-      frame_(nullptr),
-      packet_(nullptr),
-      sws_ctx_(nullptr) {
+    : logger_(logger), path_(path) {
   logger_.LogFmt(LogLevel::INFO, "Creating VideoDecoder for path: {}", path);
 }
 
-bool VideoDecoder::ScaleFrame() {
-  if (frame_->data[0] == nullptr) {
-    logger_.LogError("Frame data[0] is null");
-    return false;
-  }
-
-  auto* dst_data = frame_data_.data.data();
-  const int dst_linesize = 1920 * 3;
-
-  const int rows = sws_scale(sws_ctx_, frame_->data, frame_->linesize, 0,
-                             codec_context_->height, &dst_data, &dst_linesize);
-  if (rows <= 0) {
-    logger_.LogFmt(LogLevel::ERROR, "sws_scale failed: {}", rows);
-    return false;
-  }
-
-  frames_.push_back(frame_data_);
-  ++frame_count_;
-  av_frame_unref(frame_);
-  return true;
-}
-
 bool VideoDecoder::Init() {
-  if (avformat_open_input(&format_context_, path_.c_str(), nullptr, nullptr) < 0) {
-    logger_.LogFmt(LogLevel::ERROR, "Failed to open video file: {}", path_);
+  if (avformat_open_input(&format_context_, path_.c_str(), nullptr, nullptr) < 0 ||
+      avformat_find_stream_info(format_context_, nullptr) < 0) {
+    logger_.LogFmt(LogLevel::ERROR, "Failed to open video: {}", path_);
     return false;
   }
 
-  if (avformat_find_stream_info(format_context_, nullptr) < 0) {
-    logger_.LogFmt(LogLevel::ERROR, "Failed to find stream info for file: {}", path_);
-    return false;
-  }
-
-  for (unsigned int i = 0U; i < format_context_->nb_streams; ++i) {
-    if (format_context_->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
-      video_stream_index_ = static_cast<int>(i);
-      break;
-    }
-  }
-
-  if (video_stream_index_ == -1) {
+  video_stream_index_ =
+      av_find_best_stream(format_context_, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
+  if (video_stream_index_ < 0) {
     logger_.LogError("Could not find a video stream");
     return false;
   }
 
-  const auto codec_id = format_context_->streams[video_stream_index_]->codecpar->codec_id;
-  const AVCodec* codec = avcodec_find_decoder(codec_id);
-
+  const AVStream* stream = format_context_->streams[video_stream_index_];
+  const AVCodec* codec = avcodec_find_decoder(stream->codecpar->codec_id);
   if (codec == nullptr) {
-    logger_.LogFmt(LogLevel::ERROR, "Failed to find decoder for codec ID: {}", static_cast<int>(codec_id));
+    logger_.LogError("Could not find the video decoder");
     return false;
   }
 
   codec_context_ = avcodec_alloc_context3(codec);
-  if (codec_context_ == nullptr) {
-    logger_.LogError("Could not allocate codec context");
+  if (codec_context_ == nullptr ||
+      avcodec_parameters_to_context(codec_context_, stream->codecpar) < 0 ||
+      avcodec_open2(codec_context_, codec, nullptr) < 0) {
+    logger_.LogError("Could not initialize the video decoder");
     return false;
   }
 
-  if (avcodec_parameters_to_context(
-          codec_context_, format_context_->streams[video_stream_index_]->codecpar) < 0) {
-    logger_.LogError("Could not copy codec parameters to context");
-    return false;
-  }
-
-  frame_rate_ = av_q2d(format_context_->streams[video_stream_index_]->avg_frame_rate);
-
-  // Try hardware acceleration; fall back to software on failure.
-  const char* kDrmDevice = "/dev/dri/renderD128";
-  if (av_hwdevice_ctx_create(&codec_context_->hw_device_ctx, AV_HWDEVICE_TYPE_DRM,
-                             kDrmDevice, nullptr, 0) < 0) {
-    logger_.LogWarn("DRM hardware acceleration unavailable, using software decode");
-    codec_context_->hw_device_ctx = nullptr;
-  }
-
-  if (avcodec_open2(codec_context_, codec, nullptr) < 0) {
-    logger_.LogError("Could not open codec");
+  constexpr int kMaxDimension = 4096;
+  if (codec_context_->width <= 0 || codec_context_->height <= 0 ||
+      codec_context_->width > kMaxDimension || codec_context_->height > kMaxDimension) {
+    logger_.LogError("Video dimensions are invalid or exceed 4096 pixels");
     return false;
   }
 
   frame_ = av_frame_alloc();
   packet_ = av_packet_alloc();
-
   if (frame_ == nullptr || packet_ == nullptr) {
-    logger_.LogError("Could not allocate AVFrame/AVPacket");
+    logger_.LogError("Could not allocate FFmpeg frame state");
     return false;
   }
 
-  sws_ctx_ = sws_getContext(codec_context_->width, codec_context_->height,
-                            codec_context_->pix_fmt, 1920, 1080, AV_PIX_FMT_RGB24,
+  frame_data_ = {
+      .data = std::vector<uint8_t>(static_cast<std::size_t>(codec_context_->width) *
+                                       static_cast<std::size_t>(codec_context_->height) * 3U,
+                                   0U),
+      .width = codec_context_->width,
+      .height = codec_context_->height,
+      .channels = 3,
+  };
+  sws_ctx_ = sws_getContext(codec_context_->width, codec_context_->height, codec_context_->pix_fmt,
+                            codec_context_->width, codec_context_->height, AV_PIX_FMT_RGB24,
                             SWS_FAST_BILINEAR, nullptr, nullptr, nullptr);
   if (sws_ctx_ == nullptr) {
-    logger_.LogError("Could not create sws context");
+    logger_.LogError("Could not initialize video pixel conversion");
     return false;
   }
 
-  while (av_read_frame(format_context_, packet_) >= 0) {
-    if (packet_->stream_index != video_stream_index_) {
-      av_packet_unref(packet_);
-      continue;
-    }
-
-    const int send_ret = avcodec_send_packet(codec_context_, packet_);
-    av_packet_unref(packet_);
-
-    if (send_ret < 0) {
-      logger_.LogFmt(LogLevel::ERROR, "avcodec_send_packet error: {}", send_ret);
-      return false;
-    }
-
-    while (true) {
-      const int recv_ret = avcodec_receive_frame(codec_context_, frame_);
-      if (recv_ret == AVERROR(EAGAIN) || recv_ret == AVERROR_EOF) {
-        break;
-      }
-      if (recv_ret < 0) {
-        logger_.LogFmt(LogLevel::ERROR, "avcodec_receive_frame error: {}", recv_ret);
-        return false;
-      }
-      if (!ScaleFrame()) {
-        return false;
-      }
-    }
+  double frame_rate = av_q2d(stream->avg_frame_rate);
+  if (!std::isfinite(frame_rate) || frame_rate < 1.0 || frame_rate > 120.0) {
+    frame_rate = 30.0;
   }
-
-  // Drain buffered frames.
-  (void)avcodec_send_packet(codec_context_, nullptr);
-  while (avcodec_receive_frame(codec_context_, frame_) == 0) {
-    (void)ScaleFrame();
-  }
-
-  if (frame_count_ == 0) {
-    logger_.LogError("No frames decoded");
-    return false;
-  }
-
-  looped_ = true;
-  current_frame_ = 0;
-
+  frame_interval_ = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+      std::chrono::duration<double>(1.0 / frame_rate));
+  next_frame_due_ = std::chrono::steady_clock::now();
+  initialized_ = true;
   return true;
 }
 
-VideoDecoder::~VideoDecoder() {
-  if (sws_ctx_ != nullptr) {
-    sws_freeContext(sws_ctx_);
-    sws_ctx_ = nullptr;
+bool VideoDecoder::ScaleFrame() {
+  auto* destination = frame_data_.data.data();
+  const int destination_stride = frame_data_.width * frame_data_.channels;
+  const int rows = sws_scale(sws_ctx_, frame_->data, frame_->linesize, 0, codec_context_->height,
+                             &destination, &destination_stride);
+  av_frame_unref(frame_);
+  return rows == frame_data_.height;
+}
+
+bool VideoDecoder::Rewind() {
+  if (av_seek_frame(format_context_, video_stream_index_, 0, AVSEEK_FLAG_BACKWARD) < 0) {
+    logger_.LogError("Could not rewind video");
+    return false;
   }
-  if (frame_ != nullptr) {
-    av_frame_free(&frame_);
-    frame_ = nullptr;
-  }
-  if (packet_ != nullptr) {
-    av_packet_free(&packet_);
-    packet_ = nullptr;
-  }
-  if (codec_context_ != nullptr) {
-    avcodec_free_context(&codec_context_);
-    codec_context_ = nullptr;
-  }
-  if (format_context_ != nullptr) {
-    avformat_close_input(&format_context_);
-    format_context_ = nullptr;
+  avcodec_flush_buffers(codec_context_);
+  input_eof_ = false;
+  return true;
+}
+
+bool VideoDecoder::DecodeNextFrame() {
+  for (;;) {
+    const int receive_result = avcodec_receive_frame(codec_context_, frame_);
+    if (receive_result == 0) {
+      return ScaleFrame();
+    }
+    if (receive_result == AVERROR_EOF) {
+      if (!Rewind()) {
+        return false;
+      }
+      continue;
+    }
+    if (receive_result != AVERROR(EAGAIN)) {
+      logger_.LogFmt(LogLevel::ERROR, "Video decode failed: {}", receive_result);
+      return false;
+    }
+
+    bool submitted_packet = false;
+    while (!submitted_packet) {
+      const int read_result = av_read_frame(format_context_, packet_);
+      if (read_result < 0) {
+        if (!input_eof_) {
+          input_eof_ = true;
+          (void) avcodec_send_packet(codec_context_, nullptr);
+          submitted_packet = true;
+          continue;
+        }
+        if (!Rewind()) {
+          return false;
+        }
+        continue;
+      }
+      if (packet_->stream_index == video_stream_index_) {
+        const int send_result = avcodec_send_packet(codec_context_, packet_);
+        av_packet_unref(packet_);
+        if (send_result < 0 && send_result != AVERROR(EAGAIN)) {
+          logger_.LogFmt(LogLevel::ERROR, "Submitting a video packet failed: {}", send_result);
+          return false;
+        }
+        submitted_packet = true;
+      } else {
+        av_packet_unref(packet_);
+      }
+    }
   }
 }
 
 bool VideoDecoder::HasData() {
-  return looped_;
+  return initialized_ && std::chrono::steady_clock::now() >= next_frame_due_;
 }
 
 std::optional<std::unique_ptr<FrameData>> VideoDecoder::GetNextFrame() {
-  const FrameData& frame = frames_.at(static_cast<size_t>(current_frame_));
-
-  ++current_frame_;
-  if (current_frame_ >= frame_count_) {
-    current_frame_ = 0;
+  if (!HasData() || !DecodeNextFrame()) {
+    return std::nullopt;
   }
+  next_frame_due_ = std::chrono::steady_clock::now() + frame_interval_;
+  return std::make_unique<FrameData>(frame_data_);
+}
 
-  return std::make_unique<FrameData>(frame);
+VideoDecoder::~VideoDecoder() {
+  sws_freeContext(sws_ctx_);
+  av_frame_free(&frame_);
+  av_packet_free(&packet_);
+  avcodec_free_context(&codec_context_);
+  avformat_close_input(&format_context_);
 }
 
 }  // namespace screen_controller::processing

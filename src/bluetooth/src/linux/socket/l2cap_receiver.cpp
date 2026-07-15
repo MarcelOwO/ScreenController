@@ -18,8 +18,11 @@
 #include <algorithm>
 #include <cerrno>
 #include <chrono>
+#include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <format>
+#include <fstream>
 #include <functional>
 #include <vector>
 
@@ -30,9 +33,36 @@
 
 namespace screen_controller::socket {
 
+namespace {
+
+std::filesystem::path ControllerIdPath() {
+  if (const char* configured = std::getenv("SCREEN_CONTROLLER_CONTROLLER_ID_PATH");
+      configured != nullptr) {
+    return configured;
+  }
+  if (const char* state_directory = std::getenv("SCREEN_CONTROLLER_STATE_DIR");
+      state_directory != nullptr) {
+    return std::filesystem::path{state_directory}.parent_path() / "controller.id";
+  }
+  return "controller.id";
+}
+
+}  // namespace
+
 L2CapReceiver::L2CapReceiver(ILogger& logger, const AppSettings& settings)
-    : settings_(settings), imtu_(settings.imtu_), omtu_(settings.omtu_), logger_(logger) {
+    : settings_(settings),
+      imtu_(settings.imtu_),
+      omtu_(settings.omtu_),
+      logger_(logger),
+      controller_id_path_(ControllerIdPath()) {
   logger_.LogInfo("Creating L2CapReceiver");
+
+  const auto key = auth::LoadKeyFromEnvironment();
+  if (!key) {
+    throw std::runtime_error(key.error());
+  }
+  auth_key_ = *key;
+  LoadAuthorizedController();
 
   l2_cap_socket_ = ::socket(PF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP);
 
@@ -65,6 +95,11 @@ L2CapReceiver::L2CapReceiver(ILogger& logger, const AppSettings& settings)
   if (!res) {
     logger_.LogError("Failed to set flushable");
     throw std::runtime_error("Failed to set flushable");
+  }
+
+  res = socket::SetBluetoothSecurity(l2_cap_socket_, BT_SECURITY_MEDIUM);
+  if (!res) {
+    throw std::runtime_error("Failed to require an encrypted Bluetooth link");
   }
 
   res = socket::SetNonBlocking(l2_cap_socket_);
@@ -155,6 +190,7 @@ void L2CapReceiver::CloseClient(bool notify) {
     client_socket_ = -1;
   }
   received_data_.clear();
+  connected_controller_.clear();
   auth_state_ = AuthState::kWaiting;
   if (notify && on_disconnected_) {
     on_disconnected_();
@@ -178,7 +214,18 @@ void L2CapReceiver::CheckClient() {
     return;
   }
 
+  std::array<char, 18> addrstr{};
+  (void) ba2str(&raddr.l2_bdaddr, addrstr.data());
+  const std::string controller =
+      std::format("{}/{}", addrstr.data(), static_cast<unsigned int>(raddr.l2_bdaddr_type));
+  if (authorized_controller_ && *authorized_controller_ != controller) {
+    logger_.LogFmt(LogLevel::WARN, "Rejected non-commissioned controller {}", controller);
+    (void) close(kFd);
+    return;
+  }
+
   client_socket_ = kFd;
+  connected_controller_ = controller;
 
   l2cap_options options{};
   socklen_t optlen = sizeof(options);
@@ -192,14 +239,17 @@ void L2CapReceiver::CheckClient() {
 
   received_data_.reserve(std::max(imtu_ * 16, 256 * 1024));
 
-  std::array<char, 18> addrstr{};
-  (void) ba2str(&raddr.l2_bdaddr, addrstr.data());
-  logger_.LogFmt(LogLevel::INFO, "Accepted connection from {}", addrstr.data());
+  logger_.LogFmt(LogLevel::INFO, "Accepted connection from {}", connected_controller_);
 
   // Generate random nonce and send challenge.
-  (void) getrandom(nonce_.data(), nonce_.size(), 0);
-  const auto kNonceSpan = std::as_bytes(std::span<const uint8_t, 16>{nonce_.data(), nonce_.size()});
-  if (!SendPacket(kTypeChallenge, "challenge", kNonceSpan)) {
+  const ssize_t random_bytes = getrandom(nonce_.data(), nonce_.size(), 0);
+  if (random_bytes != static_cast<ssize_t>(nonce_.size())) {
+    logger_.LogError("Failed to generate a complete authentication nonce");
+    CloseClient(false);
+    return;
+  }
+  const auto kNonceSpan = std::as_bytes(std::span{nonce_});
+  if (!SendPacket(kTypeChallenge, "auth-v2", kNonceSpan)) {
     logger_.LogError("Failed to send auth challenge — closing connection");
     CloseClient(false);
     return;
@@ -282,13 +332,29 @@ void L2CapReceiver::ReadAllAvailable() {
       break;
     }
     received_data_.insert(received_data_.end(), temp_record_.begin(), temp_record_.begin() + kN);
+    const std::size_t max_buffer = auth_state_ == AuthState::kAuthenticated
+                                       ? static_cast<std::size_t>(kMaxPayload) + kMaxNameLen + 15U
+                                       : 1024U;
+    if (received_data_.size() > max_buffer) {
+      logger_.LogWarn("Peer exceeded the receive-buffer limit");
+      SendError(0x02, "receive buffer limit exceeded");
+      CloseClient();
+      break;
+    }
   }
 }
 
 void L2CapReceiver::ValidateAuth(std::span<const uint8_t> payload) {
-  if (!auth::ValidateResponse(nonce_, payload)) {
+  if (!auth::ValidateResponse(auth_key_, nonce_, payload)) {
     logger_.LogError("Auth failed — PSK mismatch, closing connection");
     SendError(0x01, "auth failed");
+    CloseClient();
+    return;
+  }
+
+  if (!authorized_controller_ && !PersistController()) {
+    logger_.LogError("Authentication succeeded but controller commissioning could not be saved");
+    SendError(0x09, "controller commissioning could not be persisted");
     CloseClient();
     return;
   }
@@ -298,6 +364,50 @@ void L2CapReceiver::ValidateAuth(std::span<const uint8_t> payload) {
   if (on_authenticated_) {
     on_authenticated_();
   }
+}
+
+void L2CapReceiver::LoadAuthorizedController() {
+  std::ifstream file(controller_id_path_);
+  std::string controller;
+  if (!file || !std::getline(file, controller) || controller.empty()) {
+    logger_.LogInfo("Device is not commissioned to a controller");
+    return;
+  }
+  authorized_controller_ = std::move(controller);
+  logger_.LogInfo("Loaded the commissioned controller identity");
+}
+
+bool L2CapReceiver::PersistController() {
+  if (connected_controller_.empty()) {
+    return false;
+  }
+
+  std::error_code error;
+  if (const auto parent = controller_id_path_.parent_path(); !parent.empty()) {
+    std::filesystem::create_directories(parent, error);
+    if (error) {
+      logger_.LogFmt(LogLevel::ERROR, "Could not create controller state directory: {}",
+                     error.message());
+      return false;
+    }
+  }
+
+  auto temporary_path = controller_id_path_;
+  temporary_path += ".new";
+  {
+    std::ofstream file(temporary_path, std::ios::trunc);
+    if (!file || !(file << connected_controller_ << '\n')) {
+      return false;
+    }
+  }
+  std::filesystem::rename(temporary_path, controller_id_path_, error);
+  if (error) {
+    std::filesystem::remove(temporary_path, error);
+    return false;
+  }
+  authorized_controller_ = connected_controller_;
+  logger_.LogInfo("Commissioned the first authenticated controller");
+  return true;
 }
 
 bool L2CapReceiver::ExtractOnePacket() {
@@ -328,7 +438,8 @@ bool L2CapReceiver::ExtractOnePacket() {
 
   if (kNameLen > kMaxNameLen) {
     logger_.LogFmt(LogLevel::ERROR, "Name too large: {}", kNameLen);
-    buf.erase(buf.begin());
+    SendError(0x04, "name too large");
+    CloseClient();
     return false;
   }
 
@@ -344,7 +455,9 @@ bool L2CapReceiver::ExtractOnePacket() {
     buf.erase(buf.begin(), buf.begin() + kAfterName);
 
     if (auth_state_ != AuthState::kAuthenticated) {
-      logger_.LogWarn("Dropping command from unauthenticated client");
+      logger_.LogWarn("Closing client that sent a command before authentication");
+      SendError(0x01, "authentication required");
+      CloseClient();
       return true;
     }
 
@@ -367,7 +480,8 @@ bool L2CapReceiver::ExtractOnePacket() {
     if (on_error_) {
       on_error_(-2, "payload too large");
     }
-    buf.erase(buf.begin());
+    SendError(0x02, "payload too large");
+    CloseClient();
     return false;
   }
 
@@ -386,22 +500,31 @@ bool L2CapReceiver::ExtractOnePacket() {
     if (on_error_) {
       on_error_(-3, "crc mismatch");
     }
+    SendError(0x03, "crc mismatch");
     buf.erase(buf.begin(), buf.begin() + kNeed);
     return true;
   }
 
   // Handle auth response before anything else.
-  if (kType == kTypeAuthResponse && name == "auth") {
+  if (kType == kTypeAuthResponse && name == "auth-v2") {
     const std::span<const uint8_t> kRespSpan(kPayloadPtr, kPayloadLen);
     buf.erase(buf.begin(), buf.begin() + kNeed);
+    if (auth_state_ != AuthState::kChallengeSent) {
+      logger_.LogWarn("Authentication response arrived in an invalid state");
+      SendError(0x01, "unexpected authentication response");
+      CloseClient();
+      return true;
+    }
     ValidateAuth(kRespSpan);
     return true;
   }
 
   // Drop all other payloaded packets until authenticated.
   if (auth_state_ != AuthState::kAuthenticated) {
-    logger_.LogWarn("Dropping packet from unauthenticated client");
+    logger_.LogWarn("Closing client that sent data before authentication");
     buf.erase(buf.begin(), buf.begin() + kNeed);
+    SendError(0x01, "authentication required");
+    CloseClient();
     return true;
   }
 
@@ -442,6 +565,14 @@ bool L2CapReceiver::SendPacket(const uint8_t kType, const std::string_view kName
   while (offset < bytes.size()) {
     const size_t kChunk = std::min(bytes.size() - offset, kChunkSize);
     const ssize_t kSent = send(client_socket_, bytes.data() + offset, kChunk, MSG_NOSIGNAL);
+    if (kSent < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+      pollfd descriptor{.fd = client_socket_, .events = POLLOUT, .revents = 0};
+      if (poll(&descriptor, 1, 2000) > 0) {
+        continue;
+      }
+      logger_.LogError("send timed out waiting for socket capacity");
+      return false;
+    }
     if (kSent <= 0) {
       logger_.LogFmt(LogLevel::ERROR, "send: {}", strerror(errno));
       if (on_error_) {

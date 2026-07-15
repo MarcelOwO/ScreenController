@@ -33,15 +33,25 @@ std::expected<std::unique_ptr<GlfwWindow>, std::error_code> GlfwWindow::Create(
     return std::unexpected(std::make_error_code(std::errc::connection_refused));
   }
 
+#if defined(__linux__)
+  glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+  glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+#else
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+#endif
 
   auto* raw_window = glfwCreateWindow(1920, 1080, "My Title", glfwGetPrimaryMonitor(), nullptr);
 
   if (raw_window == nullptr) {
-    logger.LogError("Failed to create GLFW window");
+    const char* description = nullptr;
+    const int code = glfwGetError(&description);
+    logger.LogFmt(LogLevel::ERROR, "Failed to create GLFW window ({}): {}", code,
+                  description == nullptr ? "unknown error" : description);
     return std::unexpected(std::make_error_code(std::errc::invalid_argument));
   }
 

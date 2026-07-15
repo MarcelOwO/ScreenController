@@ -5,6 +5,7 @@
 #include "bluetooth_agent.hpp"
 
 #include "bluetooth_device.hpp"
+#include "sdbus-c++/Error.h"
 namespace screen_controller::dbus {
 
 BluetoothAgent::BluetoothAgent(ILogger& logger,
@@ -21,15 +22,10 @@ BluetoothAgent::BluetoothAgent(ILogger& logger,
           sdbus::registerMethod("Release").withNoReply().implementedAs(
               [this] { logger_.LogInfo("BluetoothAgent released"); }),
           sdbus::registerMethod("RequestPinCode")
-              .implementedAs([this](const sdbus::ObjectPath& device_path) {
-                logger_.LogInfo("RequestPinCode");
-                const BluetoothDevice device_object(logger_, connection_, device_path);
-
-                if (const auto res = device_object.GetName(); res.has_value()) {
-                  logger_.LogInfo("Device name: " + std::string(res.value()));
-                }
-
-                return std::string("0000");
+              .implementedAs([this](const sdbus::ObjectPath&) -> std::string {
+                logger_.LogWarn("Rejecting legacy PIN pairing");
+                throw sdbus::Error(sdbus::Error::Name("org.bluez.Error.Rejected"),
+                                   "Legacy PIN pairing is disabled");
               }),
           sdbus::registerMethod("DisplayPinCode")
               .implementedAs([this](const sdbus::ObjectPath& device, const std::string& pincode) {
@@ -40,14 +36,10 @@ BluetoothAgent::BluetoothAgent(ILogger& logger,
                 }
               }),
           sdbus::registerMethod("RequestPasskey")
-              .implementedAs([this](const sdbus::ObjectPath& device) {
-                logger_.LogInfo("RequestPasskey");
-                const BluetoothDevice device_object(logger_, connection_, device);
-                if (const auto res = device_object.GetName()) {
-                  logger_.LogInfo("Device name: " + res.value());
-                }
-
-                return 1234;
+              .implementedAs([this](const sdbus::ObjectPath&) -> uint32_t {
+                logger_.LogWarn("Rejecting passkey requests without a secure enrollment flow");
+                throw sdbus::Error(sdbus::Error::Name("org.bluez.Error.Rejected"),
+                                   "Passkey entry is disabled");
               }),
           sdbus::registerMethod("DisplayPasskey")
               .implementedAs([this](const sdbus::ObjectPath& device, const uint32_t passkey,
@@ -75,12 +67,10 @@ BluetoothAgent::BluetoothAgent(ILogger& logger,
                 logger_.LogInfo("Device name: " + res.value());
               }),
           sdbus::registerMethod("AuthorizeService")
-              .implementedAs([this](const sdbus::ObjectPath& device, const std::string& uuid) {
-                logger_.LogInfo("AuthorizeService: " + uuid);
-                const BluetoothDevice device_object(logger_, connection_, device);
-                if (const auto res = device_object.GetName()) {
-                  logger_.LogInfo("Device name: " + res.value());
-                }
+              .implementedAs([this](const sdbus::ObjectPath&, const std::string& uuid) {
+                logger_.LogWarn("Rejecting unrelated Bluetooth service: " + uuid);
+                throw sdbus::Error(sdbus::Error::Name("org.bluez.Error.Rejected"),
+                                   "ScreenController does not authorize Bluetooth profiles");
               }),
           sdbus::registerMethod("Cancel").implementedAs(
               [this] { logger_.LogInfo("Agent Cancel"); }))

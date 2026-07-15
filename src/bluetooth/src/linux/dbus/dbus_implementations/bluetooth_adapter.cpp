@@ -29,8 +29,8 @@ Result<void> BluetoothAdapter::set_alias(const std::string_view alias) const {
   });
 }
 
-Result<std::string_view> BluetoothAdapter::get_alias() const {
-  return run_dbus_op([&]() -> Result<std::string_view> {
+Result<std::string> BluetoothAdapter::get_alias() const {
+  return run_dbus_op([&]() -> Result<std::string> {
     return adapter_proxy_->getProperty("Alias")
         .onInterface(adapter_interface_name_)
         .get<std::string>();

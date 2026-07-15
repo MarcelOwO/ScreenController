@@ -20,8 +20,7 @@ std::expected<void, std::error_code> BluetoothLeAdvertisingManager::RegisterAdve
   try {
     adapter_proxy_->callMethod(sdbus::MethodName("RegisterAdvertisement"))
         .onInterface(adv_manager_interface_name)
-        .withArguments(advertisement, options)
-        .dontExpectReply();
+        .withArguments(advertisement, options);
     return {};
   } catch (const sdbus::Error& e) {
     logger_.LogError(e.getMessage());
@@ -29,11 +28,12 @@ std::expected<void, std::error_code> BluetoothLeAdvertisingManager::RegisterAdve
   }
 }
 
-std::expected<void, std::error_code> BluetoothLeAdvertisingManager::UnregisterAdvertisement()
-    const {
+std::expected<void, std::error_code> BluetoothLeAdvertisingManager::UnregisterAdvertisement(
+    const sdbus::ObjectPath& advertisement) const {
   try {
     adapter_proxy_->callMethod(sdbus::MethodName("UnregisterAdvertisement"))
-        .onInterface(adv_manager_interface_name);
+        .onInterface(adv_manager_interface_name)
+        .withArguments(advertisement);
     return {};
   } catch (const sdbus::Error& e) {
     logger_.LogError(e.getMessage());

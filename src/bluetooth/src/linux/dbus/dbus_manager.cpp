@@ -12,22 +12,21 @@
 
 namespace screen_controller::dbus {
 DbusManager::DbusManager(ILogger& logger) try
-    : logger_(logger),
-
-      service_name_(sdbus::ServiceName("com.owo.screen_controller")),
-      agent_path_(sdbus::ObjectPath("/owo/agent1")),
-      connection_(sdbus::createSystemBusConnection(service_name_)),
-
+    : alias_("ScreenController"),
+      logger_(logger),
+      connection_(sdbus::createSystemBusConnection()),
       adapter_proxy_(sdbus::createProxy(*connection_, sdbus::ServiceName("org.bluez"),
                                         sdbus::ObjectPath("/org/bluez/hci0"))),
       bluez_proxy_(sdbus::createProxy(*connection_, sdbus::ServiceName("org.bluez"),
                                       sdbus::ObjectPath("/org/bluez"))),
-      agent_(logger_, connection_, agent_path_),
+      advertisement_path_(sdbus::ObjectPath("/owo/advertisement1")),
+      agent_path_(sdbus::ObjectPath("/owo/agent1")),
       agent_manager_(logger_, *bluez_proxy_),
-      adapter_(logger_, adapter_proxy_) {
+      agent_(logger_, connection_, agent_path_),
+      adapter_(logger_, adapter_proxy_),
+      advertising_manager_(logger_, adapter_proxy_),
+      advertisement_(logger_, connection_, advertisement_path_) {
   logger_.LogInfo("Creating DBusManager");
-
-  connection_->requestName(service_name_);
 
   if (!agent_manager_.RegisterAgent(agent_path_, "NoInputNoOutput")) {
     logger_.LogError("Failed to register agent");
@@ -38,6 +37,7 @@ DbusManager::DbusManager(ILogger& logger) try
   }
 
   SetupAdapter();
+  SetupName();
 
   connection_->enterEventLoopAsync();
 } catch (std::exception& e) {
@@ -49,6 +49,9 @@ DbusManager::DbusManager(ILogger& logger) try
 }
 
 DbusManager::~DbusManager() {
+  if (advertisement_registered_) {
+    (void) advertising_manager_.UnregisterAdvertisement(advertisement_path_);
+  }
   connection_->leaveEventLoop();
 }
 
@@ -63,7 +66,6 @@ void DbusManager::SetupName() {
   const auto kCurrentAlias = kAdapterAlias.value();
 
   if (kCurrentAlias == alias_) {
-    logger_.LogError("Alias is already set");
     return;
   }
 
@@ -75,16 +77,30 @@ void DbusManager::SetupName() {
   }
 }
 
-void DbusManager::MakeConnectable() {
-  if (!adapter_.set_discoverable(true)) {
+void DbusManager::MakeConnectable(const bool allow_pairing) {
+  if (!advertisement_registered_) {
+    if (!advertising_manager_.RegisterAdvertisement(advertisement_path_, {})) {
+      logger_.LogError("Failed to register the BLE advertisement");
+    } else {
+      advertisement_registered_ = true;
+    }
+  }
+  if (!adapter_.set_discoverable(allow_pairing)) {
     logger_.LogError("Failed to set discoverable");
   }
-  if (!adapter_.set_pairable(true)) {
+  if (!adapter_.set_pairable(allow_pairing)) {
     logger_.LogError("Failed to set pairable");
   }
 }
 
 void DbusManager::DisableNewConnection() {
+  if (advertisement_registered_) {
+    if (!advertising_manager_.UnregisterAdvertisement(advertisement_path_)) {
+      logger_.LogError("Failed to unregister the BLE advertisement");
+    } else {
+      advertisement_registered_ = false;
+    }
+  }
   if (!adapter_.set_discoverable(false)) {
     logger_.LogError("Failed to set discoverable");
   }

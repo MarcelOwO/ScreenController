@@ -4,6 +4,7 @@
 
 #include "graphics_renderer.hpp"
 
+#include <algorithm>
 #include <array>
 #include <bit>
 #include <glm/mat4x4.hpp>
@@ -38,9 +39,13 @@ auto GraphicsRenderer::Create(ILogger& logger, ProcLoader dloadproc, int window_
     return std::unexpected(std::make_error_code(std::errc::invalid_argument));
   }
 
-  const std::filesystem::path kVertexShaderSourcePath{"res/shader_files/vertex_shader.vs"};
-
-  const std::filesystem::path kFragmentShaderSourcePath{"res/shader_files/fragment_shader.fs"};
+#if defined(__linux__)
+  const std::filesystem::path kVertexShaderSourcePath{"shader_files/vertex_shader_es.vs"};
+  const std::filesystem::path kFragmentShaderSourcePath{"shader_files/fragment_shader_es.fs"};
+#else
+  const std::filesystem::path kVertexShaderSourcePath{"shader_files/vertex_shader.vs"};
+  const std::filesystem::path kFragmentShaderSourcePath{"shader_files/fragment_shader.fs"};
+#endif
 
   auto shader = Shader::Create(logger, kVertexShaderSourcePath, kFragmentShaderSourcePath);
 
@@ -114,6 +119,8 @@ void GraphicsRenderer::Render() const {
 
   shader_.Run();
   glUniform1i(glGetUniformLocation(shader_.program_id_, "uTexture"), 0);
+  glUniform1f(glGetUniformLocation(shader_.program_id_, "uBrightness"),
+              display_enabled_ ? brightness_ : 0.0F);
 
   glBindVertexArray(vao_);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -121,9 +128,9 @@ void GraphicsRenderer::Render() const {
 }
 
 void GraphicsRenderer::SetTexture(const FrameData* data) {
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width_, height_, 0, GL_RGB, GL_UNSIGNED_BYTE,
+  glBindTexture(GL_TEXTURE_2D, texture_);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, data->width, data->height, 0, GL_RGB, GL_UNSIGNED_BYTE,
                data->data.data());
-  glGenerateMipmap(GL_TEXTURE_2D);
 }
 void GraphicsRenderer::SetFallbackTexture() const {
   logger_.LogInfo("Setting fallback texture");
@@ -132,11 +139,10 @@ void GraphicsRenderer::SetFallbackTexture() const {
 
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width_, height_, 0, GL_RGB, GL_UNSIGNED_BYTE,
                kBlackImage.data());
-  glGenerateMipmap(GL_TEXTURE_2D);
 }
 void GraphicsRenderer::UpdateRatio(const int kWidth, const int kHeight) const {
   const float kImageAspect = static_cast<float>(kWidth) / kHeight;
-  const float kScreenAspect = static_cast<float>(1920) / 1080;
+  const float kScreenAspect = static_cast<float>(width_) / static_cast<float>(height_);
 
   float plane_width = 1.0F;
   float plane_height = 1.0F;
@@ -170,5 +176,13 @@ void GraphicsRenderer::Rotate() const {
       glm::rotate(glm::mat4(1.0F), rotation_angle_, glm::vec3(0.0F, 0.0F, 1.0F));
 
   shader_.SetMat4("uRotation", kRotation);
+}
+
+void GraphicsRenderer::SetBrightness(const float brightness) {
+  brightness_ = std::clamp(brightness, 0.0F, 1.0F);
+}
+
+void GraphicsRenderer::SetDisplayEnabled(const bool enabled) {
+  display_enabled_ = enabled;
 }
 }  // namespace screen_controller

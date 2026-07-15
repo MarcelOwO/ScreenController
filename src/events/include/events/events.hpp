@@ -18,17 +18,21 @@ struct Message {
 
 // Bluetooth received a command string from the phone (e.g. "Select:foo", "Rotate").
 struct CommandReceivedEvent : Message {
+  explicit CommandReceivedEvent(std::string command_value) : command(std::move(command_value)) {}
   std::string command;
 };
 
 // Bluetooth received a raw file payload from the phone ready to be saved.
 struct FileReceivedEvent : Message {
+  FileReceivedEvent(std::string filename_value, std::vector<std::byte> data_value)
+      : filename(std::move(filename_value)), data(std::move(data_value)) {}
   std::string filename;
   std::vector<std::byte> data;
 };
 
 // The Bluetooth peer connected or disconnected.
 struct ConnectionChangedEvent : Message {
+  explicit ConnectionChangedEvent(bool is_connected) : connected(is_connected) {}
   bool connected{false};
 };
 

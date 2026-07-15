@@ -1,5 +1,0 @@
-[D-BUS Service]
-Name=com.owo.screen_controller
-Exec=/usr/bin/screen_controller
-User=root
-SystemdService=owo-screen-controller.service

@@ -23,15 +23,13 @@ public:
   App();
   ~App();
 
-  void AdjustSettings(const std::function<void(AppSettings&)>& update_settings);
-
   void Run();
 
 private:
   bool is_running_;
 
   std::unique_ptr<ILogger> logger_;
-  std::unique_ptr<AppSettings> settings_;
+  AppSettings settings_;
 
   std::unique_ptr<IWindowManager> window_manager_;
   std::unique_ptr<IRenderer> renderer_;
@@ -47,6 +45,12 @@ private:
   void OnCommandReceived(const CommandReceivedEvent& event);
   void OnFileReceived(const FileReceivedEvent& event);
   void SendFileList();
+  void SendStatus();
+  void SendAck(std::string_view operation);
+  void SendError(uint32_t code, std::string_view message);
+
+  int brightness_percent_{100};
+  bool display_enabled_{true};
 };
 
 }  // namespace screen_controller

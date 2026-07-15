@@ -15,6 +15,8 @@ public:
   virtual void SetFallbackTexture() const = 0;
   virtual void UpdateRatio(int width, int height) const = 0;
   virtual void Rotate() const = 0;
+  virtual void SetBrightness(float brightness) = 0;
+  virtual void SetDisplayEnabled(bool enabled) = 0;
   virtual void Render() const = 0;
 };
 

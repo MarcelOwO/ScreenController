@@ -1,0 +1,51 @@
+#!/bin/sh
+set -e
+
+install -d -o root -g root -m 0700 /etc/screencontroller
+
+# A graphical desktop normally owns the X11/Wayland session. Prefer its first
+# regular local user while retaining the unit's root default for headless or
+# custom kiosk images. Bluetooth access is granted by the unit capabilities.
+desktop_user="$(getent passwd | awk -F: '$3 >= 1000 && $3 < 60000 { print $1; exit }')"
+service_user=root
+service_group=root
+service_home=/root
+service_uid=0
+
+if [ -n "$desktop_user" ]; then
+  service_user="$desktop_user"
+  service_group="$(id -gn "$desktop_user")"
+  service_home="$(getent passwd "$desktop_user" | cut -d: -f6)"
+  service_uid="$(id -u "$desktop_user")"
+
+  install -d -o root -g root -m 0755 \
+    /etc/systemd/system/owo-screen-controller.service.d
+  cat > /etc/systemd/system/owo-screen-controller.service.d/desktop-user.conf <<EOF
+[Service]
+User=$service_user
+Group=$service_group
+Environment=HOME=$service_home
+Environment=XDG_RUNTIME_DIR=/run/user/$service_uid
+Environment=XAUTHORITY=$service_home/.Xauthority
+EOF
+fi
+
+install -d -o "$service_user" -g "$service_group" -m 0700 \
+  /var/lib/screencontroller /var/lib/screencontroller/files
+
+environment=/etc/screencontroller/screencontroller.env
+if [ ! -s "$environment" ]; then
+  umask 077
+  key="$(openssl rand -hex 32)"
+  printf 'SCREEN_CONTROLLER_PSK_HEX=%s\n' "$key" >"$environment"
+fi
+chown root:root "$environment"
+chmod 0600 "$environment"
+
+if [ -d /run/systemd/system ]; then
+  systemctl daemon-reload
+  systemctl enable owo-screen-controller.service >/dev/null || true
+  systemctl restart owo-screen-controller.service >/dev/null || true
+fi
+
+exit 0

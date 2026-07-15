@@ -1,20 +1,40 @@
 [Unit]
 Description=OwO Screen Controller Service
 Requires=dbus.socket bluetooth.service
-After=dbus.socket bluetooth.service network.target
+After=dbus.socket bluetooth.service graphical.target
 Wants=bluetooth.service
 
 [Service]
-Type=dbus
-BusName=com.owo.screen_controller
+Type=simple
 ExecStart=/usr/bin/screen_controller
 Restart=on-failure
 RestartSec=3
 User=root
+Environment=DISPLAY=:0
+Environment=SCREEN_CONTROLLER_ASSET_DIR=/usr/share/screencontroller/assets
+Environment=SCREEN_CONTROLLER_STATE_DIR=/var/lib/screencontroller/files
+Environment=SCREEN_CONTROLLER_CONTROLLER_ID_PATH=/var/lib/screencontroller/controller.id
+EnvironmentFile=-/etc/screencontroller/screencontroller.env
+StateDirectory=screencontroller
+LogsDirectory=screencontroller
+WorkingDirectory=/var/lib/screencontroller
+UMask=0077
 StandardOutput=journal
 StandardError=journal
 # Allow the process direct access to the display framebuffer and Bluetooth HCI.
-SupplementaryGroups=bluetooth video render input
+SupplementaryGroups=video render input
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictAddressFamilies=AF_UNIX AF_BLUETOOTH
+ReadWritePaths=/var/lib/screencontroller /var/log/screencontroller
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=graphical.target

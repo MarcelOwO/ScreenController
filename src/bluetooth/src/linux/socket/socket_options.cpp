@@ -33,6 +33,14 @@ expected SetFlushable(int file_descriptor, int value) {
   return SetSocketOption(file_descriptor, SOL_BLUETOOTH, BT_FLUSHABLE, value);
 }
 
+expected SetBluetoothSecurity(const int file_descriptor, const int level) {
+  bt_security security{.level = static_cast<uint8_t>(level), .key_size = 0};
+  if (setsockopt(file_descriptor, SOL_BLUETOOTH, BT_SECURITY, &security, sizeof(security)) < 0) {
+    return std::unexpected(std::make_error_code(std::errc::operation_not_permitted));
+  }
+  return {};
+}
+
 expected SetNonBlocking(int socket) {
   if (fcntl(socket, F_SETFL, O_NONBLOCK) < 0) {
     return std::unexpected(std::make_error_code(std::errc::operation_not_permitted));

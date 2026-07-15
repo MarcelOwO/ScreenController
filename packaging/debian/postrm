@@ -1,0 +1,16 @@
+#!/bin/sh
+set -e
+
+rm -f /etc/systemd/system/owo-screen-controller.service.d/desktop-user.conf
+rmdir /etc/systemd/system/owo-screen-controller.service.d 2>/dev/null || true
+
+if [ "$1" = purge ]; then
+  rm -rf /etc/screencontroller
+  rm -f /var/lib/screencontroller/controller.id
+fi
+
+if [ -d /run/systemd/system ]; then
+  systemctl daemon-reload
+fi
+
+exit 0

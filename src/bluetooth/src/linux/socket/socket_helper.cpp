@@ -13,7 +13,7 @@ void BuildPacketBytes(uint8_t type, uint16_t magic, std::string_view name,
 
   size_t total_size = sizeof(magic) + sizeof(type) + sizeof(uint32_t) + name.size();
 
-  if (!payload.empty()) {
+  if (type >= 0x80U) {
     total_size += sizeof(uint32_t) + sizeof(uint32_t) + payload.size();
   }
 
@@ -26,7 +26,7 @@ void BuildPacketBytes(uint8_t type, uint16_t magic, std::string_view name,
   auto name_bytes = std::as_bytes(std::span{name});
   out.insert(out.end(), name_bytes.begin(), name_bytes.end());
 
-  if (!payload.empty()) {
+  if (type >= 0x80U) {
     const auto kLen = static_cast<uint32_t>(payload.size());
 
     auto uint8_view =

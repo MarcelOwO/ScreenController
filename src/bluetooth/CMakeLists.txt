@@ -1,5 +1,7 @@
 if(LINUX)
 
+find_package(OpenSSL 3 REQUIRED COMPONENTS Crypto)
+
 add_library(
   Bluetooth
   src/linux/bluetooth_manager.cpp
@@ -21,8 +23,8 @@ target_include_directories(Bluetooth PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 target_link_libraries(
   Bluetooth
-  PUBLIC Logger common
-  PRIVATE sdbus-c++ bluetooth libzstd_static)
+  PUBLIC Logger common Events
+  PRIVATE sdbus-c++ bluetooth libzstd_static OpenSSL::Crypto)
 else()
 
   add_library(Bluetooth src/dummy/dummy_mgr.cpp src/dummy/dummy_factory.cpp )

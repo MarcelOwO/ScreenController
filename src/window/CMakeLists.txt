@@ -7,11 +7,12 @@ target_include_directories(Window
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(Window
-  PUBLIC Logger common
-  PRIVATE glfw
-"-framework Cocoa"
-        "-framework OpenGL"
-        "-framework IOKit"
-        "-framework CoreVideo"
-)
+target_link_libraries(Window PUBLIC Logger common PRIVATE glfw)
+
+if(APPLE)
+  target_link_libraries(Window PRIVATE
+    "-framework Cocoa"
+    "-framework OpenGL"
+    "-framework IOKit"
+    "-framework CoreVideo")
+endif()

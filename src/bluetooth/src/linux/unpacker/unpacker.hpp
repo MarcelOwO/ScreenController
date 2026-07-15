@@ -4,27 +4,25 @@
 
 #pragma once
 
-#include <logging/logger.hpp>
-#include <models/bluetooth_packet.hpp>
-
+#include <expected>
 #include <span>
+#include <string>
+#include <vector>
 
 namespace screen_controller::bluetooth {
 
 class Unpacker final {
 public:
-  explicit Unpacker(ILogger& logger);
-  ~Unpacker();
+  Unpacker() = default;
+  ~Unpacker() = default;
 
-  void Decompress(std::span<const std::byte> span, BluetoothPacket& packet) const;
+  [[nodiscard]] std::expected<std::vector<std::byte>, std::string> Decompress(
+      std::span<const std::byte> compressed, std::size_t max_output_size) const;
 
   Unpacker(const Unpacker&) = delete;
   Unpacker& operator=(const Unpacker&) = delete;
   Unpacker(Unpacker&&) = delete;
   Unpacker& operator=(Unpacker&&) = delete;
-
-private:
-  ILogger& logger_;
 };
 
 }  // namespace screen_controller::bluetooth

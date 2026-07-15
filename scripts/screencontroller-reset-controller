@@ -1,0 +1,19 @@
+#!/bin/sh
+set -eu
+
+if [ "$(id -u)" -ne 0 ]; then
+  echo "Run this command as root." >&2
+  exit 1
+fi
+
+controller_file=/var/lib/screencontroller/controller.id
+systemctl stop owo-screen-controller.service
+
+if [ -s "$controller_file" ]; then
+  address="$(cut -d/ -f1 "$controller_file")"
+  bluetoothctl remove "$address" >/dev/null 2>&1 || true
+  rm -f "$controller_file"
+fi
+
+systemctl start owo-screen-controller.service
+echo "Controller commissioning was reset; the Pi is pairable again."

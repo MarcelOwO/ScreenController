@@ -9,12 +9,16 @@
 
 #include <array>
 #include <chrono>
+#include <filesystem>
 #include <functional>
+#include <optional>
 #include <span>
+#include <string>
 #include <vector>
 
 #include <logging/logger.hpp>
 #include <models/app_settings.hpp>
+#include "../auth/authenticator.hpp"
 #include "../models/packet.hpp"
 
 namespace screen_controller::socket {
@@ -50,6 +54,9 @@ public:
   [[nodiscard]] bool IsAuthenticated() const {
     return auth_state_ == AuthState::kAuthenticated;
   }
+  [[nodiscard]] bool IsCommissioned() const {
+    return authorized_controller_.has_value();
+  }
 
 private:
   enum class AuthState { kWaiting, kChallengeSent, kAuthenticated };
@@ -59,6 +66,8 @@ private:
   bool ExtractOnePacket();
   void ValidateAuth(std::span<const uint8_t> payload);
   void CloseClient(bool notify = true);
+  [[nodiscard]] bool PersistController();
+  void LoadAuthorizedController();
 
   void TryEnable2MDefaultPhy();
 
@@ -71,8 +80,12 @@ private:
   ILogger& logger_;
 
   AuthState auth_state_{AuthState::kWaiting};
-  std::array<uint8_t, 16> nonce_{};
+  auth::Key auth_key_{};
+  auth::Nonce nonce_{};
   std::chrono::steady_clock::time_point challenge_deadline_{};
+  std::filesystem::path controller_id_path_;
+  std::optional<std::string> authorized_controller_;
+  std::string connected_controller_;
 
   std::vector<uint8_t> temp_record_;
   std::vector<uint8_t> received_data_;

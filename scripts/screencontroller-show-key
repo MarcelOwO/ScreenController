@@ -1,0 +1,15 @@
+#!/bin/sh
+set -eu
+
+if [ "$(id -u)" -ne 0 ]; then
+  echo "Run this command as root." >&2
+  exit 1
+fi
+
+environment=/etc/screencontroller/screencontroller.env
+if [ ! -r "$environment" ]; then
+  echo "ScreenController has no provisioning key." >&2
+  exit 1
+fi
+
+sed -n 's/^SCREEN_CONTROLLER_PSK_HEX=//p' "$environment"
