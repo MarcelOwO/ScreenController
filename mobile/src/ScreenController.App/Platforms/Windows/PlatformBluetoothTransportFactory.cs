@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Channels;
+using ScreenController.Domain;
 using ScreenController.Protocol;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;

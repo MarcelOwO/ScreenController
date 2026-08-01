@@ -3,6 +3,7 @@ using System.Threading.Channels;
 using CoreBluetooth;
 using CoreFoundation;
 using Foundation;
+using ScreenController.Domain;
 using ScreenController.Protocol;
 
 namespace ScreenController.App.Services;
@@ -10,19 +11,29 @@ namespace ScreenController.App.Services;
 public sealed class PlatformBluetoothTransportFactory : IControllerTransportFactory
 {
     private readonly CentralDelegate centralDelegate = new();
-    private readonly CBCentralManager central;
+    private CBCentralManager? central;
     private readonly ConcurrentDictionary<string, CBPeripheral> peripherals = new();
     private readonly ConcurrentDictionary<string, PeripheralDelegate> peripheralDelegates = new();
 
-    public PlatformBluetoothTransportFactory()
+    private CBCentralManager Central
     {
-        central = new CBCentralManager(centralDelegate, DispatchQueue.MainQueue);
-        centralDelegate.Discovered += peripheral => peripherals[peripheral.Identifier.AsString()] = peripheral;
+        get
+        {
+            if (central is not null)
+            {
+                return central;
+            }
+
+            centralDelegate.Discovered += peripheral => peripherals[peripheral.Identifier.AsString()] = peripheral;
+            central = new CBCentralManager(centralDelegate, DispatchQueue.MainQueue);
+            return central;
+        }
     }
 
     public async IAsyncEnumerable<DeviceCandidate> ScanAsync(
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        var central = Central;
         await centralDelegate.WaitUntilReadyAsync(cancellationToken);
         var output = Channel.CreateUnbounded<DeviceCandidate>();
         void OnDiscovered(CBPeripheral peripheral, int rssi) =>
@@ -36,6 +47,7 @@ public sealed class PlatformBluetoothTransportFactory : IControllerTransportFact
 
     public async Task<IControllerTransport> ConnectAsync(DeviceEnrollment enrollment, CancellationToken cancellationToken)
     {
+        var central = Central;
         await centralDelegate.WaitUntilReadyAsync(cancellationToken);
         if (!peripherals.TryGetValue(enrollment.DeviceId, out var peripheral))
         {

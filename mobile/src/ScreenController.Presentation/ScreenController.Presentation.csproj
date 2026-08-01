@@ -1,11 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <RootNamespace>ScreenController.Protocol</RootNamespace>
+    <RootNamespace>ScreenController.Presentation</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
-    <PackageReference Include="ZstdSharp.Port" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../ScreenController.Application/ScreenController.Application.csproj" />

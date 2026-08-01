@@ -1,12 +1,4 @@
 <Solution>
-  <Folder Name="/src/">
-    <Project Path="src/ScreenController.App/ScreenController.App.csproj" />
-    <Project Path="src/ScreenController.Application/ScreenController.Application.csproj" />
-    <Project Path="src/ScreenController.Domain/ScreenController.Domain.csproj" />
-    <Project Path="src/ScreenController.Infrastructure/ScreenController.Infrastructure.csproj" />
-    <Project Path="src/ScreenController.Presentation/ScreenController.Presentation.csproj" />
-    <Project Path="src/ScreenController.Protocol/ScreenController.Protocol.csproj" />
-  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/ScreenController.Application.Tests/ScreenController.Application.Tests.csproj" />
     <Project Path="tests/ScreenController.Architecture.Tests/ScreenController.Architecture.Tests.csproj" />

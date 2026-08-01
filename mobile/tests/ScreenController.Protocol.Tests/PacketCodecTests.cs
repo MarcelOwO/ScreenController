@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using ScreenController.Domain;
 using ScreenController.Protocol;
 using Xunit;
 

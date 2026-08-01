@@ -4,24 +4,28 @@ using Android.Bluetooth.LE;
 using Android.Content;
 using Android.OS;
 using Java.Util;
+using ScreenController.Domain;
 using ScreenController.Protocol;
 
 namespace ScreenController.App.Services;
 
 public sealed class PlatformBluetoothTransportFactory : IControllerTransportFactory
 {
-    private readonly BluetoothAdapter adapter;
+    private BluetoothAdapter? adapter;
 
-    public PlatformBluetoothTransportFactory()
+    private BluetoothAdapter Adapter => adapter ??= GetAdapter();
+
+    private static BluetoothAdapter GetAdapter()
     {
         var manager = (BluetoothManager?)Android.App.Application.Context.GetSystemService(Context.BluetoothService);
-        adapter = manager?.Adapter ?? throw new PlatformNotSupportedException("This Android device has no Bluetooth adapter.");
+        return manager?.Adapter ?? throw new PlatformNotSupportedException("This Android device has no Bluetooth adapter.");
     }
 
     public async IAsyncEnumerable<DeviceCandidate> ScanAsync(
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {
         await EnsurePermissionAsync();
+        var adapter = Adapter;
         if (!adapter.IsEnabled) throw new InvalidOperationException("Turn Bluetooth on before scanning.");
         var scanner = adapter.BluetoothLeScanner ?? throw new InvalidOperationException("Bluetooth LE scanning is unavailable.");
         var channel = Channel.CreateUnbounded<DeviceCandidate>();
@@ -49,6 +53,7 @@ public sealed class PlatformBluetoothTransportFactory : IControllerTransportFact
     public async Task<IControllerTransport> ConnectAsync(DeviceEnrollment enrollment, CancellationToken cancellationToken)
     {
         await EnsurePermissionAsync();
+        var adapter = Adapter;
         var device = adapter.GetRemoteDevice(enrollment.DeviceId)
             ?? throw new InvalidOperationException("The saved Bluetooth device is no longer available.");
         var socket = device.CreateL2capChannel(enrollment.Psm)

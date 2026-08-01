@@ -1,14 +1,18 @@
 using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
+using Microsoft.Extensions.Logging;
+using ScreenController.Application.Abstractions;
+using ScreenController.Domain;
 using ZstdSharp;
 
 namespace ScreenController.Protocol;
 
-public sealed class ScreenControllerClient : IAsyncDisposable
+public sealed class ScreenControllerClient : IDisplayController
 {
     private static readonly TimeSpan ResponseTimeout = TimeSpan.FromSeconds(15);
     private readonly IControllerTransportFactory transportFactory;
+    private readonly ILogger<ScreenControllerClient> logger;
     private readonly SemaphoreSlim operationLock = new(1, 1);
     private Channel<ProtocolPacket> packets = CreatePacketChannel();
     private IControllerTransport? transport;
@@ -16,8 +20,13 @@ public sealed class ScreenControllerClient : IAsyncDisposable
     private CancellationTokenSource? connectionCancellation;
     private Task? receiveTask;
 
-    public ScreenControllerClient(IControllerTransportFactory transportFactory) =>
+    public ScreenControllerClient(
+        IControllerTransportFactory transportFactory,
+        ILogger<ScreenControllerClient> logger)
+    {
         this.transportFactory = transportFactory;
+        this.logger = logger;
+    }
 
     public bool IsConnected => transport?.IsConnected == true && receiveTask is { IsCompleted: false };
 
@@ -28,6 +37,11 @@ public sealed class ScreenControllerClient : IAsyncDisposable
 
     public async Task ConnectAsync(DeviceEnrollment enrollment, CancellationToken cancellationToken)
     {
+        using var scope = logger.BeginScope(new Dictionary<string, object?>
+        {
+            ["DeviceId"] = enrollment.DeviceId,
+        });
+        logger.LogInformation("Opening Bluetooth transport");
         await DisconnectAsync().ConfigureAwait(false);
         packets = CreatePacketChannel();
         transport = await transportFactory.ConnectAsync(enrollment, cancellationToken)
@@ -51,10 +65,12 @@ public sealed class ScreenControllerClient : IAsyncDisposable
 
             connectionCancellation = new CancellationTokenSource();
             receiveTask = ReceiveLoopAsync(connectionCancellation.Token);
+            logger.LogInformation("Bluetooth transport authenticated");
             ConnectionChanged?.Invoke(this, true);
         }
-        catch
+        catch (Exception exception)
         {
+            logger.LogError(exception, "Bluetooth connection or authentication failed");
             await DisconnectAsync().ConfigureAwait(false);
             throw;
         }
@@ -107,6 +123,7 @@ public sealed class ScreenControllerClient : IAsyncDisposable
         IProgress<TransferProgress>? progress,
         CancellationToken cancellationToken)
     {
+        logger.LogInformation("Preparing upload {FileName} with {FileBytes} bytes", Path.GetFileName(fileName), file.Length);
         if (file.Length > ProtocolConstants.MaxFileBytes)
         {
             throw new ProtocolException("Files larger than 128 MiB are not supported.");
@@ -132,6 +149,7 @@ public sealed class ScreenControllerClient : IAsyncDisposable
                 cancellationToken).ConfigureAwait(false);
             var response = await ReadResponseAsync(cancellationToken).ConfigureAwait(false);
             EnsureResponse(response, PacketType.Acknowledgement, "Upload");
+            logger.LogInformation("Upload {FileName} completed", Path.GetFileName(fileName));
         }
         finally
         {
@@ -141,6 +159,7 @@ public sealed class ScreenControllerClient : IAsyncDisposable
 
     public async Task DisconnectAsync()
     {
+        var wasConnected = transport is not null;
         connectionCancellation?.Cancel();
         if (transport is not null)
         {
@@ -153,6 +172,10 @@ public sealed class ScreenControllerClient : IAsyncDisposable
         connectionCancellation = null;
         receiveTask = null;
         while (packets.Reader.TryRead(out _)) { }
+        if (wasConnected)
+        {
+            logger.LogInformation("Bluetooth transport disconnected");
+        }
         ConnectionChanged?.Invoke(this, false);
     }
 
@@ -237,6 +260,7 @@ public sealed class ScreenControllerClient : IAsyncDisposable
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
         catch (Exception exception)
         {
+            logger.LogError(exception, "Bluetooth receive loop terminated unexpectedly");
             packets.Writer.TryComplete(exception);
             ConnectionChanged?.Invoke(this, false);
         }

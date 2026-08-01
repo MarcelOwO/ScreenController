@@ -2,8 +2,8 @@
 <ContentPage x:Class="ScreenController.App.Views.DashboardPage" x:Name="Root"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:model="clr-namespace:ScreenController.Protocol;assembly=ScreenController.Protocol"
-    xmlns:vm="clr-namespace:ScreenController.App.ViewModels"
+    xmlns:model="clr-namespace:ScreenController.Domain;assembly=ScreenController.Domain"
+    xmlns:vm="clr-namespace:ScreenController.Presentation;assembly=ScreenController.Presentation"
     x:DataType="vm:ControllerViewModel" Title="Screen Controller">
     <ScrollView>
         <VerticalStackLayout MaximumWidthRequest="980" Padding="24,16,24,48" Spacing="18">

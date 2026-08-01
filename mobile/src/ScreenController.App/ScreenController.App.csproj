@@ -21,10 +21,13 @@
     <MauiSplashScreen Include="Resources/Splash/splash.svg" Color="#0B1020" BaseSize="256,256" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="Microsoft.Maui.Controls" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="../ScreenController.Application/ScreenController.Application.csproj" />
+    <ProjectReference Include="../ScreenController.Domain/ScreenController.Domain.csproj" />
+    <ProjectReference Include="../ScreenController.Infrastructure/ScreenController.Infrastructure.csproj" />
+    <ProjectReference Include="../ScreenController.Presentation/ScreenController.Presentation.csproj" />
     <ProjectReference Include="../ScreenController.Protocol/ScreenController.Protocol.csproj" />
   </ItemGroup>
 </Project>

@@ -1,5 +1,10 @@
+using Microsoft.Extensions.Logging;
+using ScreenController.Application;
+using ScreenController.Application.Abstractions;
 using ScreenController.App.Services;
-using ScreenController.App.ViewModels;
+using ScreenController.Infrastructure;
+using ScreenController.Infrastructure.Logging;
+using ScreenController.Presentation;
 using ScreenController.App.Views;
 using ScreenController.Protocol;
 
@@ -11,10 +16,30 @@ public static class MauiProgram
     {
         var builder = MauiApp.CreateBuilder();
         builder.UseMauiApp<ApplicationRoot>();
+
+        var logDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "ScreenController",
+            "Logs");
+        builder.Logging.SetMinimumLevel(LogLevel.Information);
+        builder.Logging.AddProvider(new JsonFileLoggerProvider(logDirectory));
+
+        builder.Services
+            .AddScreenControllerApplication()
+            .AddScreenControllerInfrastructure()
+            .AddScreenControllerPresentation();
+
         builder.Services.AddSingleton<IControllerTransportFactory, PlatformBluetoothTransportFactory>();
         builder.Services.AddSingleton<ScreenControllerClient>();
-        builder.Services.AddSingleton<EnrollmentStore>();
-        builder.Services.AddSingleton<ControllerViewModel>();
+        builder.Services.AddSingleton<IDisplayController>(services =>
+            services.GetRequiredService<ScreenControllerClient>());
+        builder.Services.AddSingleton<MauiPlatformServices>();
+        builder.Services.AddSingleton<ISecureValueStore>(services => services.GetRequiredService<MauiPlatformServices>());
+        builder.Services.AddSingleton<IClipboardService>(services => services.GetRequiredService<MauiPlatformServices>());
+        builder.Services.AddSingleton<IUserDialogService>(services => services.GetRequiredService<MauiPlatformServices>());
+        builder.Services.AddSingleton<IMediaPickerService>(services => services.GetRequiredService<MauiPlatformServices>());
+        builder.Services.AddSingleton<IUiDispatcher>(services => services.GetRequiredService<MauiPlatformServices>());
+        builder.Services.AddSingleton<StartupDiagnostics>();
         builder.Services.AddSingleton<DashboardPage>();
         return builder.Build();
     }

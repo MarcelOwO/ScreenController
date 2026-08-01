@@ -1,3 +1,5 @@
+using ScreenController.Domain;
+
 namespace ScreenController.Protocol;
 
 public interface IControllerTransport : IAsyncDisposable
